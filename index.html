@@ -1,0 +1,585 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="AeroPDF - The ultimate client-server PDF toolkit. Merge, split, compress, convert, edit, and secure PDFs with 24 complete tools. 100% private, clean, and commercial ready." />
+    <title>AeroPDF - Complete Client-Server PDF Tools Platform</title>
+  </head>
+  <body>
+    <!-- Navigation Header -->
+    <header>
+      <div class="nav-container">
+        <a href="/" class="logo" id="logo-link">
+          <div class="logo-icon">A</div>
+          <span>AeroPDF</span>
+        </a>
+        <div class="nav-links">
+          <button id="btn-back-to-dashboard" class="btn-nav-back" style="display: none;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+            Back to Dashboard
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main>
+      <!-- DASHBOARD PAGE -->
+      <section id="dashboard-page">
+        <div class="hero">
+          <h1>Every PDF Tool at Your Fingertips</h1>
+          <p>Access all 24 tools to organize, optimize, convert, edit, and secure your PDF documents.</p>
+        </div>
+
+        <!-- 6 Column Categories Grid (Like iLovePDF Menu) -->
+        <div class="dashboard-categories">
+          <!-- Column 1: Organize PDF -->
+          <div class="category-column category-organize">
+            <div class="category-header">
+              <svg class="category-header-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+              <span>Organize PDF</span>
+            </div>
+            
+            <div class="tool-card" data-tool="merge">
+              <div class="tool-icon-wrapper">📄</div>
+              <div>
+                <h3>Merge PDF</h3>
+                <p>Combine multiple PDFs into one.</p>
+              </div>
+            </div>
+            
+            <div class="tool-card" data-tool="split">
+              <div class="tool-icon-wrapper">✂️</div>
+              <div>
+                <h3>Split PDF</h3>
+                <p>Extract ranges or split all pages.</p>
+              </div>
+            </div>
+
+            <div class="tool-card" data-tool="remove-pages">
+              <div class="tool-icon-wrapper">🗑️</div>
+              <div>
+                <h3>Remove Pages</h3>
+                <p>Delete pages from your PDF file.</p>
+              </div>
+            </div>
+
+            <div class="tool-card" data-tool="extract-pages">
+              <div class="tool-icon-wrapper">📥</div>
+              <div>
+                <h3>Extract Pages</h3>
+                <p>Save specific pages as a new PDF.</p>
+              </div>
+            </div>
+
+            <div class="tool-card" data-tool="organize-pdf">
+              <div class="tool-icon-wrapper">🔄</div>
+              <div>
+                <h3>Organize PDF</h3>
+                <p>Drag and reorder page positions.</p>
+              </div>
+            </div>
+
+            <div class="tool-card" data-tool="scan-to-pdf">
+              <div class="tool-icon-wrapper">📷</div>
+              <div>
+                <h3>Scan to PDF</h3>
+                <p>Compile camera snapshots to PDF.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Column 2: Optimize PDF -->
+          <div class="category-column category-optimize">
+            <div class="category-header">
+              <svg class="category-header-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M12 12v6"/><path d="m9 15 3-3 3 3"/></svg>
+              <span>Optimize PDF</span>
+            </div>
+            
+            <div class="tool-card" data-tool="compress">
+              <div class="tool-icon-wrapper">🗜️</div>
+              <div>
+                <h3>Compress PDF</h3>
+                <p>Reduce PDF file size on the server.</p>
+              </div>
+            </div>
+
+            <div class="tool-card" data-tool="repair">
+              <div class="tool-icon-wrapper">🔧</div>
+              <div>
+                <h3>Repair PDF</h3>
+                <p>Fix corrupt PDF files & headers.</p>
+              </div>
+            </div>
+
+            <div class="tool-card" data-tool="ocr">
+              <div class="tool-icon-wrapper">🔍</div>
+              <div>
+                <h3>OCR PDF</h3>
+                <p>Make scanned PDFs text-searchable.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Column 3: Convert to PDF -->
+          <div class="category-column category-to-pdf">
+            <div class="category-header">
+              <svg class="category-header-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+              <span>Convert to PDF</span>
+            </div>
+            
+            <div class="tool-card" data-tool="img-to-pdf">
+              <div class="tool-icon-wrapper">🖼️</div>
+              <div>
+                <h3>JPG to PDF</h3>
+                <p>Convert JPG/PNG images to PDF.</p>
+              </div>
+            </div>
+
+            <div class="tool-card" data-tool="word-to-pdf">
+              <div class="tool-icon-wrapper">📝</div>
+              <div>
+                <h3>Word to PDF</h3>
+                <p>Convert DOCX files to PDF.</p>
+              </div>
+            </div>
+
+            <div class="tool-card" data-tool="ppt-to-pdf">
+              <div class="tool-icon-wrapper">📊</div>
+              <div>
+                <h3>PPT to PDF</h3>
+                <p>Convert PPTX presentations to PDF.</p>
+              </div>
+            </div>
+
+            <div class="tool-card" data-tool="excel-to-pdf">
+              <div class="tool-icon-wrapper">📈</div>
+              <div>
+                <h3>Excel to PDF</h3>
+                <p>Convert XLSX sheets to PDF.</p>
+              </div>
+            </div>
+
+            <div class="tool-card" data-tool="html-to-pdf">
+              <div class="tool-icon-wrapper">🌐</div>
+              <div>
+                <h3>HTML to PDF</h3>
+                <p>Convert web pages/code to PDF.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Column 4: Convert from PDF -->
+          <div class="category-column category-from-pdf">
+            <div class="category-header">
+              <svg class="category-header-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" x2="12" y1="2" y2="16"/></svg>
+              <span>Convert from PDF</span>
+            </div>
+            
+            <div class="tool-card" data-tool="pdf-to-img">
+              <div class="tool-icon-wrapper">🖼️</div>
+              <div>
+                <h3>PDF to JPG</h3>
+                <p>Extract PDF pages as PNG images.</p>
+              </div>
+            </div>
+
+            <div class="tool-card" data-tool="pdf-to-word">
+              <div class="tool-icon-wrapper">📝</div>
+              <div>
+                <h3>PDF to Word</h3>
+                <p>Extract PDF contents to DOCX.</p>
+              </div>
+            </div>
+
+            <div class="tool-card" data-tool="pdf-to-ppt">
+              <div class="tool-icon-wrapper">📊</div>
+              <div>
+                <h3>PDF to PPT</h3>
+                <p>Export PDF pages into slides.</p>
+              </div>
+            </div>
+
+            <div class="tool-card" data-tool="pdf-to-excel">
+              <div class="tool-icon-wrapper">📈</div>
+              <div>
+                <h3>PDF to Excel</h3>
+                <p>Extract PDF tables into CSV/Excel.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Column 5: Edit PDF -->
+          <div class="category-column category-edit">
+            <div class="category-header">
+              <svg class="category-header-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+              <span>Edit PDF</span>
+            </div>
+            
+            <div class="tool-card" data-tool="rotate">
+              <div class="tool-icon-wrapper">🔄</div>
+              <div>
+                <h3>Rotate PDF</h3>
+                <p>Rotate portrait/landscape pages.</p>
+              </div>
+            </div>
+
+            <div class="tool-card" data-tool="page-numbers">
+              <div class="tool-icon-wrapper">🔢</div>
+              <div>
+                <h3>Page Numbers</h3>
+                <p>Draw page numbers on PDF margins.</p>
+              </div>
+            </div>
+
+            <div class="tool-card" data-tool="watermark">
+              <div class="tool-icon-wrapper">💧</div>
+              <div>
+                <h3>Add Watermark</h3>
+                <p>Stamp customized text overlays.</p>
+              </div>
+            </div>
+
+            <div class="tool-card" data-tool="crop">
+              <div class="tool-icon-wrapper">✂️</div>
+              <div>
+                <h3>Crop PDF</h3>
+                <p>Visual page dimensions cropper.</p>
+              </div>
+            </div>
+
+            <div class="tool-card" data-tool="edit-pdf">
+              <div class="tool-icon-wrapper">🖋️</div>
+              <div>
+                <h3>Edit PDF</h3>
+                <p>Add text, shapes, or notes on pages.</p>
+              </div>
+            </div>
+
+            <div class="tool-card" data-tool="pdf-forms">
+              <div class="tool-icon-wrapper">📋</div>
+              <div>
+                <h3>PDF Forms</h3>
+                <p>Fill out interactive forms.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Column 6: Security -->
+          <div class="category-column category-security">
+            <div class="category-header">
+              <svg class="category-header-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <span>Security</span>
+            </div>
+            
+            <div class="tool-card" data-tool="protect">
+              <div class="tool-icon-wrapper">🔒</div>
+              <div>
+                <h3>Protect PDF</h3>
+                <p>Add passwords & encrypt files.</p>
+              </div>
+            </div>
+
+            <div class="tool-card" data-tool="unlock">
+              <div class="tool-icon-wrapper">🔓</div>
+              <div>
+                <h3>Unlock PDF</h3>
+                <p>Remove passwords & restrictions.</p>
+              </div>
+            </div>
+
+            <div class="tool-card" data-tool="sign">
+              <div class="tool-icon-wrapper">✒️</div>
+              <div>
+                <h3>Sign PDF</h3>
+                <p>Draw signatures and stamp them.</p>
+              </div>
+            </div>
+
+            <div class="tool-card" data-tool="redact">
+              <div class="tool-icon-wrapper">🔏</div>
+              <div>
+                <h3>Redact PDF</h3>
+                <p>Mask sensitive sections with black.</p>
+              </div>
+            </div>
+
+            <div class="tool-card" data-tool="compare">
+              <div class="tool-icon-wrapper">⚖️</div>
+              <div>
+                <h3>Compare PDF</h3>
+                <p>Compare two PDFs side-by-side.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ACTIVE WORKSPACE PAGE -->
+      <section id="workspace-page" class="workspace-container">
+        <div class="workspace-header">
+          <div class="workspace-title">
+            <h2 id="current-tool-title">Tool Name</h2>
+            <p id="current-tool-desc">Tool action description goes here.</p>
+          </div>
+        </div>
+
+        <!-- File Upload Area (Dropzone) -->
+        <div id="dropzone" class="upload-zone">
+          <div class="upload-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+          </div>
+          <div class="upload-text">
+            <h4 id="upload-headline">Drag and drop files here</h4>
+            <p id="upload-subline">or click to browse from your computer</p>
+          </div>
+          <input type="file" id="file-input-element" class="file-input" />
+        </div>
+
+        <!-- Active Operations Area -->
+        <div id="operations-area" class="operations-panel" style="display: none;">
+          <!-- Left Workspace (interactive grids/views) -->
+          <div class="left-panel">
+            <!-- File item rows list -->
+            <div id="files-list" class="files-container"></div>
+            
+            <!-- Page Previews grid selector (Split, Extract, Remove, Organize, Sign, Redact, Edit) -->
+            <div id="previews-container" style="display: none;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                <span class="input-label" id="previews-summary-label">Select pages to process:</span>
+                <div id="previews-bulk-actions" style="display: flex; gap: 0.5rem;">
+                  <button id="btn-select-all-pages" class="btn-nav-back" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">Select All</button>
+                  <button id="btn-deselect-all-pages" class="btn-nav-back" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">Deselect All</button>
+                </div>
+              </div>
+              
+              <!-- Thumbnails box -->
+              <div style="position: relative;">
+                <div id="previews-grid-element" class="previews-grid"></div>
+              </div>
+            </div>
+
+            <!-- Webcam Scanner Feed View -->
+            <div id="webcam-workspace" style="display: none;" class="webcam-container">
+              <video id="webcam-video" autoplay playsinline class="webcam-feed"></video>
+              <div style="display: flex; gap: 1rem; width: 100%; justify-content: center;">
+                <button id="btn-webcam-snap" class="btn-action" style="padding: 0.5rem 1.5rem;">Capture Snapshot</button>
+                <button id="btn-webcam-toggle" class="btn-nav-back">Turn Off</button>
+              </div>
+            </div>
+
+            <!-- Side-by-Side Compare Panel View -->
+            <div id="compare-workspace" style="display: none;" class="compare-container">
+              <div class="compare-file-panel" id="compare-left-panel">
+                <div class="compare-title-header" id="compare-left-title">File A</div>
+                <table class="compare-metadata-table" id="compare-left-meta"></table>
+              </div>
+              <div class="compare-file-panel" id="compare-right-panel">
+                <div class="compare-title-header" id="compare-right-title">File B</div>
+                <table class="compare-metadata-table" id="compare-right-meta"></table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Configuration Sidebar Sidebar -->
+          <aside class="sidebar-panel">
+            <div class="panel-section" id="settings-section">
+              <h4>Tool Configuration</h4>
+
+              <!-- Settings: HTML to PDF -->
+              <div id="settings-html" style="display: none;" class="input-group">
+                <label class="input-label" for="html-input-type">HTML Input Mode:</label>
+                <select id="html-input-type" class="text-input" style="background: rgba(0,0,0,0.3); margin-bottom: 0.5rem;">
+                  <option value="code">HTML Source Code</option>
+                  <option value="url">Website URL</option>
+                </select>
+                <div id="html-code-group" class="input-group">
+                  <label class="input-label" for="html-textarea">HTML Code:</label>
+                  <textarea id="html-textarea" class="text-input" style="height: 120px; font-family: monospace; font-size: 0.8rem; background: rgba(0,0,0,0.25);" placeholder="&lt;h1&gt;Hello World&lt;/h1&gt;"></textarea>
+                </div>
+                <div id="html-url-group" class="input-group" style="display: none;">
+                  <label class="input-label" for="html-url-input">Website URL:</label>
+                  <input type="url" id="html-url-input" class="text-input" placeholder="https://example.com" />
+                </div>
+              </div>
+
+              <!-- Settings: Compress PDF -->
+              <div id="settings-compress" style="display: none;" class="input-group">
+                <label class="input-label">Compression Quality:</label>
+                <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.25rem;">
+                  <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; cursor: pointer;">
+                    <input type="radio" name="compress-level" value="medium" checked /> Balanced (Good size/quality)
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; cursor: pointer;">
+                    <input type="radio" name="compress-level" value="high" /> Extreme (Lowest size/lower quality)
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; cursor: pointer;">
+                    <input type="radio" name="compress-level" value="low" /> Low Compression (High quality)
+                  </label>
+                </div>
+              </div>
+
+              <!-- Settings: Unlock PDF -->
+              <div id="settings-unlock" style="display: none;" class="input-group">
+                <label class="input-label" for="pdf-unlock-password">Decryption Password:</label>
+                <input type="password" id="pdf-unlock-password" class="text-input" placeholder="Enter current PDF password" />
+              </div>
+
+              <!-- Settings: Add Watermark -->
+              <div id="settings-watermark" style="display: none;" class="input-group">
+                <label class="input-label" for="watermark-text">Watermark Text:</label>
+                <input type="text" id="watermark-text" class="text-input" placeholder="CONFIDENTIAL" value="DRAFT" />
+
+                <label class="input-label" for="watermark-size" style="margin-top: 0.5rem;">Font Size: <span id="watermark-size-val">50</span></label>
+                <input type="range" id="watermark-size" min="12" max="120" value="50" style="accent-color: var(--accent-primary);" />
+
+                <label class="input-label" for="watermark-rotation" style="margin-top: 0.5rem;">Rotation (Degrees): <span id="watermark-rotation-val">45</span></label>
+                <input type="range" id="watermark-rotation" min="0" max="360" value="45" style="accent-color: var(--accent-primary);" />
+
+                <label class="input-label" for="watermark-opacity" style="margin-top: 0.5rem;">Opacity: <span id="watermark-opacity-val">0.3</span></label>
+                <input type="range" id="watermark-opacity" min="0.1" max="1.0" step="0.1" value="0.3" style="accent-color: var(--accent-primary);" />
+              </div>
+
+              <!-- Settings: Page Numbers -->
+              <div id="settings-page-numbers" style="display: none;" class="input-group">
+                <label class="input-label" for="pagenum-position">Page Number Position:</label>
+                <select id="pagenum-position" class="text-input" style="background: rgba(0,0,0,0.3);">
+                  <option value="bottom-right">Bottom Right</option>
+                  <option value="bottom-center">Bottom Center</option>
+                  <option value="bottom-left">Bottom Left</option>
+                  <option value="top-right">Top Right</option>
+                  <option value="top-center">Top Center</option>
+                  <option value="top-left">Top Left</option>
+                </select>
+
+                <label class="input-label" for="pagenum-format" style="margin-top: 0.5rem;">Page Number Format:</label>
+                <select id="pagenum-format" class="text-input" style="background: rgba(0,0,0,0.3);">
+                  <option value="simple">Simple Number (1, 2, 3)</option>
+                  <option value="page-x">Page X</option>
+                  <option value="page-x-of-y">Page X of Y</option>
+                </select>
+              </div>
+
+              <!-- Settings: Sign PDF -->
+              <div id="settings-sign" style="display: none;" class="input-group">
+                <label class="input-label">Draw Your Signature:</label>
+                <div class="signature-pad-container">
+                  <canvas id="signature-pad" class="signature-canvas" width="300" height="150"></canvas>
+                  <div style="display: flex; justify-content: space-between; padding: 0.5rem; width: 100%; border-top: 1px solid var(--border-color);">
+                    <button id="btn-clear-sigpad" class="btn-nav-back" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">Clear Pen</button>
+                    <span style="font-size: 0.7rem; color: var(--text-muted); align-self: center;">Draw with mouse/touch</span>
+                  </div>
+                </div>
+                
+                <p style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.4; margin-top: 0.5rem;">
+                  Once you draw your signature, select the target page thumbnail on the left, then click on it to place the signature. Drag to position.
+                </p>
+              </div>
+
+              <!-- Settings: Redact PDF -->
+              <div id="settings-redact" style="display: none;" class="input-group">
+                <p style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4;">
+                  Double-click or drag on page thumbnails on the left to draw blackout masks. Click Process to finalize redactions.
+                </p>
+              </div>
+
+              <!-- Settings: Crop PDF -->
+              <div id="settings-crop" style="display: none;" class="input-group">
+                <p style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4;">
+                  Crop pages by adjusting crop parameters below. Coordinates apply relative to standard page sizes.
+                </p>
+                <label class="input-label" for="crop-left">Crop Margins (inches):</label>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                  <input type="number" id="crop-left" class="text-input" placeholder="Left" value="0.5" step="0.1" />
+                  <input type="number" id="crop-right" class="text-input" placeholder="Right" value="0.5" step="0.1" />
+                  <input type="number" id="crop-top" class="text-input" placeholder="Top" value="0.5" step="0.1" />
+                  <input type="number" id="crop-bottom" class="text-input" placeholder="Bottom" value="0.5" step="0.1" />
+                </div>
+              </div>
+
+              <!-- Settings: Split PDF -->
+              <div id="settings-split" style="display: none;" class="input-group">
+                <label class="input-label">Extraction Mode:</label>
+                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                  <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; cursor: pointer;">
+                    <input type="radio" name="split-mode" value="selected" checked /> Extract selected pages
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; cursor: pointer;">
+                    <input type="radio" name="split-mode" value="all-split" /> Split every page into its own PDF
+                  </label>
+                </div>
+              </div>
+
+              <!-- Settings: Image to PDF -->
+              <div id="settings-img-to-pdf" style="display: none;" class="input-group">
+                <label class="input-label" for="page-size-select">Page Size:</label>
+                <select id="page-size-select" class="text-input" style="background: rgba(0,0,0,0.3);">
+                  <option value="a4">A4 (Standard)</option>
+                  <option value="letter">Letter</option>
+                  <option value="fit">Fit image dimensions</option>
+                </select>
+                
+                <label class="input-label" for="page-orientation-select" style="margin-top: 0.5rem;">Orientation:</label>
+                <select id="page-orientation-select" class="text-input" style="background: rgba(0,0,0,0.3);">
+                  <option value="portrait">Portrait</option>
+                  <option value="landscape">Landscape</option>
+                </select>
+              </div>
+
+              <!-- Settings: Protect PDF -->
+              <div id="settings-protect" style="display: none;" class="input-group">
+                <label class="input-label" for="pdf-password-input">Document Password:</label>
+                <input type="password" id="pdf-password-input" class="text-input" placeholder="Enter password to encrypt" />
+              </div>
+
+              <!-- Settings: Rotate PDF -->
+              <div id="settings-rotate" style="display: none;" class="input-group">
+                <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4;">
+                  Click the rotate buttons on individual page thumbnails to set their orientation, then click the button below to apply changes.
+                </p>
+              </div>
+
+              <!-- Settings: Default Settings Panel -->
+              <div id="settings-generic" style="display: none;">
+                <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4;">
+                  Check your uploaded files on the left. Click the button below to process.
+                </p>
+              </div>
+            </div>
+
+            <div class="panel-section">
+              <h4>Actions</h4>
+              <button id="btn-process-action" class="btn-action" disabled>
+                <span>Process Files</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+              </button>
+              <button id="btn-clear-workspace" class="btn-nav-back" style="justify-content: center; width: 100%; margin-top: 0.5rem;">
+                Clear Workspace
+              </button>
+            </div>
+          </aside>
+        </div>
+      </section>
+    </main>
+
+    <!-- Global Progress Indicator Screen -->
+    <div id="loading-overlay" class="overlay">
+      <div class="loading-container">
+        <div class="spinner"></div>
+        <div class="loading-title" id="loading-title">Processing Request...</div>
+        <div class="loading-msg" id="loading-message">All calculations are handled securely. Please hold on.</div>
+      </div>
+    </div>
+
+    <!-- Notification Container -->
+    <div id="toast-container-element" class="toast-container"></div>
+
+    <footer>
+      <p>&copy; 2026 AeroPDF. Complete 24-Tool Suite. Built Locally & Securely.</p>
+    </footer>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
