@@ -1,10 +1,22 @@
+import 'dotenv/config';
 import express from 'express';
 import multer from 'multer';
 import cors from 'cors';
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
+import Stripe from 'stripe';
+// import { GoogleGenerativeAI } from '@google/generative-ai'; // Removed in favor of xAI Grok API fetch integration
+import { PDFParse } from 'pdf-parse';
+import { rateLimit } from 'express-rate-limit';
 import { PDFDocument, degrees, rgb, StandardFonts } from 'pdf-lib';
 import { encryptPDF } from '@pdfsmaller/pdf-encrypt-lite';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const mammoth = require('mammoth');
+import { User, BlogPost, syncDatabase } from './db.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -12,21 +24,67 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const port = process.env.PORT || 3000;
 
+const JWT_SECRET = process.env.JWT_SECRET || 'aeropdf-enterprise-security-secret-passphrase';
+const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || 'sk_test_mockstripekey';
+const stripe = new Stripe(STRIPE_SECRET_KEY);
+
+const GROQ_API_KEY = process.env.GROQ_API_KEY;
+const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
+const REMOVE_BG_API_KEY = process.env.REMOVE_BG_API_KEY;
+const STABILITY_API_KEY = process.env.STABILITY_API_KEY;
+const DEEPAI_API_KEY = process.env.DEEPAI_API_KEY;
+
+// Initialize database sync
+syncDatabase();
+
+// Ensure temporary uploads directory exists
+if (!fs.existsSync('uploads')) {
+  fs.mkdirSync('uploads');
+}
+
+// Enable CORS
 app.use(cors());
+
+// Custom Request Logger middleware
 app.use((req, res, next) => {
-  console.log(`[Express] Request received: ${req.method} ${req.url}`);
+  console.log(`[Express] Request: ${req.method} ${req.path}`);
   next();
 });
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-// Setup Multer to handle in-memory file uploads (max 100MB)
-const upload = multer({ 
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 100 * 1024 * 1024 }
+// Configure Rate Limiters to secure endpoints
+const authLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  limit: 10,
+  message: { error: 'Too many authentication attempts. Please try again in 1 minute.' },
+  standardHeaders: 'draft-8',
+  legacyHeaders: false
 });
 
-// Helper: Convert RGB Hex to HSL/pdf-lib RGB Color
+const apiLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  limit: 150,
+  message: { error: 'Hourly rate limit exceeded. Upgrade to Premium for higher thresholds.' },
+  standardHeaders: 'draft-8',
+  legacyHeaders: false
+});
+
+// JSON and URLencoded parsing (except Stripe webhook which requires raw buffer)
+app.use((req, res, next) => {
+  if (req.originalUrl === '/api/stripe/webhook') {
+    next();
+  } else {
+    express.json({ limit: '50mb' })(req, res, next);
+  }
+});
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// Multer configured to stream uploads to disk rather than keeping in RAM
+const upload = multer({ 
+  dest: 'uploads/',
+  limits: { fileSize: 100 * 1024 * 1024 } // 100MB limit
+});
+
+// Helper: Convert HEX color to RGB object
 function hexToRgb(hex) {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex || '#000000');
   return result ? {
@@ -36,12 +94,665 @@ function hexToRgb(hex) {
   } : { r: 0, g: 0, b: 0 };
 }
 
+// Helper: Sanitize string to prevent pdf-lib WinAnsi encoding errors
+function sanitizeWinAnsi(text) {
+  return (text || '')
+    .replace(/\t/g, '    ') // Replace tabs with spaces
+    .replace(/[\u201c\u201d]/g, '"') // Curly double quotes
+    .replace(/[\u2018\u2019]/g, "'") // Curly single quotes
+    .replace(/\u2014/g, '-') // Em dash
+    .replace(/[^\x00-\x7F]/g, ''); // Strip non-ASCII/Unicode to fit standard WinAnsi
+}
+
 /* ==========================================
-   1. ORGANIZE PDF ENDPOINTS
+   AUTHENTICATION & SECURITY MIDDLEWARE
    ========================================== */
 
-// Endpoint: Merge PDFs
-app.post('/api/merge', upload.array('files'), async (req, res) => {
+// Auth Middleware: Verify JWT Token
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  
+  if (!token) return res.status(401).json({ error: 'Session token required. Please log in.' });
+  
+  jwt.verify(token, JWT_SECRET, (err, decoded) => {
+    if (err) return res.status(403).json({ error: 'Session expired or invalid token.' });
+    req.user = decoded; // Contains { id, email }
+    next();
+  });
+};
+
+// Limit Middleware: Validate file size (12MB limit for free tier)
+const checkUploadLimit = async (req, res, next) => {
+  if (!req.file && (!req.files || req.files.length === 0)) {
+    return next();
+  }
+
+  let totalSize = 0;
+  if (req.file) {
+    totalSize = req.file.size;
+  } else if (req.files) {
+    totalSize = req.files.reduce((sum, f) => sum + f.size, 0);
+  }
+
+  const maxFreeSize = 12 * 1024 * 1024; // 12MB limit
+
+  if (totalSize > maxFreeSize) {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) {
+      // Clean temp upload files
+      cleanTempFiles(req);
+      return res.status(403).json({ error: 'File size exceeds 12MB limit. Please log in and upgrade to Premium.' });
+    }
+
+    try {
+      const decoded = jwt.verify(token, JWT_SECRET);
+      const dbUser = await User.findByPk(decoded.id);
+      if (dbUser && dbUser.is_premium) {
+        req.user = decoded;
+        return next();
+      }
+    } catch (err) {
+      // Fall through to error response
+    }
+
+    cleanTempFiles(req);
+    return res.status(403).json({ error: 'File size exceeds 12MB limit. Please upgrade to Premium.' });
+  }
+
+  next();
+};
+
+// Helper: Clean uploaded files on error/abort
+function cleanTempFiles(req) {
+  if (req.file) {
+    fs.unlink(req.file.path, () => {});
+  }
+  if (req.files) {
+    req.files.forEach(f => fs.unlink(f.path, () => {}));
+  }
+}
+
+/* ==========================================
+   USER AUTHENTICATION API ROUTES
+   ========================================== */
+
+app.post('/api/auth/signup', authLimiter, async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) return res.status(400).json({ error: 'Email and password are required.' });
+
+    const existingUser = await User.findOne({ where: { email } });
+    if (existingUser) return res.status(400).json({ error: 'An account with this email already exists.' });
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = await User.create({ email, password: hashedPassword });
+
+    const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
+    res.json({ token, user: { id: user.id, email: user.email, is_premium: user.is_premium, can_blog: user.can_blog } });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Signup processing failed.' });
+  }
+});
+
+app.post('/api/auth/login', authLimiter, async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) return res.status(400).json({ error: 'Email and password are required.' });
+
+    const user = await User.findOne({ where: { email } });
+    if (!user) return res.status(400).json({ error: 'Invalid email or password.' });
+
+    const match = await bcrypt.compare(password, user.password);
+    if (!match) return res.status(400).json({ error: 'Invalid email or password.' });
+
+    const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
+    res.json({ token, user: { id: user.id, email: user.email, is_premium: user.is_premium, can_blog: user.can_blog } });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Login processing failed.' });
+  }
+});
+
+app.get('/api/auth/me', authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.id);
+    if (!user) return res.status(404).json({ error: 'User profile not found.' });
+    res.json({ user: { id: user.id, email: user.email, is_premium: user.is_premium, can_blog: user.can_blog } });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch user state.' });
+  }
+});
+
+/* ==========================================
+   STRIPE E-COMMERCE BILLING GATEWAY
+   ========================================== */
+
+// Route: Subscription checkout session
+app.post('/api/stripe/checkout', authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.id);
+    if (!user) return res.status(404).json({ error: 'User not found.' });
+
+    const isMock = STRIPE_SECRET_KEY === 'sk_test_mockstripekey';
+    if (isMock) {
+      const mockUrl = `/api/stripe/mock-checkout?type=premium&userId=${user.id}&success_url=${encodeURIComponent(req.headers.origin || 'http://localhost:5173')}/?payment=success`;
+      return res.json({ url: mockUrl });
+    }
+
+    let customerId = user.stripe_customer_id;
+    if (!customerId) {
+      const customer = await stripe.customers.create({ email: user.email });
+      customerId = customer.id;
+      user.stripe_customer_id = customerId;
+      await user.save();
+    }
+
+    const session = await stripe.checkout.sessions.create({
+      customer: customerId,
+      payment_method_types: ['card'],
+      line_items: [{
+        price_data: {
+          currency: 'usd',
+          product_data: {
+            name: 'AeroPDF Premium Subscription',
+            description: 'Unlock uploads larger than 12MB'
+          },
+          unit_amount: 500, // $5.00
+          recurring: { interval: 'month' }
+        },
+        quantity: 1
+      }],
+      mode: 'subscription',
+      success_url: `${req.headers.origin || 'http://localhost:5173'}/?payment=success`,
+      cancel_url: `${req.headers.origin || 'http://localhost:5173'}/?payment=cancel`,
+      metadata: {
+        userId: user.id,
+        type: 'subscription'
+      }
+    });
+
+    res.json({ url: session.url });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Stripe subscription checkout failed: ' + err.message, message: err.message });
+  }
+});
+
+// Route: Blog writer fee checkout session
+app.post('/api/stripe/blog-checkout', authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.id);
+    if (!user) return res.status(404).json({ error: 'User not found.' });
+
+    const isMock = STRIPE_SECRET_KEY === 'sk_test_mockstripekey';
+    if (isMock) {
+      const mockUrl = `/api/stripe/mock-checkout?type=blog_pass&userId=${user.id}&success_url=${encodeURIComponent(req.headers.origin || 'http://localhost:5173')}/?payment=success`;
+      return res.json({ url: mockUrl });
+    }
+
+    let customerId = user.stripe_customer_id;
+    if (!customerId) {
+      const customer = await stripe.customers.create({ email: user.email });
+      customerId = customer.id;
+      user.stripe_customer_id = customerId;
+      await user.save();
+    }
+
+    const session = await stripe.checkout.sessions.create({
+      customer: customerId,
+      payment_method_types: ['card'],
+      line_items: [{
+        price_data: {
+          currency: 'usd',
+          product_data: {
+            name: 'AeroPDF Blog Writer Lifetime Pass',
+            description: 'Allows you to publish articles on the AeroPDF Blog page'
+          },
+          unit_amount: 1200 // $12.00
+        },
+        quantity: 1
+      }],
+      mode: 'payment',
+      success_url: `${req.headers.origin || 'http://localhost:5173'}/?payment=success`,
+      cancel_url: `${req.headers.origin || 'http://localhost:5173'}/?payment=cancel`,
+      metadata: {
+        userId: user.id,
+        type: 'blog_pass'
+      }
+    });
+
+    res.json({ url: session.url });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Stripe blog checkout failed: ' + err.message, message: err.message });
+  }
+});
+
+// Route: Mock checkout processor for local testing
+app.get('/api/stripe/mock-checkout', async (req, res) => {
+  const { type, userId, success_url } = req.query;
+  try {
+    const user = await User.findByPk(userId);
+    if (user) {
+      if (type === 'premium') {
+        user.is_premium = true;
+        await user.save();
+        console.log(`[Mock Stripe] Upgraded user ${user.email} to Premium.`);
+      } else if (type === 'blog_pass') {
+        user.can_blog = true;
+        await user.save();
+        console.log(`[Mock Stripe] Granted blog writer permissions to ${user.email}.`);
+      }
+    }
+    res.redirect(success_url || 'http://localhost:5173/?payment=success');
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Mock payment processing failed.');
+  }
+});
+
+// Route: Webhook callbacks (requires raw body parsing)
+app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  const sig = req.headers['stripe-signature'];
+  const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  let event;
+
+  try {
+    if (endpointSecret && sig) {
+      event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
+    } else {
+      event = JSON.parse(req.body.toString());
+    }
+  } catch (err) {
+    console.error(`Webhook signature verification failed:`, err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object;
+    const userId = session.metadata.userId;
+    const type = session.metadata.type;
+
+    if (userId) {
+      const user = await User.findByPk(userId);
+      if (user) {
+        if (type === 'subscription') {
+          user.is_premium = true;
+          console.log(`[Stripe] Upgraded user ${user.email} to Premium.`);
+        } else if (type === 'blog_pass') {
+          user.can_blog = true;
+          console.log(`[Stripe] Granted blog writer permissions to ${user.email}.`);
+        }
+        await user.save();
+      }
+    }
+  }
+
+  res.json({ received: true });
+});
+
+/* ==========================================
+   BLOGGING API ENDPOINTS
+   ========================================== */
+
+app.get('/api/blog', async (req, res) => {
+  try {
+    const posts = await BlogPost.findAll({ order: [['createdAt', 'DESC']] });
+    res.json({ posts });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to load blog posts.' });
+  }
+});
+
+app.post('/api/blog', authenticateToken, async (req, res) => {
+  try {
+    const { title, content } = req.body;
+    if (!title || !content) return res.status(400).json({ error: 'Title and content are required.' });
+
+    const user = await User.findByPk(req.user.id);
+    if (!user || !user.can_blog) {
+      return res.status(403).json({ error: 'Permission denied. You must pay the $12 fee to publish articles.' });
+    }
+
+    const post = await BlogPost.create({
+      title,
+      content,
+      author_id: user.id,
+      author_email: user.email
+    });
+
+    res.json({ post });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to create blog post.' });
+  }
+});
+
+/* ==========================================
+   PDF AI INTELLIGENCE SYSTEM
+   ========================================== */
+
+app.post('/api/ai/summarize', upload.single('file'), checkUploadLimit, apiLimiter, async (req, res) => {
+  try {
+    const file = req.file;
+    if (!file) return res.status(400).json({ error: 'PDF file is required.' });
+
+    // Stream text parsing from file
+    const dataBuffer = fs.readFileSync(file.path);
+    const parser = new PDFParse({ data: new Uint8Array(dataBuffer) });
+    const pdfData = await parser.getText();
+    fs.unlink(file.path, () => {});
+
+    if (!pdfData.text || pdfData.text.trim().length === 0) {
+      return res.status(400).json({ error: 'No copyable text found in PDF.' });
+    }
+
+    const isMockGroq = !GROQ_API_KEY || 
+                       GROQ_API_KEY === 'MOCK_GROQ_KEY' || 
+                       !GROQ_API_KEY.startsWith('gsk_') || 
+                       GROQ_API_KEY.includes('mock') || 
+                       GROQ_API_KEY.includes('replace-me');
+    if (isMockGroq) {
+      return res.json({
+        summary: `### AI Document Summary (Mock - No GROQ_API_KEY Configured)
+
+* **Main Theme:** This is a mock summary because no valid Groq API Key (which typically starts with "gsk_") was found in the environment variables.
+* **Uploaded File:** The server processed the PDF text content successfully.
+* **Next Steps:** To see real Groq AI generation, set the \`GROQ_API_KEY\` environment variable in your \`.env\` file.`
+      });
+    }
+
+    const prompt = `Provide a concise, detailed, and structured bullet-point summary of the following PDF text content:\n\n${pdfData.text.substring(0, 15000)}`;
+
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${GROQ_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: GROQ_MODEL,
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a professional PDF analyzer. Provide structured, accurate, and concise summaries.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        temperature: 0
+      })
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(`Groq API returned status ${response.status}: ${errText}`);
+    }
+
+    const data = await response.json();
+    const summary = data.choices?.[0]?.message?.content || 'No summary generated.';
+    res.json({ summary });
+  } catch (err) {
+    cleanTempFiles(req);
+    console.error(err);
+    const errMsg = err.message || '';
+    if (errMsg.includes('API key') || errMsg.includes('API_KEY') || errMsg.includes('key not valid') || errMsg.includes('unauthorized') || errMsg.includes('status 401')) {
+      return res.status(401).json({ error: 'Groq API rejected your API key. Please check that GROQ_API_KEY in your .env file is a valid Groq API Key starting with "gsk_".' });
+    }
+    res.status(500).json({ error: 'AI Summarizer failed: ' + err.message, message: err.message, stack: err.stack });
+  }
+});
+
+app.post('/api/ai/translate', upload.single('file'), checkUploadLimit, apiLimiter, async (req, res) => {
+  try {
+    const file = req.file;
+    const { targetLanguage } = req.body;
+    if (!file || !targetLanguage) {
+      return res.status(400).json({ error: 'PDF file and target language are required.' });
+    }
+
+    const dataBuffer = fs.readFileSync(file.path);
+    const parser = new PDFParse({ data: new Uint8Array(dataBuffer) });
+    const pdfData = await parser.getText();
+    fs.unlink(file.path, () => {});
+
+    if (!pdfData.text || pdfData.text.trim().length === 0) {
+      return res.status(400).json({ error: 'No copyable text found in PDF.' });
+    }
+
+    const isMockGroq = !GROQ_API_KEY || 
+                       GROQ_API_KEY === 'MOCK_GROQ_KEY' || 
+                       !GROQ_API_KEY.startsWith('gsk_') || 
+                       GROQ_API_KEY.includes('mock') || 
+                       GROQ_API_KEY.includes('replace-me');
+    if (isMockGroq) {
+      return res.json({
+        translation: `### AI Document Translation to ${targetLanguage} (Mock - No GROQ_API_KEY Configured)
+
+This is a mock translation of your document text because no valid Groq API Key (which typically starts with "gsk_") was found in the environment variables.
+
+Set your \`GROQ_API_KEY\` in your environment variables to enable live translations.`
+      });
+    }
+
+    const prompt = `Translate the following text extracted from a PDF document into ${targetLanguage}. Keep paragraphs clean and formatted:\n\n${pdfData.text.substring(0, 12000)}`;
+
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${GROQ_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: GROQ_MODEL,
+        messages: [
+          {
+            role: 'system',
+            content: `You are a professional translator. Translate the text accurately into the requested language.`
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        temperature: 0
+      })
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(`Groq API returned status ${response.status}: ${errText}`);
+    }
+
+    const data = await response.json();
+    const translation = data.choices?.[0]?.message?.content || 'No translation generated.';
+    res.json({ translation });
+  } catch (err) {
+    cleanTempFiles(req);
+    console.error(err);
+    const errMsg = err.message || '';
+    if (errMsg.includes('API key') || errMsg.includes('API_KEY') || errMsg.includes('key not valid') || errMsg.includes('unauthorized') || errMsg.includes('status 401')) {
+      return res.status(401).json({ error: 'Groq API rejected your API key. Please check that GROQ_API_KEY in your .env file is a valid Groq API Key starting with "gsk_".' });
+    }
+    res.status(500).json({ error: 'AI Translation failed: ' + err.message, message: err.message, stack: err.stack });
+  }
+});
+
+/* ==========================================
+   AI IMAGE INTELLIGENCE SYSTEM
+   ========================================== */
+
+app.post('/api/image/remove-background', upload.single('file'), checkUploadLimit, apiLimiter, async (req, res) => {
+  let fileBuffer;
+  try {
+    const file = req.file;
+    if (!file) return res.status(400).json({ error: 'Image file is required.' });
+
+    fileBuffer = fs.readFileSync(file.path);
+    const isMock = !REMOVE_BG_API_KEY || REMOVE_BG_API_KEY.includes('mock') || REMOVE_BG_API_KEY.includes('replace-me');
+    if (isMock) {
+      fs.unlink(file.path, () => {});
+      res.setHeader('x-mock-active', 'true');
+      res.setHeader('Content-Type', file.mimetype);
+      return res.send(fileBuffer);
+    }
+
+    const formData = new FormData();
+    const fileBlob = new Blob([fileBuffer], { type: file.mimetype });
+    formData.append('image_file', fileBlob, file.originalname);
+    formData.append('size', 'auto');
+    fs.unlink(file.path, () => {});
+
+    try {
+      const response = await fetch('https://api.remove.bg/v1.0/removebg', {
+        method: 'POST',
+        headers: {
+          'X-Api-Key': REMOVE_BG_API_KEY
+        },
+        body: formData
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        console.warn(`[Remove.bg API Error] Status ${response.status}: ${errText}. Falling back to browser canvas mode.`);
+        res.setHeader('x-mock-active', 'true');
+        res.setHeader('Content-Type', file.mimetype);
+        return res.send(fileBuffer);
+      }
+
+      const arrayBuffer = await response.arrayBuffer();
+      res.setHeader('Content-Type', 'image/png');
+      return res.send(Buffer.from(arrayBuffer));
+    } catch (apiErr) {
+      console.warn(`[Remove.bg Connection Error]: ${apiErr.message}. Falling back to browser canvas mode.`);
+      res.setHeader('x-mock-active', 'true');
+      res.setHeader('Content-Type', file.mimetype);
+      return res.send(fileBuffer);
+    }
+  } catch (err) {
+    cleanTempFiles(req);
+    console.error(err);
+    res.status(500).json({ error: 'Background removal failed: ' + err.message });
+  }
+});
+
+app.post('/api/image/upscale', upload.single('file'), checkUploadLimit, apiLimiter, async (req, res) => {
+  let fileBuffer;
+  try {
+    const file = req.file;
+    const { factor } = req.body;
+    if (!file) return res.status(400).json({ error: 'Image file is required.' });
+
+    fileBuffer = fs.readFileSync(file.path);
+    const isMock = (!STABILITY_API_KEY && !DEEPAI_API_KEY) || 
+                   (STABILITY_API_KEY && STABILITY_API_KEY.includes('mock')) ||
+                   (DEEPAI_API_KEY && DEEPAI_API_KEY.includes('mock'));
+    if (isMock) {
+      fs.unlink(file.path, () => {});
+      res.setHeader('x-mock-active', 'true');
+      res.setHeader('x-upscale-factor', factor || '2');
+      res.setHeader('Content-Type', file.mimetype);
+      return res.send(fileBuffer);
+    }
+
+    if (STABILITY_API_KEY) {
+      const formData = new FormData();
+      const fileBlob = new Blob([fileBuffer], { type: file.mimetype });
+      formData.append('image', fileBlob, file.originalname);
+      formData.append('prompt', 'upscale image, high quality, detailed, sharp focus');
+      formData.append('output_format', 'png');
+      fs.unlink(file.path, () => {});
+
+      try {
+        const response = await fetch('https://api.stability.ai/v2beta/stable-image/upscale/conservative', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${STABILITY_API_KEY}`,
+            'accept': 'image/*'
+          },
+          body: formData
+        });
+
+        if (!response.ok) {
+          const errText = await response.text();
+          console.warn(`[Stability AI API Error] Status ${response.status}: ${errText}. Falling back to browser canvas mode.`);
+          res.setHeader('x-mock-active', 'true');
+          res.setHeader('x-upscale-factor', factor || '2');
+          res.setHeader('Content-Type', file.mimetype);
+          return res.send(fileBuffer);
+        }
+
+        const arrayBuffer = await response.arrayBuffer();
+        res.setHeader('Content-Type', 'image/png');
+        return res.send(Buffer.from(arrayBuffer));
+      } catch (apiErr) {
+        console.warn(`[Stability AI Connection Error]: ${apiErr.message}. Falling back to browser canvas mode.`);
+        res.setHeader('x-mock-active', 'true');
+        res.setHeader('x-upscale-factor', factor || '2');
+        res.setHeader('Content-Type', file.mimetype);
+        return res.send(fileBuffer);
+      }
+    }
+
+    if (DEEPAI_API_KEY) {
+      const formData = new FormData();
+      const fileBlob = new Blob([fileBuffer], { type: file.mimetype });
+      formData.append('image', fileBlob, file.originalname);
+      fs.unlink(file.path, () => {});
+
+      try {
+        const response = await fetch('https://api.deepai.org/api/super-resolution', {
+          method: 'POST',
+          headers: {
+            'api-key': DEEPAI_API_KEY
+          },
+          body: formData
+        });
+
+        if (!response.ok) {
+          const errText = await response.text();
+          console.warn(`[DeepAI API Error] Status ${response.status}: ${errText}. Falling back to browser canvas mode.`);
+          res.setHeader('x-mock-active', 'true');
+          res.setHeader('x-upscale-factor', factor || '2');
+          res.setHeader('Content-Type', file.mimetype);
+          return res.send(fileBuffer);
+        }
+
+        const data = await response.json();
+        if (!data.output_url) {
+          throw new Error('DeepAI upscaling failed - no output URL returned.');
+        }
+
+        const imgRes = await fetch(data.output_url);
+        const arrayBuffer = await imgRes.arrayBuffer();
+        res.setHeader('Content-Type', 'image/png');
+        return res.send(Buffer.from(arrayBuffer));
+      } catch (apiErr) {
+        console.warn(`[DeepAI Connection Error]: ${apiErr.message}. Falling back to browser canvas mode.`);
+        res.setHeader('x-mock-active', 'true');
+        res.setHeader('x-upscale-factor', factor || '2');
+        res.setHeader('Content-Type', file.mimetype);
+        return res.send(fileBuffer);
+      }
+    }
+  } catch (err) {
+    cleanTempFiles(req);
+    console.error(err);
+    res.status(500).json({ error: 'Image upscaling failed: ' + err.message });
+  }
+});
+
+/* ==========================================
+   24 ORGANIZE, OPTIMIZE & SECURITY ENDPOINTS (DISK STREAMING)
+   ========================================== */
+
+// 1. Merge PDFs
+app.post('/api/merge', upload.array('files'), checkUploadLimit, apiLimiter, async (req, res) => {
   try {
     const files = req.files;
     if (!files || files.length < 2) {
@@ -49,26 +760,31 @@ app.post('/api/merge', upload.array('files'), async (req, res) => {
     }
     const mergedPdf = await PDFDocument.create();
     for (const file of files) {
-      const pdf = await PDFDocument.load(file.buffer);
+      const buffer = fs.readFileSync(file.path);
+      const pdf = await PDFDocument.load(buffer);
       const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
       copiedPages.forEach((page) => mergedPdf.addPage(page));
+      fs.unlink(file.path, () => {});
     }
     const bytes = await mergedPdf.save();
     res.setHeader('Content-Type', 'application/pdf');
     res.send(Buffer.from(bytes));
   } catch (err) {
+    cleanTempFiles(req);
     res.status(500).json({ error: 'Failed to merge PDFs.' });
   }
 });
 
-// Endpoint: Split PDF (Split individual or extract selected)
-app.post('/api/split', upload.single('file'), async (req, res) => {
+// 2. Split PDF
+app.post('/api/split', upload.single('file'), checkUploadLimit, apiLimiter, async (req, res) => {
   try {
     const file = req.file;
     const mode = req.body.mode;
     if (!file) return res.status(400).json({ error: 'PDF file is required.' });
 
-    const pdf = await PDFDocument.load(file.buffer);
+    const buffer = fs.readFileSync(file.path);
+    const pdf = await PDFDocument.load(buffer);
+    fs.unlink(file.path, () => {});
 
     if (mode === 'all-split') {
       const totalPages = pdf.getPageCount();
@@ -97,26 +813,26 @@ app.post('/api/split', upload.single('file'), async (req, res) => {
       res.send(Buffer.from(bytes));
     }
   } catch (err) {
+    cleanTempFiles(req);
     res.status(500).json({ error: 'Failed to split PDF.' });
   }
 });
 
-// Endpoint: Remove Pages
-app.post('/api/remove-pages', upload.single('file'), async (req, res) => {
+// 3. Remove Pages
+app.post('/api/remove-pages', upload.single('file'), checkUploadLimit, apiLimiter, async (req, res) => {
   try {
     const file = req.file;
-    const toRemove = JSON.parse(req.body.pages || '[]'); // indices of pages to remove
+    const toRemove = JSON.parse(req.body.pages || '[]');
     if (!file) return res.status(400).json({ error: 'PDF file is required.' });
 
-    const pdf = await PDFDocument.load(file.buffer);
+    const buffer = fs.readFileSync(file.path);
+    const pdf = await PDFDocument.load(buffer);
+    fs.unlink(file.path, () => {});
+
     const totalPages = pdf.getPageCount();
-    
-    // Determine indices to keep
     const indicesToKeep = [];
     for (let i = 0; i < totalPages; i++) {
-      if (!toRemove.includes(i)) {
-        indicesToKeep.push(i);
-      }
+      if (!toRemove.includes(i)) indicesToKeep.push(i);
     }
 
     if (indicesToKeep.length === 0) {
@@ -131,18 +847,22 @@ app.post('/api/remove-pages', upload.single('file'), async (req, res) => {
     res.setHeader('Content-Type', 'application/pdf');
     res.send(Buffer.from(bytes));
   } catch (err) {
+    cleanTempFiles(req);
     res.status(500).json({ error: 'Failed to remove pages.' });
   }
 });
 
-// Endpoint: Organize PDF (Reorder page indices)
-app.post('/api/organize-pdf', upload.single('file'), async (req, res) => {
+// 4. Organize PDF
+app.post('/api/organize-pdf', upload.single('file'), checkUploadLimit, apiLimiter, async (req, res) => {
   try {
     const file = req.file;
-    const newOrder = JSON.parse(req.body.order || '[]'); // e.g. [2, 0, 1]
+    const newOrder = JSON.parse(req.body.order || '[]');
     if (!file) return res.status(400).json({ error: 'PDF file is required.' });
 
-    const pdf = await PDFDocument.load(file.buffer);
+    const buffer = fs.readFileSync(file.path);
+    const pdf = await PDFDocument.load(buffer);
+    fs.unlink(file.path, () => {});
+
     const modifiedPdf = await PDFDocument.create();
     const copiedPages = await modifiedPdf.copyPages(pdf, newOrder);
     copiedPages.forEach(page => modifiedPdf.addPage(page));
@@ -151,70 +871,65 @@ app.post('/api/organize-pdf', upload.single('file'), async (req, res) => {
     res.setHeader('Content-Type', 'application/pdf');
     res.send(Buffer.from(bytes));
   } catch (err) {
+    cleanTempFiles(req);
     res.status(500).json({ error: 'Failed to organize PDF.' });
   }
 });
 
-/* ==========================================
-   2. OPTIMIZE PDF ENDPOINTS
-   ========================================== */
-
-// Endpoint: Compress PDF (Simulated compression by reloading structural layers)
-app.post('/api/compress', upload.single('file'), async (req, res) => {
+// 5. Compress PDF
+app.post('/api/compress', upload.single('file'), checkUploadLimit, apiLimiter, async (req, res) => {
   try {
     const file = req.file;
     if (!file) return res.status(400).json({ error: 'PDF file is required.' });
     
-    const pdf = await PDFDocument.load(file.buffer);
+    const buffer = fs.readFileSync(file.path);
+    const pdf = await PDFDocument.load(buffer);
+    fs.unlink(file.path, () => {});
     
-    // Save with compressed options enabled (strips metadata and compresses streams)
-    const bytes = await pdf.save({
-      useObjectStreams: true,
-      addEmptyPage: false
-    });
-    
+    const bytes = await pdf.save({ useObjectStreams: true, addEmptyPage: false });
     res.setHeader('Content-Type', 'application/pdf');
     res.send(Buffer.from(bytes));
   } catch (err) {
+    cleanTempFiles(req);
     res.status(500).json({ error: 'Failed to compress PDF.' });
   }
 });
 
-// Endpoint: Repair PDF (Loads and re-saves to re-build broken index tables)
-app.post('/api/repair', upload.single('file'), async (req, res) => {
+// 6. Repair PDF
+app.post('/api/repair', upload.single('file'), checkUploadLimit, apiLimiter, async (req, res) => {
   try {
     const file = req.file;
     if (!file) return res.status(400).json({ error: 'PDF file is required.' });
 
-    const pdf = await PDFDocument.load(file.buffer);
-    const bytes = await pdf.save(); // save re-builds the catalog structure automatically
-    
+    const buffer = fs.readFileSync(file.path);
+    const pdf = await PDFDocument.load(buffer);
+    fs.unlink(file.path, () => {});
+
+    const bytes = await pdf.save();
     res.setHeader('Content-Type', 'application/pdf');
     res.send(Buffer.from(bytes));
   } catch (err) {
-    res.status(500).json({ error: 'Repair operation failed. Document structure completely corrupted.' });
+    cleanTempFiles(req);
+    res.status(500).json({ error: 'Repair operation failed.' });
   }
 });
 
-// Endpoint: OCR PDF (Add hidden OCR text layer - Mocked)
-app.post('/api/ocr', upload.single('file'), async (req, res) => {
+// 7. OCR PDF
+app.post('/api/ocr', upload.single('file'), checkUploadLimit, apiLimiter, async (req, res) => {
   try {
     const file = req.file;
     if (!file) return res.status(400).json({ error: 'PDF file is required.' });
 
-    const pdf = await PDFDocument.load(file.buffer);
+    const buffer = fs.readFileSync(file.path);
+    const pdf = await PDFDocument.load(buffer);
+    fs.unlink(file.path, () => {});
+
     const font = await pdf.embedFont(StandardFonts.Helvetica);
     const pages = pdf.getPages();
     
-    // Inject mock text overlays for scanned documents to make them copyable
     pages.forEach((page, i) => {
-      page.drawText(`AeroPDF OCR Text Layer (Page ${i+1}) - Scanned Content Reconstructed`, {
-        x: 50,
-        y: 20,
-        size: 8,
-        font,
-        color: rgb(0.7, 0.7, 0.7),
-        opacity: 0.15
+      page.drawText(`AeroPDF OCR Text Layer (Page ${i+1})`, {
+        x: 50, y: 20, size: 8, font, color: rgb(0.7, 0.7, 0.7), opacity: 0.15
       });
     });
 
@@ -222,16 +937,13 @@ app.post('/api/ocr', upload.single('file'), async (req, res) => {
     res.setHeader('Content-Type', 'application/pdf');
     res.send(Buffer.from(bytes));
   } catch (err) {
+    cleanTempFiles(req);
     res.status(500).json({ error: 'OCR Processing failed.' });
   }
 });
 
-/* ==========================================
-   3. CONVERT TO PDF ENDPOINTS
-   ========================================== */
-
-// Endpoint: Image to PDF
-app.post('/api/img-to-pdf', upload.array('files'), async (req, res) => {
+// 8. Image to PDF
+app.post('/api/img-to-pdf', upload.array('files'), checkUploadLimit, apiLimiter, async (req, res) => {
   try {
     const files = req.files;
     const pageSize = req.body.pageSize || 'a4';
@@ -246,13 +958,14 @@ app.post('/api/img-to-pdf', upload.array('files'), async (req, res) => {
 
     for (const file of files) {
       let embeddedImage;
-      const bytes = new Uint8Array(file.buffer);
+      const bytes = fs.readFileSync(file.path);
 
       if (file.mimetype === 'image/png' || file.originalname.toLowerCase().endsWith('.png')) {
         embeddedImage = await pdfDoc.embedPng(bytes);
       } else {
         embeddedImage = await pdfDoc.embedJpg(bytes);
       }
+      fs.unlink(file.path, () => {});
 
       let pageWidth, pageHeight;
       if (pageSize === 'fit') {
@@ -292,72 +1005,112 @@ app.post('/api/img-to-pdf', upload.array('files'), async (req, res) => {
     res.setHeader('Content-Type', 'application/pdf');
     res.send(Buffer.from(bytes));
   } catch (err) {
+    cleanTempFiles(req);
     res.status(500).json({ error: 'Failed to convert images.' });
   }
 });
 
-// Endpoint: Word / Excel / PPT to PDF (Mocked document parsing)
-app.post('/api/office-to-pdf', upload.single('file'), async (req, res) => {
+// 9. Word / Excel / PPT to PDF
+app.post('/api/office-to-pdf', upload.single('file'), checkUploadLimit, apiLimiter, async (req, res) => {
   try {
     const file = req.file;
     if (!file) return res.status(400).json({ error: 'Document file is required.' });
 
+    const isDocx = file.originalname.toLowerCase().endsWith('.docx');
+
+    if (isDocx) {
+      const result = await mammoth.extractRawText({ path: file.path });
+      const rawText = result.value;
+      const text = sanitizeWinAnsi(rawText);
+      fs.unlink(file.path, () => {});
+
+      const pdfDoc = await PDFDocument.create();
+      const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+      const fontSize = 10;
+      const lineHeight = 14;
+      const margin = 50;
+      const pageWidth = 595.28;
+      const pageHeight = 841.89;
+      const maxTextWidth = pageWidth - (margin * 2);
+
+      let page = pdfDoc.addPage([pageWidth, pageHeight]);
+      let y = pageHeight - margin;
+
+      const paragraphs = text.split('\n');
+      for (const paragraph of paragraphs) {
+        if (!paragraph.trim()) continue;
+        
+        const words = paragraph.split(' ');
+        let currentLine = '';
+
+        for (const word of words) {
+          const testLine = currentLine ? `${currentLine} ${word}` : word;
+          const width = font.widthOfTextAtSize(testLine, fontSize);
+          if (width > maxTextWidth) {
+            if (y - lineHeight < margin) {
+              page = pdfDoc.addPage([pageWidth, pageHeight]);
+              y = pageHeight - margin;
+            }
+            page.drawText(currentLine, { x: margin, y, size: fontSize, font });
+            y -= lineHeight;
+            currentLine = word;
+          } else {
+            currentLine = testLine;
+          }
+        }
+
+        if (currentLine) {
+          if (y - lineHeight < margin) {
+            page = pdfDoc.addPage([pageWidth, pageHeight]);
+            y = pageHeight - margin;
+          }
+          page.drawText(currentLine, { x: margin, y, size: fontSize, font });
+          y -= lineHeight;
+        }
+        y -= lineHeight * 0.5; // paragraph space
+      }
+
+      const bytes = await pdfDoc.save();
+      res.setHeader('Content-Type', 'application/pdf');
+      return res.send(Buffer.from(bytes));
+    }
+
+    // Fallback for non-docx office files (xlsx, pptx)
+    fs.unlink(file.path, () => {});
     const pdfDoc = await PDFDocument.create();
-    const page = pdfDoc.addPage([595.28, 841.89]); // A4
-    const fontTitle = await pdfDoc.embedFont(StandardFonts.Helvetica_Bold);
+    const page = pdfDoc.addPage([595.28, 841.89]);
+    const fontTitle = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
     const fontBody = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
     page.drawText(`CONVERTED DOCUMENT PREVIEW`, { x: 50, y: 750, size: 20, font: fontTitle, color: rgb(0.39, 0.4, 0.95) });
     page.drawText(`File Name: ${file.originalname}`, { x: 50, y: 700, size: 12, font: fontBody });
     page.drawText(`Converted On: ${new Date().toLocaleString()}`, { x: 50, y: 680, size: 10, font: fontBody, color: rgb(0.5,0.5,0.5) });
-    page.drawText(`File Size: ${(file.size / 1024).toFixed(2)} KB`, { x: 50, y: 660, size: 10, font: fontBody, color: rgb(0.5,0.5,0.5) });
-
-    const separator = "------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------";
-    page.drawText(separator, { x: 50, y: 640, size: 8, font: fontBody, color: rgb(0.8,0.8,0.8) });
-
-    // Mock body text parsing
-    page.drawText(`Document parsed and compiled successfully:`, { x: 50, y: 600, size: 12, font: fontTitle });
-    page.drawText(`[Document Contents Restructured Into Server Output]`, { x: 50, y: 560, size: 11, font: fontBody, color: rgb(0.2,0.6,0.4) });
-    
-    // Draw some dummy sentences mimicking doc contents
-    const textLines = [
-      "1. Introduction and Project scope outlines standard requirements.",
-      "2. Calculations and indices were checked using server filters.",
-      "3. All parameters are compiled and processed directly in-memory.",
-      "4. Final outputs are wrapped inside clean structural layout envelopes."
-    ];
-    let yPos = 520;
-    textLines.forEach(line => {
-      page.drawText(line, { x: 50, y: yPos, size: 10, font: fontBody });
-      yPos -= 25;
-    });
 
     const bytes = await pdfDoc.save();
     res.setHeader('Content-Type', 'application/pdf');
     res.send(Buffer.from(bytes));
   } catch (err) {
-    res.status(500).json({ error: 'Office conversion failed.' });
+    cleanTempFiles(req);
+    console.error(err);
+    res.status(500).json({ error: 'Office conversion failed: ' + err.message, message: err.message, stack: err.stack });
   }
 });
 
-// Endpoint: HTML to PDF
-app.post('/api/html-to-pdf', async (req, res) => {
+// 10. HTML to PDF
+app.post('/api/html-to-pdf', apiLimiter, async (req, res) => {
   try {
     const { html, url, mode } = req.body;
-    
     const pdfDoc = await PDFDocument.create();
     const page = pdfDoc.addPage([595.28, 841.89]);
-    const fontTitle = await pdfDoc.embedFont(StandardFonts.Helvetica_Bold);
+    const fontTitle = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
     const fontBody = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
     page.drawText('HTML to PDF Compiled Output', { x: 50, y: 760, size: 18, font: fontTitle, color: rgb(0.39, 0.4, 0.95) });
 
     if (mode === 'url') {
       page.drawText(`Source URL: ${url}`, { x: 50, y: 720, size: 11, font: fontBody, color: rgb(0.2, 0.6, 0.4) });
-      page.drawText(`Page content fetched and formatted inside document container.`, { x: 50, y: 680, size: 10, font: fontBody });
     } else {
       page.drawText(`HTML Source Code Compiled:`, { x: 50, y: 720, size: 11, font: fontTitle });
-      
       const lines = (html || '').substring(0, 1000).split('\n');
       let yPos = 680;
       lines.slice(0, 20).forEach(line => {
@@ -374,65 +1127,46 @@ app.post('/api/html-to-pdf', async (req, res) => {
   }
 });
 
-/* ==========================================
-   4. CONVERT FROM PDF ENDPOINTS
-   ========================================== */
-
-// Endpoint: PDF to Word / Excel / PPT (Text-extraction to DOCX/CSV container)
-app.post('/api/pdf-to-office', upload.single('file'), async (req, res) => {
+// 11. PDF to Word / Excel / PPT
+app.post('/api/pdf-to-office', upload.single('file'), checkUploadLimit, apiLimiter, async (req, res) => {
   try {
     const file = req.file;
-    const format = req.body.format || 'docx'; // docx, xlsx, pptx
+    const format = req.body.format || 'docx';
     if (!file) return res.status(400).json({ error: 'PDF file is required.' });
 
-    const pdf = await PDFDocument.load(file.buffer);
+    const buffer = fs.readFileSync(file.path);
+    const pdf = await PDFDocument.load(buffer);
+    fs.unlink(file.path, () => {});
+
     const pageCount = pdf.getPageCount();
     const title = pdf.getTitle() || file.originalname;
 
     if (format === 'xlsx') {
-      // Return a CSV representing table rows
-      const csvContent = `AeroPDF Table Extraction,,"${title}"\nPage Count,,"${pageCount}"\nExported On,,"${new Date().toLocaleString()}"\n\nRow Index,Col 1,Col 2,Col 3\n1,Cell A1,Cell B1,Cell C1\n2,Cell A2,Cell B2,Cell C2\n3,Cell A3,Cell B3,Cell C3`;
+      const csvContent = `AeroPDF Table Extraction,,"${title}"\nPage Count,,"${pageCount}"\nExported On,,"${new Date().toLocaleString()}"`;
       res.setHeader('Content-Type', 'text/csv');
       return res.send(Buffer.from(csvContent));
     } else {
-      // Return an HTML-DOCX file (which opens directly in Microsoft Word as rich text!)
-      const wordHtml = `
-        <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/REC-html40">
-        <head><title>${title}</title><style>body { font-family: Arial; padding: 20px; }</style></head>
-        <body>
-          <h1 style="color: #6366f1;">Extracted Content: ${title}</h1>
-          <p><b>Exported Pages:</b> ${pageCount} pages</p>
-          <p><b>Exported Date:</b> ${new Date().toLocaleString()}</p>
-          <hr />
-          <h3>Paragraph Text Extracted:</h3>
-          <p>This document content has been extracted from the original PDF container and wrapped inside Word compatible HTML segments.</p>
-          <ul>
-            <li>Page indexing tables validated.</li>
-            <li>Coordinates matched server templates.</li>
-          </ul>
-        </body>
-        </html>
-      `;
+      const wordHtml = `<html><body><h1>Extracted Content: ${title}</h1><p>Pages: ${pageCount}</p></body></html>`;
       res.setHeader('Content-Type', 'application/msword');
       return res.send(Buffer.from(wordHtml));
     }
   } catch (err) {
+    cleanTempFiles(req);
     res.status(500).json({ error: 'PDF conversion failed.' });
   }
 });
 
-/* ==========================================
-   5. EDIT PDF ENDPOINTS
-   ========================================== */
-
-// Endpoint: Rotate PDF (Implemented in server.js earlier)
-app.post('/api/rotate', upload.single('file'), async (req, res) => {
+// 12. Rotate PDF
+app.post('/api/rotate', upload.single('file'), checkUploadLimit, apiLimiter, async (req, res) => {
   try {
     const file = req.file;
     const rotations = JSON.parse(req.body.rotations || '{}');
     if (!file) return res.status(400).json({ error: 'PDF file is required.' });
 
-    const pdf = await PDFDocument.load(file.buffer);
+    const buffer = fs.readFileSync(file.path);
+    const pdf = await PDFDocument.load(buffer);
+    fs.unlink(file.path, () => {});
+
     const pages = pdf.getPages();
     for (const [indexStr, angle] of Object.entries(rotations)) {
       const idx = parseInt(indexStr, 10);
@@ -446,27 +1180,29 @@ app.post('/api/rotate', upload.single('file'), async (req, res) => {
     res.setHeader('Content-Type', 'application/pdf');
     res.send(Buffer.from(bytes));
   } catch (err) {
+    cleanTempFiles(req);
     res.status(500).json({ error: 'Failed to rotate PDF.' });
   }
 });
 
-// Endpoint: Page Numbers
-app.post('/api/page-numbers', upload.single('file'), async (req, res) => {
+// 13. Page Numbers
+app.post('/api/page-numbers', upload.single('file'), checkUploadLimit, apiLimiter, async (req, res) => {
   try {
     const file = req.file;
-    const position = req.body.position || 'bottom-right'; // bottom-right, bottom-center, top-center etc
-    const format = req.body.format || 'simple'; // simple, page-x, page-x-of-y
-    
+    const position = req.body.position || 'bottom-right';
+    const format = req.body.format || 'simple';
     if (!file) return res.status(400).json({ error: 'PDF file is required.' });
 
-    const pdf = await PDFDocument.load(file.buffer);
+    const buffer = fs.readFileSync(file.path);
+    const pdf = await PDFDocument.load(buffer);
+    fs.unlink(file.path, () => {});
+
     const font = await pdf.embedFont(StandardFonts.Helvetica);
     const pages = pdf.getPages();
     const total = pages.length;
 
     pages.forEach((page, index) => {
       const { width, height } = page.getSize();
-      
       let text = `${index + 1}`;
       if (format === 'page-x') text = `Page ${index + 1}`;
       if (format === 'page-x-of-y') text = `Page ${index + 1} of ${total}`;
@@ -480,7 +1216,6 @@ app.post('/api/page-numbers', upload.single('file'), async (req, res) => {
       } else if (position.includes('left')) {
         x = margin;
       }
-
       if (position.includes('top')) {
         y = height - margin;
       }
@@ -492,12 +1227,13 @@ app.post('/api/page-numbers', upload.single('file'), async (req, res) => {
     res.setHeader('Content-Type', 'application/pdf');
     res.send(Buffer.from(bytes));
   } catch (err) {
+    cleanTempFiles(req);
     res.status(500).json({ error: 'Failed to add page numbers.' });
   }
 });
 
-// Endpoint: Add Watermark
-app.post('/api/watermark', upload.single('file'), async (req, res) => {
+// 14. Add Watermark
+app.post('/api/watermark', upload.single('file'), checkUploadLimit, apiLimiter, async (req, res) => {
   try {
     const file = req.file;
     const text = req.body.text || 'CONFIDENTIAL';
@@ -507,8 +1243,11 @@ app.post('/api/watermark', upload.single('file'), async (req, res) => {
 
     if (!file) return res.status(400).json({ error: 'PDF file is required.' });
 
-    const pdf = await PDFDocument.load(file.buffer);
-    const font = await pdf.embedFont(StandardFonts.Helvetica_Bold);
+    const buffer = fs.readFileSync(file.path);
+    const pdf = await PDFDocument.load(buffer);
+    fs.unlink(file.path, () => {});
+
+    const font = await pdf.embedFont(StandardFonts.HelveticaBold);
     const pages = pdf.getPages();
 
     pages.forEach((page) => {
@@ -528,27 +1267,29 @@ app.post('/api/watermark', upload.single('file'), async (req, res) => {
     res.setHeader('Content-Type', 'application/pdf');
     res.send(Buffer.from(bytes));
   } catch (err) {
+    cleanTempFiles(req);
     res.status(500).json({ error: 'Failed to add watermark.' });
   }
 });
 
-// Endpoint: Crop PDF
-app.post('/api/crop', upload.single('file'), async (req, res) => {
+// 15. Crop PDF
+app.post('/api/crop', upload.single('file'), checkUploadLimit, apiLimiter, async (req, res) => {
   try {
     const file = req.file;
-    const left = parseFloat(req.body.left || '0.5') * 72; // convert inches to points (72 points/inch)
+    const left = parseFloat(req.body.left || '0.5') * 72;
     const right = parseFloat(req.body.right || '0.5') * 72;
     const top = parseFloat(req.body.top || '0.5') * 72;
     const bottom = parseFloat(req.body.bottom || '0.5') * 72;
 
     if (!file) return res.status(400).json({ error: 'PDF file is required.' });
 
-    const pdf = await PDFDocument.load(file.buffer);
-    const pages = pdf.getPages();
+    const buffer = fs.readFileSync(file.path);
+    const pdf = await PDFDocument.load(buffer);
+    fs.unlink(file.path, () => {});
 
+    const pages = pdf.getPages();
     pages.forEach(page => {
       const { width, height } = page.getSize();
-      // Set page crop limits
       page.setCropBox(left, bottom, width - left - right, height - top - bottom);
     });
 
@@ -556,19 +1297,22 @@ app.post('/api/crop', upload.single('file'), async (req, res) => {
     res.setHeader('Content-Type', 'application/pdf');
     res.send(Buffer.from(bytes));
   } catch (err) {
+    cleanTempFiles(req);
     res.status(500).json({ error: 'Failed to crop PDF.' });
   }
 });
 
-// Endpoint: Edit PDF (Overlay annotations/elements)
-app.post('/api/edit-pdf', upload.single('file'), async (req, res) => {
+// 16. Edit PDF
+app.post('/api/edit-pdf', upload.single('file'), checkUploadLimit, apiLimiter, async (req, res) => {
   try {
     const file = req.file;
-    const elements = JSON.parse(req.body.elements || '[]'); // array of { type: 'text', page: 0, text: 'hi', x: 10, y: 10 }
-    
+    const elements = JSON.parse(req.body.elements || '[]');
     if (!file) return res.status(400).json({ error: 'PDF file is required.' });
 
-    const pdf = await PDFDocument.load(file.buffer);
+    const buffer = fs.readFileSync(file.path);
+    const pdf = await PDFDocument.load(buffer);
+    fs.unlink(file.path, () => {});
+
     const font = await pdf.embedFont(StandardFonts.Helvetica);
     const pages = pdf.getPages();
 
@@ -577,13 +1321,7 @@ app.post('/api/edit-pdf', upload.single('file'), async (req, res) => {
       if (pageIndex >= 0 && pageIndex < pages.length) {
         const page = pages[pageIndex];
         if (el.type === 'text') {
-          page.drawText(el.text, {
-            x: el.x,
-            y: el.y,
-            size: el.size || 12,
-            font,
-            color: rgb(0,0,0)
-          });
+          page.drawText(el.text, { x: el.x, y: el.y, size: el.size || 12, font, color: rgb(0,0,0) });
         }
       }
     });
@@ -592,20 +1330,22 @@ app.post('/api/edit-pdf', upload.single('file'), async (req, res) => {
     res.setHeader('Content-Type', 'application/pdf');
     res.send(Buffer.from(bytes));
   } catch (err) {
+    cleanTempFiles(req);
     res.status(500).json({ error: 'Failed to edit PDF.' });
   }
 });
 
-// Endpoint: PDF Forms Filler (Fills interactive fields - basic mock setup)
-app.post('/api/pdf-forms', upload.single('file'), async (req, res) => {
+// 17. PDF Forms
+app.post('/api/pdf-forms', upload.single('file'), checkUploadLimit, apiLimiter, async (req, res) => {
   try {
     const file = req.file;
     if (!file) return res.status(400).json({ error: 'PDF form file is required.' });
 
-    const pdf = await PDFDocument.load(file.buffer);
+    const buffer = fs.readFileSync(file.path);
+    const pdf = await PDFDocument.load(buffer);
+    fs.unlink(file.path, () => {});
+
     const form = pdf.getForm();
-    
-    // Fill first text field found (for visual demo)
     const fields = form.getFields();
     if (fields.length > 0) {
       try {
@@ -620,49 +1360,52 @@ app.post('/api/pdf-forms', upload.single('file'), async (req, res) => {
     res.setHeader('Content-Type', 'application/pdf');
     res.send(Buffer.from(bytes));
   } catch (err) {
+    cleanTempFiles(req);
     res.status(500).json({ error: 'Forms processor failed.' });
   }
 });
 
-/* ==========================================
-   6. SECURITY ENDPOINTS
-   ========================================== */
-
-// Endpoint: Protect PDF
-app.post('/api/protect', upload.single('file'), async (req, res) => {
+// 18. Protect PDF
+app.post('/api/protect', upload.single('file'), checkUploadLimit, apiLimiter, async (req, res) => {
   try {
     const file = req.file;
     const password = req.body.password;
     if (!file || !password) return res.status(400).json({ error: 'File and password are required.' });
 
-    const encryptedBytes = await encryptPDF(new Uint8Array(file.buffer), password, password);
+    const buffer = fs.readFileSync(file.path);
+    const encryptedBytes = await encryptPDF(new Uint8Array(buffer), password, password);
+    fs.unlink(file.path, () => {});
+
     res.setHeader('Content-Type', 'application/pdf');
     res.send(Buffer.from(encryptedBytes));
   } catch (err) {
+    cleanTempFiles(req);
     res.status(500).json({ error: 'Failed to protect PDF.' });
   }
 });
 
-// Endpoint: Unlock PDF (Removes encryption constraints)
-app.post('/api/unlock', upload.single('file'), async (req, res) => {
+// 19. Unlock PDF
+app.post('/api/unlock', upload.single('file'), checkUploadLimit, apiLimiter, async (req, res) => {
   try {
     const file = req.file;
     const password = req.body.password;
     if (!file || !password) return res.status(400).json({ error: 'File and password are required.' });
 
-    // Load with password, then save normal byte stream
-    const pdf = await PDFDocument.load(file.buffer, { password });
-    const bytes = await pdf.save(); // saving unlocks/decrypts the file layout natively
-    
+    const buffer = fs.readFileSync(file.path);
+    const pdf = await PDFDocument.load(buffer, { password });
+    fs.unlink(file.path, () => {});
+
+    const bytes = await pdf.save();
     res.setHeader('Content-Type', 'application/pdf');
     res.send(Buffer.from(bytes));
   } catch (err) {
+    cleanTempFiles(req);
     res.status(500).json({ error: 'Invalid password. Decryption rejected.' });
   }
 });
 
-// Endpoint: Sign PDF (Overlay signature PNG stamp)
-app.post('/api/sign', upload.single('file'), async (req, res) => {
+// 20. Sign PDF
+app.post('/api/sign', upload.single('file'), checkUploadLimit, apiLimiter, async (req, res) => {
   try {
     const file = req.file;
     const pageIndex = parseInt(req.body.pageIndex || '0', 10);
@@ -670,19 +1413,18 @@ app.post('/api/sign', upload.single('file'), async (req, res) => {
     const y = parseFloat(req.body.y || '100');
     const width = parseFloat(req.body.width || '150');
     const height = parseFloat(req.body.height || '75');
-    
-    // Extract base64 signature PNG image
-    const signatureBase64 = req.body.signature; // data:image/png;base64,...
-    if (!file || !signatureBase64) {
-      return res.status(400).json({ error: 'PDF file and signature are required.' });
-    }
+    const signatureBase64 = req.body.signature;
+
+    if (!file || !signatureBase64) return res.status(400).json({ error: 'PDF file and signature are required.' });
+
+    const buffer = fs.readFileSync(file.path);
+    const pdf = await PDFDocument.load(buffer);
+    fs.unlink(file.path, () => {});
 
     const cleanBase64 = signatureBase64.replace(/^data:image\/png;base64,/, "");
     const sigBuffer = Buffer.from(cleanBase64, 'base64');
 
-    const pdf = await PDFDocument.load(file.buffer);
     const pages = pdf.getPages();
-
     if (pageIndex >= 0 && pageIndex < pages.length) {
       const page = pages[pageIndex];
       const sigImage = await pdf.embedPng(sigBuffer);
@@ -693,32 +1435,28 @@ app.post('/api/sign', upload.single('file'), async (req, res) => {
     res.setHeader('Content-Type', 'application/pdf');
     res.send(Buffer.from(bytes));
   } catch (err) {
-    console.error('Sign error:', err);
+    cleanTempFiles(req);
     res.status(500).json({ error: 'Failed to overlay signature.' });
   }
 });
 
-// Endpoint: Redact PDF (Mask areas with black boxes)
-app.post('/api/redact', upload.single('file'), async (req, res) => {
+// 21. Redact PDF
+app.post('/api/redact', upload.single('file'), checkUploadLimit, apiLimiter, async (req, res) => {
   try {
     const file = req.file;
-    const areas = JSON.parse(req.body.areas || '[]'); // array of { page: 0, x, y, w, h }
+    const areas = JSON.parse(req.body.areas || '[]');
     if (!file) return res.status(400).json({ error: 'PDF file is required.' });
 
-    const pdf = await PDFDocument.load(file.buffer);
-    const pages = pdf.getPages();
+    const buffer = fs.readFileSync(file.path);
+    const pdf = await PDFDocument.load(buffer);
+    fs.unlink(file.path, () => {});
 
+    const pages = pdf.getPages();
     areas.forEach(area => {
       const pageIndex = area.page;
       if (pageIndex >= 0 && pageIndex < pages.length) {
         const page = pages[pageIndex];
-        page.drawRectangle({
-          x: area.x,
-          y: area.y,
-          width: area.w,
-          height: area.h,
-          color: rgb(0, 0, 0)
-        });
+        page.drawRectangle({ x: area.x, y: area.y, width: area.w, height: area.h, color: rgb(0, 0, 0) });
       }
     });
 
@@ -726,20 +1464,26 @@ app.post('/api/redact', upload.single('file'), async (req, res) => {
     res.setHeader('Content-Type', 'application/pdf');
     res.send(Buffer.from(bytes));
   } catch (err) {
+    cleanTempFiles(req);
     res.status(500).json({ error: 'Failed to redact PDF.' });
   }
 });
 
-// Endpoint: Compare PDF (Metadata validation)
-app.post('/api/compare', upload.array('files'), async (req, res) => {
+// 22. Compare PDF
+app.post('/api/compare', upload.array('files'), checkUploadLimit, apiLimiter, async (req, res) => {
   try {
     const files = req.files;
     if (!files || files.length < 2) {
       return res.status(400).json({ error: 'Two PDF files are required.' });
     }
 
-    const pdfA = await PDFDocument.load(files[0].buffer);
-    const pdfB = await PDFDocument.load(files[1].buffer);
+    const bufferA = fs.readFileSync(files[0].path);
+    const bufferB = fs.readFileSync(files[1].path);
+    fs.unlink(files[0].path, () => {});
+    fs.unlink(files[1].path, () => {});
+
+    const pdfA = await PDFDocument.load(bufferA);
+    const pdfB = await PDFDocument.load(bufferB);
 
     res.json({
       fileA: {
@@ -747,7 +1491,6 @@ app.post('/api/compare', upload.array('files'), async (req, res) => {
         pages: pdfA.getPageCount(),
         author: pdfA.getAuthor() || 'N/A',
         title: pdfA.getTitle() || 'N/A',
-        creator: pdfA.getCreator() || 'N/A',
         size: `${(files[0].size / 1024).toFixed(2)} KB`
       },
       fileB: {
@@ -755,23 +1498,21 @@ app.post('/api/compare', upload.array('files'), async (req, res) => {
         pages: pdfB.getPageCount(),
         author: pdfB.getAuthor() || 'N/A',
         title: pdfB.getTitle() || 'N/A',
-        creator: pdfB.getCreator() || 'N/A',
         size: `${(files[1].size / 1024).toFixed(2)} KB`
       }
     });
   } catch (err) {
+    cleanTempFiles(req);
     res.status(500).json({ error: 'Failed to compare PDFs.' });
   }
 });
 
 /* ==========================================
-   PRODUCTION FRONTEND ROUTING
+   PRODUCTION SPA ASSETS ROUTING
    ========================================== */
 
-// Serve assets
 app.use(express.static(path.join(__dirname, 'dist')));
 
-// Route all requests to SPA main file
 app.get(/.*/, (req, res, next) => {
   if (req.path.startsWith('/api')) return next();
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));

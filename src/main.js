@@ -24,7 +24,11 @@ import {
   redactPDF,
   comparePDFs,
   pdfToImages,
-  generatePagePreviews 
+  generatePagePreviews,
+  aiSummarizePDF,
+  aiTranslatePDF,
+  aiRemoveBackground,
+  aiUpscaleImage
 } from './pdf-tools.js';
 
 // Application State
@@ -36,6 +40,10 @@ let selectedPages = new Set();
 let signatureDataUrl = null;
 let signaturePlacement = null; // { page: 0, x: 0, y: 0, w: 100, h: 50 }
 let redactionBoxes = []; // [ { page: 0, x, y, w, h } ]
+
+// User Auth State
+let token = localStorage.getItem('token') || null;
+let currentUser = null;
 
 // Webcam stream handler
 let webcamStream = null;
@@ -74,12 +82,19 @@ const TOOL_META = {
   unlock: { title: 'Unlock PDF', desc: 'Unlock password constraints from encrypted PDFs.', uploadHeadline: 'Upload an encrypted PDF to unlock', uploadSubline: 'or drag and drop it here', accepts: '.pdf', multiple: false },
   sign: { title: 'Sign PDF', desc: 'Visually stamp custom signature drawings onto pages.', uploadHeadline: 'Upload a PDF to sign', uploadSubline: 'or drag and drop it here', accepts: '.pdf', multiple: false },
   redact: { title: 'Redact PDF', desc: 'Visually black out sensitive section coordinates on pages.', uploadHeadline: 'Upload a PDF to redact sections', uploadSubline: 'or drag and drop it here', accepts: '.pdf', multiple: false },
-  compare: { title: 'Compare PDF', desc: 'Validate metadata and page alignment comparisons between two PDFs.', uploadHeadline: 'Upload two PDF documents to compare', uploadSubline: 'or drag and drop them here', accepts: '.pdf', multiple: true }
+  compare: { title: 'Compare PDF', desc: 'Validate metadata and page alignment comparisons between two PDFs.', uploadHeadline: 'Upload two PDF documents to compare', uploadSubline: 'or drag and drop them here', accepts: '.pdf', multiple: true },
+  'ai-summarize': { title: 'AI Summarizer', desc: 'Generate concise structured summaries from PDF text using Groq.', uploadHeadline: 'Upload a PDF to summarize', uploadSubline: 'or drag and drop it here', accepts: '.pdf', multiple: false },
+  'ai-translate': { title: 'Translate PDF', desc: 'Translate PDF text content to other languages using Groq.', uploadHeadline: 'Upload a PDF to translate', uploadSubline: 'or drag and drop it here', accepts: '.pdf', multiple: false },
+  'remove-background': { title: 'Background Remover', desc: 'Remove background from images automatically using AI.', uploadHeadline: 'Upload an image to remove background', uploadSubline: 'or drag and drop it here', accepts: 'image/png, image/jpeg, image/jpg', multiple: false },
+  'upscale-image': { title: 'Image Upscaler', desc: 'Enhance resolution and quality of images.', uploadHeadline: 'Upload an image to upscale', uploadSubline: 'or drag and drop it here', accepts: 'image/png, image/jpeg, image/jpg', multiple: false }
 };
 
 document.addEventListener('DOMContentLoaded', () => {
   setupEventListeners();
   setupSignaturePad();
+  checkAuthSession();
+  setupAuthEventListeners();
+  setupBlogEventListeners();
 });
 
 // Setup Mouse movements glow effect
@@ -215,6 +230,14 @@ function setupEventListeners() {
   document.getElementById('html-url-input').addEventListener('input', updateProcessButtonState);
   document.getElementById('pdf-unlock-password').addEventListener('input', updateProcessButtonState);
   
+  document.getElementById('btn-copy-ai-result').addEventListener('click', () => {
+    const text = document.getElementById('ai-results-content').textContent;
+    if (text) {
+      navigator.clipboard.writeText(text);
+      showToast('AI content copied to clipboard!', 'success');
+    }
+  });
+
   setupCardMouseEffect();
 }
 
@@ -311,6 +334,7 @@ function navigateToTool(tool) {
   }
   
   document.getElementById('dashboard-page').style.display = 'none';
+  document.getElementById('blog-page').style.display = 'none';
   document.getElementById('workspace-page').style.display = 'block';
   document.getElementById('btn-back-to-dashboard').style.display = 'flex';
   
@@ -327,6 +351,7 @@ function navigateToDashboard() {
   stopWebcamStream();
   clearWorkspace();
   document.getElementById('workspace-page').style.display = 'none';
+  document.getElementById('blog-page').style.display = 'none';
   document.getElementById('btn-back-to-dashboard').style.display = 'none';
   document.getElementById('dashboard-page').style.display = 'block';
 }
@@ -336,9 +361,14 @@ function toggleSettingsPanels(tool) {
   const sections = [
     'settings-split', 'settings-protect', 'settings-img-to-pdf', 'settings-rotate', 
     'settings-html', 'settings-compress', 'settings-unlock', 'settings-watermark', 
-    'settings-page-numbers', 'settings-sign', 'settings-redact', 'settings-crop', 'settings-generic'
+    'settings-page-numbers', 'settings-sign', 'settings-redact', 'settings-crop', 
+    'settings-ai-summarize', 'settings-ai-translate', 'settings-remove-background', 
+    'settings-upscale-image', 'settings-generic'
   ];
-  sections.forEach(id => document.getElementById(id).style.display = 'none');
+  sections.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
   
   if (TOOL_META[tool] && TOOL_META[tool].noUpload) {
     document.getElementById('settings-generic').style.display = 'none';
@@ -370,6 +400,14 @@ function toggleSettingsPanels(tool) {
     document.getElementById('settings-redact').style.display = 'block';
   } else if (tool === 'crop') {
     document.getElementById('settings-crop').style.display = 'block';
+  } else if (tool === 'ai-summarize') {
+    document.getElementById('settings-ai-summarize').style.display = 'block';
+  } else if (tool === 'ai-translate') {
+    document.getElementById('settings-ai-translate').style.display = 'block';
+  } else if (tool === 'remove-background') {
+    document.getElementById('settings-remove-background').style.display = 'block';
+  } else if (tool === 'upscale-image') {
+    document.getElementById('settings-upscale-image').style.display = 'block';
   }
 }
 
@@ -442,6 +480,17 @@ async function handleFilesSelected(fileList) {
   });
   
   if (filtered.length === 0) return;
+  
+  // Size validation check
+  const totalSize = filtered.reduce((sum, f) => sum + f.size, 0);
+  const maxFreeSize = 12 * 1024 * 1024; // 12MB limit
+  if (totalSize > maxFreeSize) {
+    if (!token || !currentUser || !currentUser.is_premium) {
+      showToast('File size exceeds the 12MB limit. Please upgrade to Premium.', 'error');
+      showAuthModal('upgrade');
+      return;
+    }
+  }
   
   if (meta.multiple) {
     uploadedFiles = [...uploadedFiles, ...filtered];
@@ -842,6 +891,12 @@ function clearWorkspace() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
   }
   signatureDataUrl = null;
+
+  const aiResults = document.getElementById('ai-results-panel');
+  if (aiResults) {
+    aiResults.style.display = 'none';
+    document.getElementById('ai-results-content').textContent = '';
+  }
   
   hideOperationsArea();
   updateProcessButtonState();
@@ -1057,6 +1112,69 @@ async function processFiles() {
       case 'redact':
         outputBytes = await redactPDF(uploadedFiles[0], redactionBoxes);
         break;
+
+      case 'ai-summarize':
+        try {
+          const resData = await aiSummarizePDF(uploadedFiles[0], token);
+          loadingTitle.textContent = 'Summary Generated';
+          loadingMessage.textContent = 'Rendering content...';
+          
+          const aiResults = document.getElementById('ai-results-panel');
+          const aiContent = document.getElementById('ai-results-content');
+          const aiTitle = document.getElementById('ai-results-title');
+          
+          aiTitle.textContent = 'AI Document Summary';
+          aiContent.textContent = resData.summary;
+          aiResults.style.display = 'block';
+          aiResults.scrollIntoView({ behavior: 'smooth' });
+          
+          showToast('Summary generated successfully!', 'success');
+        } catch (err) {
+          showToast(err.message || 'AI Summarizer failed', 'error');
+        }
+        overlay.classList.remove('active');
+        return;
+        
+      case 'ai-translate':
+        const targetLang = document.getElementById('translate-lang-select').value;
+        try {
+          const resData = await aiTranslatePDF(uploadedFiles[0], targetLang, token);
+          loadingTitle.textContent = 'Translation Complete';
+          loadingMessage.textContent = 'Rendering content...';
+          
+          const aiResults = document.getElementById('ai-results-panel');
+          const aiContent = document.getElementById('ai-results-content');
+          const aiTitle = document.getElementById('ai-results-title');
+          
+          aiTitle.textContent = `AI Document Translation (${targetLang})`;
+          aiContent.textContent = resData.translation;
+          aiResults.style.display = 'block';
+          aiResults.scrollIntoView({ behavior: 'smooth' });
+          
+          showToast(`Translated to ${targetLang} successfully!`, 'success');
+        } catch (err) {
+          showToast(err.message || 'AI Translation failed', 'error');
+        }
+        overlay.classList.remove('active');
+        return;
+
+      case 'remove-background':
+        loadingTitle.textContent = 'Removing Background...';
+        outputBytes = await aiRemoveBackground(uploadedFiles[0], token);
+        filename = 'bg-removed.png';
+        mimeType = 'image/png';
+        break;
+        
+      case 'upscale-image':
+        const factor = document.getElementById('upscale-factor-select').value;
+        loadingTitle.textContent = 'Upscaling Image...';
+        outputBytes = await aiUpscaleImage(uploadedFiles[0], factor, token);
+        const originalName = uploadedFiles[0].name;
+        const nameParts = originalName.split('.');
+        const ext = nameParts.length > 1 ? nameParts.pop() : 'png';
+        filename = `${nameParts.join('.')}-upscaled.${ext}`;
+        mimeType = uploadedFiles[0].type;
+        break;
     }
     
     if (outputBytes) {
@@ -1115,4 +1233,403 @@ function showToast(message, type = 'success') {
     toast.classList.remove('show');
     setTimeout(() => toast.remove(), 300);
   }, 4000);
+}
+
+/* ==========================================
+   USER AUTHENTICATION SESSION HANDLERS
+   ========================================== */
+
+async function checkAuthSession() {
+  token = localStorage.getItem('token');
+  if (!token) {
+    updateAuthNav(null);
+    return;
+  }
+  
+  try {
+    const res = await fetch('/api/auth/me', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    if (res.ok) {
+      const data = await res.json();
+      currentUser = data.user;
+      updateAuthNav(currentUser);
+    } else {
+      localStorage.removeItem('token');
+      token = null;
+      currentUser = null;
+      updateAuthNav(null);
+    }
+  } catch (err) {
+    console.error('Session check failed', err);
+    updateAuthNav(null);
+  }
+}
+
+function updateAuthNav(user) {
+  const authNav = document.getElementById('user-auth-nav');
+  if (!authNav) return;
+  
+  if (user) {
+    const badgeClass = user.is_premium ? 'auth-badge-premium' : 'auth-badge-free';
+    const badgeText = user.is_premium ? 'Premium' : 'Free';
+    const badgeStyle = user.is_premium ? '' : 'style="cursor: pointer;" title="Upgrade to Premium"';
+    const badgeId = user.is_premium ? '' : 'id="btn-nav-upgrade"';
+    
+    authNav.innerHTML = `
+      <span style="font-size: 0.95rem; color: var(--text-secondary); max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500;">
+        ${user.email}
+      </span>
+      <span ${badgeId} class="auth-badge ${badgeClass}" ${badgeStyle}>${badgeText}</span>
+      <button id="btn-logout" class="btn-nav-back" style="padding: 0.35rem 0.75rem; font-size: 0.85rem;">Logout</button>
+    `;
+    
+    if (!user.is_premium) {
+      document.getElementById('btn-nav-upgrade').addEventListener('click', () => {
+        showAuthModal('upgrade');
+      });
+    }
+    
+    document.getElementById('btn-logout').addEventListener('click', () => {
+      localStorage.removeItem('token');
+      token = null;
+      currentUser = null;
+      updateAuthNav(null);
+      showToast('Logged out successfully', 'info');
+      if (document.getElementById('blog-page').style.display === 'block') {
+        renderBlogComposeSection();
+      }
+    });
+  } else {
+    authNav.innerHTML = `
+      <button id="btn-show-login" class="btn-nav-back">Login</button>
+      <button id="btn-show-signup" class="btn-nav-back" style="background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); border: none; color: white;">Sign Up</button>
+    `;
+    
+    document.getElementById('btn-show-login').addEventListener('click', () => showAuthModal('login'));
+    document.getElementById('btn-show-signup').addEventListener('click', () => showAuthModal('signup'));
+  }
+  
+  if (document.getElementById('blog-page').style.display === 'block') {
+    renderBlogComposeSection();
+  }
+}
+
+function showAuthModal(type) {
+  const overlay = document.getElementById('auth-modal-overlay');
+  const login = document.getElementById('login-modal');
+  const signup = document.getElementById('signup-modal');
+  const upgrade = document.getElementById('upgrade-modal');
+  
+  overlay.classList.add('active');
+  login.style.display = 'none';
+  signup.style.display = 'none';
+  upgrade.style.display = 'none';
+  
+  if (type === 'login') {
+    login.style.display = 'flex';
+  } else if (type === 'signup') {
+    signup.style.display = 'flex';
+  } else if (type === 'upgrade') {
+    upgrade.style.display = 'flex';
+    const btnCheckout = document.getElementById('btn-trigger-checkout');
+    const loggedOutActions = document.getElementById('upgrade-logged-out-actions');
+    if (token) {
+      btnCheckout.style.display = 'block';
+      loggedOutActions.style.display = 'none';
+    } else {
+      btnCheckout.style.display = 'none';
+      loggedOutActions.style.display = 'flex';
+    }
+  }
+}
+
+function hideAuthModal() {
+  const overlay = document.getElementById('auth-modal-overlay');
+  overlay.classList.remove('active');
+}
+
+function setupAuthEventListeners() {
+  document.getElementById('btn-close-login').addEventListener('click', hideAuthModal);
+  document.getElementById('btn-close-signup').addEventListener('click', hideAuthModal);
+  document.getElementById('btn-close-upgrade').addEventListener('click', hideAuthModal);
+  
+  document.getElementById('link-goto-signup').addEventListener('click', (e) => {
+    e.preventDefault();
+    showAuthModal('signup');
+  });
+  document.getElementById('link-goto-login').addEventListener('click', (e) => {
+    e.preventDefault();
+    showAuthModal('login');
+  });
+  document.getElementById('btn-upgrade-login').addEventListener('click', () => {
+    showAuthModal('login');
+  });
+  document.getElementById('link-upgrade-signup').addEventListener('click', (e) => {
+    e.preventDefault();
+    showAuthModal('signup');
+  });
+  
+  document.getElementById('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+    
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Login failed');
+      
+      localStorage.setItem('token', data.token);
+      token = data.token;
+      currentUser = data.user;
+      updateAuthNav(currentUser);
+      hideAuthModal();
+      showToast('Logged in successfully', 'success');
+      
+      document.getElementById('login-email').value = '';
+      document.getElementById('login-password').value = '';
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  });
+  
+  document.getElementById('signup-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('signup-email').value;
+    const password = document.getElementById('signup-password').value;
+    
+    try {
+      const res = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Signup failed');
+      
+      localStorage.setItem('token', data.token);
+      token = data.token;
+      currentUser = data.user;
+      updateAuthNav(currentUser);
+      hideAuthModal();
+      showToast('Account created successfully!', 'success');
+      
+      document.getElementById('signup-email').value = '';
+      document.getElementById('signup-password').value = '';
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  });
+  
+  document.getElementById('btn-trigger-checkout').addEventListener('click', async () => {
+    if (!token) {
+      showToast('Please login first', 'error');
+      showAuthModal('login');
+      return;
+    }
+    
+    try {
+      const res = await fetch('/api/stripe/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Checkout redirect failed');
+      
+      showToast('Redirecting to secure Stripe billing portal...', 'info');
+      window.location.href = data.url;
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  });
+}
+
+/* ==========================================
+   BLOG CONTROLLERS & RENDERERS
+   ========================================== */
+
+function setupBlogEventListeners() {
+  document.getElementById('btn-goto-blog').addEventListener('click', navigateToBlog);
+}
+
+function navigateToBlog() {
+  currentTool = null;
+  stopWebcamStream();
+  clearWorkspace();
+  
+  document.getElementById('workspace-page').style.display = 'none';
+  document.getElementById('dashboard-page').style.display = 'none';
+  document.getElementById('blog-page').style.display = 'block';
+  document.getElementById('btn-back-to-dashboard').style.display = 'flex';
+  
+  loadBlogPosts();
+  renderBlogComposeSection();
+}
+
+async function loadBlogPosts() {
+  const container = document.getElementById('blog-posts-list');
+  if (!container) return;
+  
+  container.innerHTML = `
+    <div class="loading-container" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 0.75rem; padding: 3rem; text-align: center; width: 100%;">
+      <div class="spinner" style="margin: 0 auto 1rem auto; width: 2.5rem; height: 2.5rem;"></div>
+      <div>Loading articles...</div>
+    </div>
+  `;
+  
+  try {
+    const res = await fetch('/api/blog');
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to fetch blogs');
+    
+    if (!data.posts || data.posts.length === 0) {
+      container.innerHTML = `
+        <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 0.75rem; padding: 3rem; text-align: center; color: var(--text-secondary); width: 100%;">
+          <h3>No articles published yet</h3>
+          <p style="margin-top: 0.5rem;">Be the first to publish an article on AeroPDF!</p>
+        </div>
+      `;
+      return;
+    }
+    
+    container.innerHTML = data.posts.map(post => {
+      const dateStr = new Date(post.createdAt).toLocaleDateString(undefined, {
+        year: 'numeric', month: 'long', day: 'numeric'
+      });
+      return `
+        <article class="blog-post-card">
+          <div class="blog-post-header">
+            <span class="blog-post-author">By ${post.author_email}</span>
+            <span>${dateStr}</span>
+          </div>
+          <h3 style="margin-top: 0.25rem; margin-bottom: 0.5rem;">${escapeHTML(post.title)}</h3>
+          <div class="blog-post-content">${escapeHTML(post.content)}</div>
+        </article>
+      `;
+    }).join('');
+  } catch (err) {
+    container.innerHTML = `
+      <div style="background: var(--bg-card); border: 1px solid var(--accent-danger); border-radius: 0.75rem; padding: 2rem; text-align: center; color: var(--accent-danger); width: 100%;">
+        Failed to load blog posts: ${err.message}
+      </div>
+    `;
+  }
+}
+
+function renderBlogComposeSection() {
+  const container = document.getElementById('blog-compose-container');
+  if (!container) return;
+  
+  if (!token) {
+    container.innerHTML = `
+      <div style="display: flex; flex-direction: column; gap: 1rem; align-items: center; text-align: center; padding: 1rem 0;">
+        <p style="font-size: 0.85rem; color: var(--text-secondary);">Please login or sign up to publish blog articles.</p>
+        <button id="btn-blog-login" class="btn-action" style="width: 100%;">Login to Continue</button>
+      </div>
+    `;
+    
+    document.getElementById('btn-blog-login').addEventListener('click', () => showAuthModal('login'));
+    return;
+  }
+  
+  if (currentUser && !currentUser.can_blog) {
+    container.innerHTML = `
+      <div style="display: flex; flex-direction: column; gap: 1rem; text-align: center; padding: 1rem 0;">
+        <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
+          You need publisher authorization. Click below to pay the one-time $12 publishing fee via Stripe.
+        </p>
+        <button id="btn-pay-blog-fee" class="btn-action" style="width: 100%; background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));">
+          Pay $12 Publishing Fee
+        </button>
+      </div>
+    `;
+    
+    document.getElementById('btn-pay-blog-fee').addEventListener('click', async () => {
+      try {
+        const res = await fetch('/api/stripe/blog-checkout', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Stripe redirect failed');
+        
+        showToast('Redirecting to Stripe payment page...', 'info');
+        window.location.href = data.url;
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    });
+    return;
+  }
+  
+  container.innerHTML = `
+    <form id="blog-compose-form" class="compose-box">
+      <div class="input-group">
+        <label class="input-label" for="blog-title">Article Title</label>
+        <input type="text" id="blog-title" class="text-input" placeholder="Title of your post" required />
+      </div>
+      <div class="input-group">
+        <label class="input-label" for="blog-content">Content</label>
+        <textarea id="blog-content" class="text-input" style="height: 150px; resize: vertical;" placeholder="Write your content here..." required></textarea>
+      </div>
+      <button type="submit" class="btn-action" style="background: var(--accent-success); width: 100%;">
+        Publish Post
+      </button>
+    </form>
+  `;
+  
+  document.getElementById('blog-compose-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const title = document.getElementById('blog-title').value;
+    const content = document.getElementById('blog-content').value;
+    
+    try {
+      const res = await fetch('/api/blog', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ title, content })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to publish article');
+      
+      showToast('Article published successfully!', 'success');
+      loadBlogPosts();
+      
+      document.getElementById('blog-title').value = '';
+      document.getElementById('blog-content').value = '';
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  });
+}
+
+function escapeHTML(str) {
+  return str.replace(/[&<>'"]/g, 
+    tag => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      "'": '&#39;',
+      '"': '&quot;'
+    }[tag] || tag)
+  );
 }

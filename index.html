@@ -16,10 +16,15 @@
           <span>AeroPDF</span>
         </a>
         <div class="nav-links">
+          <button id="btn-goto-blog" class="btn-nav-back">Blog</button>
           <button id="btn-back-to-dashboard" class="btn-nav-back" style="display: none;">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
             Back to Dashboard
           </button>
+          <div class="user-auth-nav" id="user-auth-nav">
+            <button id="btn-show-login" class="btn-nav-back">Login</button>
+            <button id="btn-show-signup" class="btn-nav-back" style="background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); border: none; color: white;">Sign Up</button>
+          </div>
         </div>
       </div>
     </header>
@@ -314,6 +319,54 @@
               </div>
             </div>
           </div>
+
+          <!-- Column 7: PDF Intelligence -->
+          <div class="category-column category-intelligence">
+            <div class="category-header">
+              <svg class="category-header-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              <span>PDF Intelligence</span>
+            </div>
+
+            <div class="tool-card" data-tool="ai-summarize">
+              <div class="tool-icon-wrapper" style="background: rgba(168, 85, 247, 0.15); color: var(--accent-secondary);">🤖</div>
+              <div>
+                <h3>AI Summarizer</h3>
+                <p>Generate structured summaries from PDF text.</p>
+              </div>
+            </div>
+
+            <div class="tool-card" data-tool="ai-translate">
+              <div class="tool-icon-wrapper" style="background: rgba(168, 85, 247, 0.15); color: var(--accent-secondary);">🌐</div>
+              <div>
+                <h3>Translate PDF</h3>
+                <p>Translate PDF text using Groq AI.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Column 8: AI Image Tools -->
+          <div class="category-column category-image-tools">
+            <div class="category-header">
+              <svg class="category-header-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+              <span>AI Image Tools</span>
+            </div>
+
+            <div class="tool-card" data-tool="remove-background">
+              <div class="tool-icon-wrapper" style="background: rgba(16, 185, 129, 0.15); color: var(--accent-success);">🪄</div>
+              <div>
+                <h3>Background Remover</h3>
+                <p>Remove background from images automatically.</p>
+              </div>
+            </div>
+
+            <div class="tool-card" data-tool="upscale-image">
+              <div class="tool-icon-wrapper" style="background: rgba(16, 185, 129, 0.15); color: var(--accent-success);">🔍</div>
+              <div>
+                <h3>Image Upscaler</h3>
+                <p>Enhance resolution and quality of images.</p>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -380,6 +433,17 @@
                 <div class="compare-title-header" id="compare-right-title">File B</div>
                 <table class="compare-metadata-table" id="compare-right-meta"></table>
               </div>
+            </div>
+
+            <!-- AI Result Panel -->
+            <div id="ai-results-panel" style="display: none; background: rgba(0,0,0,0.25); border: 1px solid var(--border-color); border-radius: 0.75rem; padding: 1.5rem; margin-top: 1rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-bottom: 1rem;">
+                <h4 style="font-size: 1.1rem; font-weight: 600; color: var(--accent-success);" id="ai-results-title">AI Output</h4>
+                <button id="btn-copy-ai-result" class="btn-nav-back" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">
+                  Copy Content
+                </button>
+              </div>
+              <div id="ai-results-content" style="white-space: pre-wrap; font-size: 0.95rem; line-height: 1.6; max-height: 400px; overflow-y: auto; color: var(--text-primary);"></div>
             </div>
           </div>
 
@@ -547,6 +611,49 @@
                   Check your uploaded files on the left. Click the button below to process.
                 </p>
               </div>
+
+              <!-- Settings: AI Summarizer -->
+              <div id="settings-ai-summarize" style="display: none;" class="input-group">
+                <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4;">
+                  Extract text from the PDF and generate a detailed structured summary using Groq AI.
+                </p>
+              </div>
+
+              <!-- Settings: AI Translate -->
+              <div id="settings-ai-translate" style="display: none;" class="input-group">
+                <label class="input-label" for="translate-lang-select">Target Language:</label>
+                <select id="translate-lang-select" class="text-input" style="background: rgba(0,0,0,0.3);">
+                  <option value="Spanish">Spanish</option>
+                  <option value="French">French</option>
+                  <option value="German">German</option>
+                  <option value="Chinese">Chinese</option>
+                  <option value="Hindi">Hindi</option>
+                  <option value="Arabic">Arabic</option>
+                  <option value="Portuguese">Portuguese</option>
+                  <option value="Japanese">Japanese</option>
+                  <option value="Italian">Italian</option>
+                  <option value="Russian">Russian</option>
+                </select>
+              </div>
+
+              <!-- Settings: Background Remover -->
+              <div id="settings-remove-background" style="display: none;" class="input-group">
+                <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4;">
+                  Upload a JPG/PNG image to automatically isolate the subject and make the background transparent.
+                </p>
+              </div>
+
+              <!-- Settings: Image Upscaler -->
+              <div id="settings-upscale-image" style="display: none;" class="input-group">
+                <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4; margin-bottom: 0.75rem;">
+                  Enhance and upscale image resolution.
+                </p>
+                <label class="input-label" for="upscale-factor-select">Upscale Factor:</label>
+                <select id="upscale-factor-select" class="text-input" style="background: rgba(0,0,0,0.3);">
+                  <option value="2">2x (Double Resolution)</option>
+                  <option value="4">4x (Ultra HD)</option>
+                </select>
+              </div>
             </div>
 
             <div class="panel-section">
@@ -558,6 +665,31 @@
               <button id="btn-clear-workspace" class="btn-nav-back" style="justify-content: center; width: 100%; margin-top: 0.5rem;">
                 Clear Workspace
               </button>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <!-- BLOG PAGE -->
+      <section id="blog-page" style="display: none; animation: fadeIn 0.4s ease-out; margin-top: 1rem;">
+        <div class="hero" style="margin-bottom: 2rem;">
+          <h1>AeroPDF Blog Hub</h1>
+          <p>Read tech articles from our global community, or pay a one-time $12 fee to publish your own article.</p>
+        </div>
+
+        <div class="operations-panel">
+          <!-- Left: Blog posts list -->
+          <div style="display: flex; flex-direction: column; gap: 1.5rem;" id="blog-posts-list">
+            <!-- Loaded dynamically by main.js -->
+          </div>
+
+          <!-- Right: Publish sidebar -->
+          <aside class="sidebar-panel" style="width: 100%;">
+            <div class="panel-section">
+              <h4>Publish an Article</h4>
+              <div id="blog-compose-container">
+                <!-- Injected dynamically by main.js (Form or Upgrade Prompt) -->
+              </div>
             </div>
           </aside>
         </div>
@@ -579,6 +711,81 @@
     <footer>
       <p>&copy; 2026 AeroPDF. Complete 24-Tool Suite. Built Locally & Securely.</p>
     </footer>
+
+    <!-- Authentication Modals Overlay -->
+    <div id="auth-modal-overlay" class="overlay">
+      <!-- Login Modal -->
+      <div id="login-modal" class="loading-container modal-content-box" style="display: none; max-width: 400px; text-align: left; align-items: stretch; gap: 1rem; width: 100%;">
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+          <h3 style="font-size: 1.35rem; font-weight: 700; margin: 0;">Login to AeroPDF</h3>
+          <button class="btn-close-modal btn-icon" id="btn-close-login" style="background:none; border:none; color:var(--text-muted); cursor:pointer;">&times;</button>
+        </div>
+        <form id="login-form" style="display: flex; flex-direction: column; gap: 1rem; width: 100%;">
+          <div class="input-group">
+            <label class="input-label" for="login-email">Email Address</label>
+            <input type="email" id="login-email" class="text-input" placeholder="you@example.com" required />
+          </div>
+          <div class="input-group">
+            <label class="input-label" for="login-password">Password</label>
+            <input type="password" id="login-password" class="text-input" placeholder="••••••••" required />
+          </div>
+          <button type="submit" class="btn-action" style="width: 100%;">Login</button>
+        </form>
+        <p style="font-size: 0.85rem; color: var(--text-secondary); text-align: center; margin: 0.5rem 0 0 0; width: 100%;">
+          Don't have an account? <a href="#" id="link-goto-signup" style="color: var(--accent-primary); text-decoration: none; font-weight: 600;">Sign up</a>
+        </p>
+      </div>
+
+      <!-- Signup Modal -->
+      <div id="signup-modal" class="loading-container modal-content-box" style="display: none; max-width: 400px; text-align: left; align-items: stretch; gap: 1rem; width: 100%;">
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+          <h3 style="font-size: 1.35rem; font-weight: 700; margin: 0;">Create Account</h3>
+          <button class="btn-close-modal btn-icon" id="btn-close-signup" style="background:none; border:none; color:var(--text-muted); cursor:pointer;">&times;</button>
+        </div>
+        <form id="signup-form" style="display: flex; flex-direction: column; gap: 1rem; width: 100%;">
+          <div class="input-group">
+            <label class="input-label" for="signup-email">Email Address</label>
+            <input type="email" id="signup-email" class="text-input" placeholder="you@example.com" required />
+          </div>
+          <div class="input-group">
+            <label class="input-label" for="signup-password">Password</label>
+            <input type="password" id="signup-password" class="text-input" placeholder="Min 6 characters" minlength="6" required />
+          </div>
+          <button type="submit" class="btn-action" style="width: 100%;">Create Account</button>
+        </form>
+        <p style="font-size: 0.85rem; color: var(--text-secondary); text-align: center; margin: 0.5rem 0 0 0; width: 100%;">
+          Already have an account? <a href="#" id="link-goto-login" style="color: var(--accent-primary); text-decoration: none; font-weight: 600;">Login</a>
+        </p>
+      </div>
+
+      <!-- Premium/Upgrade Modal -->
+      <div id="upgrade-modal" class="loading-container modal-content-box" style="display: none; max-width: 420px; text-align: center; align-items: center; gap: 1.25rem; width: 100%;">
+        <div style="display: flex; justify-content: flex-end; width: 100%;">
+          <button class="btn-close-modal btn-icon" id="btn-close-upgrade" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size: 1.5rem;">&times;</button>
+        </div>
+        <div style="font-size: 3rem; margin-top: -1rem;">💎</div>
+        <h3 style="font-size: 1.5rem; font-weight: 800; background: linear-gradient(135deg, #fff, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 0;">Upgrade to Premium</h3>
+        <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5; margin: 0;">
+          Unlock unlimited uploads beyond the 12MB limit, high resolution images, background removal, and advanced PDF AI summarization.
+        </p>
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 0.75rem; padding: 1rem; width: 100%; text-align: left;">
+          <div style="display: flex; justify-content: space-between; font-weight: 600; margin-bottom: 0.25rem; font-size: 0.95rem;">
+            <span>Premium Plan</span>
+            <span style="color: var(--accent-secondary);">$10/month</span>
+          </div>
+          <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0;">Cancel anytime. Instant access.</p>
+        </div>
+        <button id="btn-trigger-checkout" class="btn-action" style="width: 100%; background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));">
+          Subscribe Now
+        </button>
+        <div id="upgrade-logged-out-actions" style="display: none; flex-direction: column; gap: 0.5rem; width: 100%;">
+          <button id="btn-upgrade-login" class="btn-action" style="width: 100%;">Log In to Subscribe</button>
+          <p style="font-size: 0.85rem; color: var(--text-secondary); text-align: center; margin: 0.5rem 0 0 0; width: 100%;">
+            New to AeroPDF? <a href="#" id="link-upgrade-signup" style="color: var(--accent-primary); text-decoration: none; font-weight: 600;">Create an account</a>
+          </p>
+        </div>
+      </div>
+    </div>
 
     <script type="module" src="/src/main.js"></script>
   </body>

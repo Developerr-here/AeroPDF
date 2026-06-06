@@ -315,3 +315,224 @@ export async function generatePagePreviews(pdfBuffer, onProgress) {
   }
   return previews;
 }
+
+/* ==========================================
+   PDF AI INTELLIGENCE API METHODS
+   ========================================== */
+
+export async function aiSummarizePDF(file, token) {
+  const formData = new FormData();
+  formData.append('file', file);
+  const headers = {};
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  const res = await fetch('/api/ai/summarize', {
+    method: 'POST',
+    headers: headers,
+    body: formData
+  });
+  return handleJSONResponse(res, 'AI Summarizer failed.');
+}
+
+export async function aiTranslatePDF(file, targetLanguage, token) {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('targetLanguage', targetLanguage);
+  const headers = {};
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  const res = await fetch('/api/ai/translate', {
+    method: 'POST',
+    headers: headers,
+    body: formData
+  });
+  return handleJSONResponse(res, 'AI Translation failed.');
+}
+
+/* ==========================================
+   AI IMAGE API METHODS & FALLBACKS
+   ========================================== */
+
+export async function aiRemoveBackground(file, token) {
+  const formData = new FormData();
+  formData.append('file', file);
+  const headers = {};
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  const res = await fetch('/api/image/remove-background', {
+    method: 'POST',
+    headers: headers,
+    body: formData
+  });
+
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.error || 'Background removal failed.');
+  }
+
+  const isMock = res.headers.get('x-mock-active') === 'true';
+  const arrayBuffer = await res.arrayBuffer();
+  const bytes = new Uint8Array(arrayBuffer);
+
+  if (isMock) {
+    return await processClientMockBackgroundRemoval(bytes, file.type);
+  }
+  return bytes;
+}
+
+export async function aiUpscaleImage(file, factor, token) {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('factor', factor);
+  const headers = {};
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  const res = await fetch('/api/image/upscale', {
+    method: 'POST',
+    headers: headers,
+    body: formData
+  });
+
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.error || 'Image upscaling failed.');
+  }
+
+  const isMock = res.headers.get('x-mock-active') === 'true';
+  const upscaleFactor = res.headers.get('x-upscale-factor') || factor || '2';
+  const arrayBuffer = await res.arrayBuffer();
+  const bytes = new Uint8Array(arrayBuffer);
+
+  if (isMock) {
+    return await processClientMockUpscale(bytes, upscaleFactor, file.type);
+  }
+  return bytes;
+}
+
+async function processClientMockBackgroundRemoval(bytes, mimeType) {
+  return new Promise((resolve, reject) => {
+    const blob = new Blob([bytes], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      
+      const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imgData.data;
+      
+      // Chroma-keying: Make white and near-white pixels transparent
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+        
+        // If pixel is near-white (R > 215, G > 215, B > 215)
+        if (r > 215 && g > 215 && b > 215) {
+          data[i + 3] = 0; // Set alpha to 0 (fully transparent)
+        }
+      }
+      
+      ctx.putImageData(imgData, 0, 0);
+      canvas.toBlob((resultBlob) => {
+        if (!resultBlob) return reject(new Error('Failed to create transparent image blob.'));
+        resultBlob.arrayBuffer().then(ab => {
+          resolve(new Uint8Array(ab));
+        });
+      }, 'image/png');
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('Failed to load image for transparent background processing.'));
+    };
+    img.src = url;
+  });
+}
+
+async function processClientMockUpscale(bytes, factor, mimeType) {
+  return new Promise((resolve, reject) => {
+    const scale = parseInt(factor || '2');
+    const blob = new Blob([bytes], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width * scale;
+      canvas.height = img.height * scale;
+      const ctx = canvas.getContext('2d');
+      
+      // Draw image scaled up (bilinear smoothing is on by default)
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      
+      // Apply a simple sharpening kernel to improve resolution appearance
+      const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imgData.data;
+      const w = canvas.width;
+      const h = canvas.height;
+      
+      // 3x3 convolution sharpen filter
+      const weights = [
+         0, -0.5,  0,
+        -0.5,  3, -0.5,
+         0, -0.5,  0
+      ];
+      const side = Math.round(Math.sqrt(weights.length));
+      const halfSide = Math.floor(side / 2);
+      
+      const output = ctx.createImageData(w, h);
+      const dst = output.data;
+      
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          const sy = y;
+          const sx = x;
+          const dstOff = (y * w + x) * 4;
+          
+          let r = 0, g = 0, b = 0, a = 0;
+          for (let cy = 0; cy < side; cy++) {
+            for (let cx = 0; cx < side; cx++) {
+              const scy = Math.min(h - 1, Math.max(0, sy + cy - halfSide));
+              const scx = Math.min(w - 1, Math.max(0, sx + cx - halfSide));
+              const srcOff = (scy * w + scx) * 4;
+              const wt = weights[cy * side + cx];
+              r += data[srcOff] * wt;
+              g += data[srcOff + 1] * wt;
+              b += data[srcOff + 2] * wt;
+              a += data[srcOff + 3] * wt;
+            }
+          }
+          
+          dst[dstOff] = Math.min(255, Math.max(0, r));
+          dst[dstOff + 1] = Math.min(255, Math.max(0, g));
+          dst[dstOff + 2] = Math.min(255, Math.max(0, b));
+          dst[dstOff + 3] = data[dstOff + 3]; // keep original alpha
+        }
+      }
+      
+      ctx.putImageData(output, 0, 0);
+      
+      canvas.toBlob((resultBlob) => {
+        if (!resultBlob) return reject(new Error('Failed to create upscaled image blob.'));
+        resultBlob.arrayBuffer().then(ab => {
+          resolve(new Uint8Array(ab));
+        });
+      }, mimeType);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('Failed to load image for upscaling.'));
+    };
+    img.src = url;
+  });
+}
