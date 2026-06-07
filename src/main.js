@@ -238,6 +238,16 @@ function setupEventListeners() {
     }
   });
 
+  // Category tabs filtering
+  document.querySelectorAll('.category-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      const cat = tab.dataset.category;
+      filterCategoryColumns(cat);
+    });
+  });
+
   setupCardMouseEffect();
 }
 
@@ -354,6 +364,31 @@ function navigateToDashboard() {
   document.getElementById('blog-page').style.display = 'none';
   document.getElementById('btn-back-to-dashboard').style.display = 'none';
   document.getElementById('dashboard-page').style.display = 'block';
+
+  // Reset category tabs to "All Tools"
+  document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
+  const allTab = document.querySelector('.category-tab[data-category="all"]');
+  if (allTab) allTab.classList.add('active');
+  filterCategoryColumns('all');
+}
+
+function filterCategoryColumns(category) {
+  const columns = document.querySelectorAll('.category-column');
+  columns.forEach(col => {
+    if (category === 'all') {
+      col.style.display = 'flex';
+    } else if (category === 'organize') {
+      col.style.display = col.classList.contains('category-organize') ? 'flex' : 'none';
+    } else if (category === 'optimize') {
+      col.style.display = col.classList.contains('category-optimize') ? 'flex' : 'none';
+    } else if (category === 'convert') {
+      col.style.display = (col.classList.contains('category-to-pdf') || col.classList.contains('category-from-pdf')) ? 'flex' : 'none';
+    } else if (category === 'edit') {
+      col.style.display = (col.classList.contains('category-edit') || col.classList.contains('category-image-tools')) ? 'flex' : 'none';
+    } else if (category === 'security') {
+      col.style.display = col.classList.contains('category-security') ? 'flex' : 'none';
+    }
+  });
 }
 
 function toggleSettingsPanels(tool) {
