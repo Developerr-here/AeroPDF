@@ -228,6 +228,7 @@ function setupEventListeners() {
 
   document.getElementById('html-textarea').addEventListener('input', updateProcessButtonState);
   document.getElementById('html-url-input').addEventListener('input', updateProcessButtonState);
+  document.getElementById('pdf-password-input').addEventListener('input', updateProcessButtonState);
   document.getElementById('pdf-unlock-password').addEventListener('input', updateProcessButtonState);
   
   document.getElementById('btn-copy-ai-result').addEventListener('click', () => {

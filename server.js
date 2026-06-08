@@ -7,9 +7,11 @@ import bcrypt from 'bcryptjs';
 import Stripe from 'stripe';
 // import { GoogleGenerativeAI } from '@google/generative-ai'; // Removed in favor of xAI Grok API fetch integration
 import { PDFParse } from 'pdf-parse';
+import XLSX from 'xlsx';
 import { rateLimit } from 'express-rate-limit';
 import { PDFDocument, degrees, rgb, StandardFonts } from 'pdf-lib';
 import { encryptPDF } from '@pdfsmaller/pdf-encrypt-lite';
+import { decryptPDF } from '@pdfsmaller/pdf-decrypt';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -1016,7 +1018,11 @@ app.post('/api/office-to-pdf', upload.single('file'), checkUploadLimit, apiLimit
     const file = req.file;
     if (!file) return res.status(400).json({ error: 'Document file is required.' });
 
+    const buffer = fs.readFileSync(file.path);
     const isDocx = file.originalname.toLowerCase().endsWith('.docx');
+    const isXlsx = file.originalname.toLowerCase().endsWith('.xlsx') || 
+                   file.originalname.toLowerCase().endsWith('.xls') ||
+                   file.originalname.toLowerCase().endsWith('.csv');
 
     if (isDocx) {
       const result = await mammoth.extractRawText({ path: file.path });
@@ -1075,7 +1081,92 @@ app.post('/api/office-to-pdf', upload.single('file'), checkUploadLimit, apiLimit
       return res.send(Buffer.from(bytes));
     }
 
-    // Fallback for non-docx office files (xlsx, pptx)
+    if (isXlsx) {
+      const workbook = XLSX.read(buffer, { type: 'buffer' });
+      fs.unlink(file.path, () => {});
+
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+      const pdfDoc = await PDFDocument.create();
+      const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+      const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+      const fontSize = 9;
+      const margin = 30;
+      const pageWidth = 595.28;
+      const pageHeight = 841.89;
+      const contentWidth = pageWidth - (margin * 2);
+
+      let page = pdfDoc.addPage([pageWidth, pageHeight]);
+      let y = pageHeight - margin;
+
+      // Draw title
+      const title = file.originalname;
+      page.drawText(`Spreadsheet Export: ${title}`, { x: margin, y, size: 14, font: fontBold, color: rgb(0.12, 0.16, 0.3) });
+      y -= 25;
+
+      // Determine max columns in the sheet
+      let maxCols = 1;
+      rows.forEach(r => {
+        if (Array.isArray(r) && r.length > maxCols) maxCols = r.length;
+      });
+      if (maxCols > 8) maxCols = 8; // Cap columns to fit page comfortably
+
+      const colWidth = contentWidth / maxCols;
+      const rowHeight = 18;
+
+      for (let rIdx = 0; rIdx < rows.length; rIdx++) {
+        const row = rows[rIdx] || [];
+        // Check page boundary
+        if (y - rowHeight < margin) {
+          page = pdfDoc.addPage([pageWidth, pageHeight]);
+          y = pageHeight - margin;
+        }
+
+        // Draw cells
+        for (let cIdx = 0; cIdx < maxCols; cIdx++) {
+          const val = row[cIdx] !== undefined ? String(row[cIdx]) : '';
+          const x = margin + (cIdx * colWidth);
+          
+          // Draw cell border
+          page.drawRectangle({
+            x,
+            y: y - rowHeight,
+            width: colWidth,
+            height: rowHeight,
+            borderColor: rgb(0.85, 0.85, 0.85),
+            borderWidth: 0.5,
+            color: rIdx === 0 ? rgb(0.95, 0.95, 0.98) : rgb(1, 1, 1) // Header row gray background
+          });
+
+          // Draw text inside cell (truncated to fit cell width)
+          let cellText = val;
+          let textWidth = font.widthOfTextAtSize(cellText, fontSize);
+          const maxCellTextWidth = colWidth - 6; // padding
+          while (textWidth > maxCellTextWidth && cellText.length > 0) {
+            cellText = cellText.substring(0, cellText.length - 1);
+            textWidth = font.widthOfTextAtSize(cellText + '...', fontSize);
+          }
+          if (cellText !== val) cellText += '...';
+
+          page.drawText(cellText, {
+            x: x + 3,
+            y: y - rowHeight + 5,
+            size: fontSize,
+            font: rIdx === 0 ? fontBold : font,
+            color: rgb(0.1, 0.1, 0.1)
+          });
+        }
+        y -= rowHeight;
+      }
+
+      const bytes = await pdfDoc.save();
+      res.setHeader('Content-Type', 'application/pdf');
+      return res.send(Buffer.from(bytes));
+    }
+
+    // Fallback for non-docx/non-xlsx office files (pptx)
     fs.unlink(file.path, () => {});
     const pdfDoc = await PDFDocument.create();
     const page = pdfDoc.addPage([595.28, 841.89]);
@@ -1142,9 +1233,30 @@ app.post('/api/pdf-to-office', upload.single('file'), checkUploadLimit, apiLimit
     const title = pdf.getTitle() || file.originalname;
 
     if (format === 'xlsx') {
-      const csvContent = `AeroPDF Table Extraction,,"${title}"\nPage Count,,"${pageCount}"\nExported On,,"${new Date().toLocaleString()}"`;
+      const parser = new PDFParse({ data: new Uint8Array(buffer) });
+      const pdfData = await parser.getText();
+      const rawText = pdfData.text || '';
+
+      const csvLines = [
+        `"AeroPDF Table Extraction","${title.replace(/"/g, '""')}"`,
+        `"Page Count","${pageCount}"`,
+        `"Exported On","${new Date().toLocaleString().replace(/"/g, '""')}"`,
+        `""`
+      ];
+
+      const lines = rawText.split('\n');
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed) continue;
+        // Split by tabs or 2+ consecutive spaces
+        const columns = trimmed.split(/\s{2,}|\t/);
+        const csvRow = columns.map(col => `"${col.replace(/"/g, '""')}"`).join(',');
+        csvLines.push(csvRow);
+      }
+
       res.setHeader('Content-Type', 'text/csv');
-      return res.send(Buffer.from(csvContent));
+      res.setHeader('Content-Disposition', 'attachment; filename="converted-data.csv"');
+      return res.send(Buffer.from(csvLines.join('\n'), 'utf-8'));
     } else {
       const wordHtml = `<html><body><h1>Extracted Content: ${title}</h1><p>Pages: ${pageCount}</p></body></html>`;
       res.setHeader('Content-Type', 'application/msword');
@@ -1392,12 +1504,11 @@ app.post('/api/unlock', upload.single('file'), checkUploadLimit, apiLimiter, asy
     if (!file || !password) return res.status(400).json({ error: 'File and password are required.' });
 
     const buffer = fs.readFileSync(file.path);
-    const pdf = await PDFDocument.load(buffer, { password });
+    const decryptedBytes = await decryptPDF(new Uint8Array(buffer), password);
     fs.unlink(file.path, () => {});
 
-    const bytes = await pdf.save();
     res.setHeader('Content-Type', 'application/pdf');
-    res.send(Buffer.from(bytes));
+    res.send(Buffer.from(decryptedBytes));
   } catch (err) {
     cleanTempFiles(req);
     res.status(500).json({ error: 'Invalid password. Decryption rejected.' });

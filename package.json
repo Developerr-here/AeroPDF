@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
+    "@pdfsmaller/pdf-decrypt": "^1.0.1",
     "@pdfsmaller/pdf-encrypt-lite": "^1.0.2",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
@@ -30,6 +31,7 @@
     "pg-hstore": "^2.3.4",
     "sequelize": "^6.37.8",
     "sqlite3": "^6.0.1",
-    "stripe": "^22.2.0"
+    "stripe": "^22.2.0",
+    "xlsx": "^0.18.5"
   }
 }
