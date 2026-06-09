@@ -57,6 +57,10 @@ export const User = sequelize.define('User', {
     type: DataTypes.BOOLEAN,
     defaultValue: false
   },
+  display_name: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
   stripe_customer_id: {
     type: DataTypes.STRING,
     allowNull: true
@@ -85,6 +89,10 @@ export const BlogPost = sequelize.define('BlogPost', {
   author_email: {
     type: DataTypes.STRING,
     allowNull: false
+  },
+  author_name: {
+    type: DataTypes.STRING,
+    allowNull: true
   }
 });
 

@@ -41,12 +41,97 @@ let signatureDataUrl = null;
 let signaturePlacement = null; // { page: 0, x: 0, y: 0, w: 100, h: 50 }
 let redactionBoxes = []; // [ { page: 0, x, y, w, h } ]
 
+// Safe storage wrapper to prevent DOMException when Tracking Prevention blocks storage access
+const memoryStorage = {};
+const safeStorage = {
+  getItem(key) {
+    try {
+      return localStorage.getItem(key);
+    } catch (e) {
+      console.warn('Storage access blocked. Falling back to in-memory storage.', e);
+      return memoryStorage[key] || null;
+    }
+  },
+  setItem(key, value) {
+    try {
+      localStorage.setItem(key, value);
+    } catch (e) {
+      console.warn('Storage access blocked. Falling back to in-memory storage.', e);
+      memoryStorage[key] = value;
+    }
+  },
+  removeItem(key) {
+    try {
+      localStorage.removeItem(key);
+    } catch (e) {
+      console.warn('Storage access blocked. Falling back to in-memory storage.', e);
+      delete memoryStorage[key];
+    }
+  }
+};
+
+const memorySessionStorage = {};
+const safeSessionStorage = {
+  getItem(key) {
+    try {
+      return sessionStorage.getItem(key);
+    } catch (e) {
+      console.warn('Session storage access blocked. Falling back to in-memory storage.', e);
+      return memorySessionStorage[key] || null;
+    }
+  },
+  setItem(key, value) {
+    try {
+      sessionStorage.setItem(key, value);
+    } catch (e) {
+      console.warn('Session storage access blocked. Falling back to in-memory storage.', e);
+      memorySessionStorage[key] = value;
+    }
+  }
+};
+
 // User Auth State
-let token = localStorage.getItem('token') || null;
+let token = safeStorage.getItem('token') || null;
 let currentUser = null;
+
+// Cumulative Size Session Tracking Helpers
+function getCumulativeUploadSize() {
+  const size = safeSessionStorage.getItem('cumulative_upload_size');
+  return size ? parseInt(size, 10) : 0;
+}
+function addCumulativeUploadSize(bytes) {
+  const current = getCumulativeUploadSize();
+  safeSessionStorage.setItem('cumulative_upload_size', current + bytes);
+}
+
+// Dev environment browser redirect helper
+function performCheckoutRedirect(url) {
+  let targetUrl = url;
+  if (targetUrl.startsWith('/') && window.location.port === '5173') {
+    targetUrl = `http://localhost:3000${targetUrl}`;
+  }
+  window.location.href = targetUrl;
+}
+
+// Global Fetch Interceptor to auto-inject auth token and cumulative session upload size
+const originalFetch = window.fetch;
+window.fetch = function (url, options = {}) {
+  if (typeof url === 'string' && url.startsWith('/api/')) {
+    if (!options.headers) {
+      options.headers = {};
+    }
+    if (token && !options.headers['Authorization'] && !options.headers['authorization']) {
+      options.headers['Authorization'] = `Bearer ${token}`;
+    }
+    const cumulativeSize = getCumulativeUploadSize().toString();
+    options.headers['x-cumulative-size'] = cumulativeSize;
+  }
+  return originalFetch(url, options);
+};
 
 // Webcam stream handler
 let webcamStream = null;
+let blogQuill = null;
 
 // Drawing Pad state
 let isDrawing = false;
@@ -89,12 +174,60 @@ const TOOL_META = {
   'upscale-image': { title: 'Image Upscaler', desc: 'Enhance resolution and quality of images.', uploadHeadline: 'Upload an image to upscale', uploadSubline: 'or drag and drop it here', accepts: 'image/png, image/jpeg, image/jpg', multiple: false }
 };
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   setupEventListeners();
   setupSignaturePad();
-  checkAuthSession();
+  await checkAuthSession();
   setupAuthEventListeners();
   setupBlogEventListeners();
+
+  // Process query parameters for Stripe payment success redirects
+  const urlParams = new URLSearchParams(window.location.search);
+  const paymentStatus = urlParams.get('payment');
+  const sessionId = urlParams.get('session_id');
+
+  if (paymentStatus) {
+    if (sessionId) {
+      showToast('Verifying payment with Stripe...', 'info');
+      try {
+        const res = await fetch('/api/stripe/verify-payment', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ sessionId })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          currentUser = data.user;
+          updateAuthNav(currentUser);
+          if (paymentStatus === 'blog-success') {
+            showToast('Payment verified successfully! You can now publish your blog article.', 'success');
+            navigateToBlog();
+          } else if (paymentStatus === 'success') {
+            showToast('Subscription verified successfully! Welcome to Premium.', 'success');
+          }
+        } else {
+          showToast(data.error || 'Payment verification failed. Please contact support.', 'error');
+        }
+      } catch (err) {
+        console.error('Payment verification failed:', err);
+        showToast('Error verifying payment with Stripe.', 'error');
+      }
+    } else {
+      if (paymentStatus === 'blog-success') {
+        showToast('Payment successful! You can now publish your blog article.', 'success');
+        navigateToBlog();
+      } else if (paymentStatus === 'success') {
+        showToast('Subscription updated successfully! Welcome to Premium.', 'success');
+      } else if (paymentStatus === 'cancel') {
+        showToast('Payment cancelled.', 'info');
+      }
+    }
+    // Clean up query parameters from the browser address bar
+    const cleanUrl = window.location.pathname;
+    window.history.replaceState({}, document.title, cleanUrl);
+  }
 });
 
 // Setup Mouse movements glow effect
@@ -519,10 +652,17 @@ async function handleFilesSelected(fileList) {
   
   // Size validation check
   const totalSize = filtered.reduce((sum, f) => sum + f.size, 0);
-  const maxFreeSize = 12 * 1024 * 1024; // 12MB limit
-  if (totalSize > maxFreeSize) {
-    if (!token || !currentUser || !currentUser.is_premium) {
-      showToast('File size exceeds the 12MB limit. Please upgrade to Premium.', 'error');
+  const maxFreeSize = 10 * 1024 * 1024; // 10MB limit
+  const cumulativeSize = getCumulativeUploadSize();
+
+  if (!token || !currentUser || !currentUser.is_premium) {
+    if (totalSize > maxFreeSize) {
+      showToast('File size exceeds the 10MB limit. Please upgrade to Premium.', 'error');
+      showAuthModal('upgrade');
+      return;
+    }
+    if (totalSize + cumulativeSize > maxFreeSize) {
+      showToast('Cumulative session upload size exceeds the 10MB limit. Please upgrade to Premium.', 'error');
       showAuthModal('upgrade');
       return;
     }
@@ -1011,6 +1151,7 @@ async function processFiles() {
             triggerFileDownload(page.bytes, `page-${page.pageNum}.pdf`, 'application/pdf');
             await new Promise(r => setTimeout(r, 200));
           }
+          addCumulativeUploadSize(uploadedFiles[0].size);
           showToast(`Split ${pages.length} pages successfully!`, 'success');
           overlay.classList.remove('active');
           return;
@@ -1076,6 +1217,7 @@ async function processFiles() {
           triggerBlobDownload(blob, `extracted-page-${img.pageNum}.png`);
           await new Promise(r => setTimeout(r, 200));
         }
+        addCumulativeUploadSize(uploadedFiles[0].size);
         showToast('All pages extracted successfully!', 'success');
         overlay.classList.remove('active');
         return;
@@ -1087,6 +1229,7 @@ async function processFiles() {
         const blobFormat = formatMap[currentTool];
         const officeBlob = await pdfToOffice(uploadedFiles[0], blobFormat);
         triggerBlobDownload(officeBlob, `extracted-data.${blobFormat}`);
+        addCumulativeUploadSize(uploadedFiles[0].size);
         showToast('Extracted document download started!', 'success');
         overlay.classList.remove('active');
         return;
@@ -1164,6 +1307,7 @@ async function processFiles() {
           aiResults.style.display = 'block';
           aiResults.scrollIntoView({ behavior: 'smooth' });
           
+          addCumulativeUploadSize(uploadedFiles[0].size);
           showToast('Summary generated successfully!', 'success');
         } catch (err) {
           showToast(err.message || 'AI Summarizer failed', 'error');
@@ -1187,6 +1331,7 @@ async function processFiles() {
           aiResults.style.display = 'block';
           aiResults.scrollIntoView({ behavior: 'smooth' });
           
+          addCumulativeUploadSize(uploadedFiles[0].size);
           showToast(`Translated to ${targetLang} successfully!`, 'success');
         } catch (err) {
           showToast(err.message || 'AI Translation failed', 'error');
@@ -1216,6 +1361,10 @@ async function processFiles() {
     if (outputBytes) {
       triggerFileDownload(outputBytes, filename, mimeType);
       showToast('Operation completed successfully!', 'success');
+      if (uploadedFiles && uploadedFiles.length > 0) {
+        const batchSize = uploadedFiles.reduce((sum, f) => sum + f.size, 0);
+        addCumulativeUploadSize(batchSize);
+      }
     }
   } catch (err) {
     console.error(err);
@@ -1276,7 +1425,7 @@ function showToast(message, type = 'success') {
    ========================================== */
 
 async function checkAuthSession() {
-  token = localStorage.getItem('token');
+  token = safeStorage.getItem('token');
   if (!token) {
     updateAuthNav(null);
     return;
@@ -1294,7 +1443,7 @@ async function checkAuthSession() {
       currentUser = data.user;
       updateAuthNav(currentUser);
     } else {
-      localStorage.removeItem('token');
+      safeStorage.removeItem('token');
       token = null;
       currentUser = null;
       updateAuthNav(null);
@@ -1330,7 +1479,7 @@ function updateAuthNav(user) {
     }
     
     document.getElementById('btn-logout').addEventListener('click', () => {
-      localStorage.removeItem('token');
+      safeStorage.removeItem('token');
       token = null;
       currentUser = null;
       updateAuthNav(null);
@@ -1424,7 +1573,7 @@ function setupAuthEventListeners() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Login failed');
       
-      localStorage.setItem('token', data.token);
+      safeStorage.setItem('token', data.token);
       token = data.token;
       currentUser = data.user;
       updateAuthNav(currentUser);
@@ -1453,7 +1602,7 @@ function setupAuthEventListeners() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Signup failed');
       
-      localStorage.setItem('token', data.token);
+      safeStorage.setItem('token', data.token);
       token = data.token;
       currentUser = data.user;
       updateAuthNav(currentUser);
@@ -1486,7 +1635,7 @@ function setupAuthEventListeners() {
       if (!res.ok) throw new Error(data.error || 'Checkout redirect failed');
       
       showToast('Redirecting to secure Stripe billing portal...', 'info');
-      window.location.href = data.url;
+      performCheckoutRedirect(data.url);
     } catch (err) {
       showToast(err.message, 'error');
     }
@@ -1499,6 +1648,102 @@ function setupAuthEventListeners() {
 
 function setupBlogEventListeners() {
   document.getElementById('btn-goto-blog').addEventListener('click', navigateToBlog);
+
+  // Close Compose Modal handlers
+  document.getElementById('btn-close-compose').addEventListener('click', () => {
+    document.getElementById('blog-compose-overlay').classList.remove('active');
+  });
+  document.getElementById('btn-cancel-compose').addEventListener('click', () => {
+    document.getElementById('blog-compose-overlay').classList.remove('active');
+  });
+
+  // Attach File in Blog compose modal handler
+  document.getElementById('blog-file-attach').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Check size limit for blog attachments (20MB)
+    const maxAttachSize = 20 * 1024 * 1024;
+    if (file.size > maxAttachSize) {
+      showToast('Attachment exceeds the 20MB limit.', 'error');
+      e.target.value = '';
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      showToast('Uploading attachment...', 'info');
+      const res = await fetch('/api/blog/upload', {
+        method: 'POST',
+        body: formData
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to upload attachment.');
+
+      showToast('Attachment uploaded successfully!', 'success');
+
+      if (!blogQuill) return;
+
+      const range = blogQuill.getSelection() || { index: blogQuill.getLength() };
+      if (file.type.startsWith('image/')) {
+        blogQuill.insertEmbed(range.index, 'image', data.url);
+      } else {
+        // Link to file download
+        blogQuill.insertText(range.index, `[Download ${file.name}]`, 'link', data.url);
+      }
+    } catch (err) {
+      showToast(err.message, 'error');
+    } finally {
+      e.target.value = ''; // Reset file input
+    }
+  });
+
+  // Submit Blog compose modal handler
+  document.getElementById('blog-compose-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!blogQuill) return;
+
+    const title = document.getElementById('blog-title').value.trim();
+    const content = blogQuill.root.innerHTML;
+
+    if (!title || blogQuill.getText().trim().length === 0) {
+      showToast('Please enter both title and content for your article.', 'error');
+      return;
+    }
+
+    try {
+      showToast('Publishing article...', 'info');
+      const res = await fetch('/api/blog', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ title, content })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to publish article');
+
+      showToast('Article published successfully!', 'success');
+
+      // Clear compose form
+      document.getElementById('blog-title').value = '';
+      blogQuill.setContents([]);
+
+      // Hide modal
+      document.getElementById('blog-compose-overlay').classList.remove('active');
+
+      // Update user state and re-render compose sidebar (permission is consumed)
+      if (currentUser) {
+        currentUser.can_blog = false;
+        updateAuthNav(currentUser);
+      }
+      loadBlogPosts();
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  });
 }
 
 function navigateToBlog() {
@@ -1545,14 +1790,15 @@ async function loadBlogPosts() {
       const dateStr = new Date(post.createdAt).toLocaleDateString(undefined, {
         year: 'numeric', month: 'long', day: 'numeric'
       });
+      const authorName = post.author_name || post.author_email;
       return `
         <article class="blog-post-card">
           <div class="blog-post-header">
-            <span class="blog-post-author">By ${post.author_email}</span>
+            <span class="blog-post-author">By ${escapeHTML(authorName)}</span>
             <span>${dateStr}</span>
           </div>
           <h3 style="margin-top: 0.25rem; margin-bottom: 0.5rem;">${escapeHTML(post.title)}</h3>
-          <div class="blog-post-content">${escapeHTML(post.content)}</div>
+          <div class="blog-post-content ql-editor" style="padding: 0; height: auto; overflow-y: visible; background: transparent;">${post.content}</div>
         </article>
       `;
     }).join('');
@@ -1581,81 +1827,112 @@ function renderBlogComposeSection() {
     return;
   }
   
+  const displayNamePlaceholder = currentUser?.display_name || currentUser?.email || 'Your Author Name';
+  const displayNameValue = currentUser?.display_name || '';
+
+  // Render display name profile box + action buttons
+  let actionHtml = '';
   if (currentUser && !currentUser.can_blog) {
-    container.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 1rem; text-align: center; padding: 1rem 0;">
+    actionHtml = `
+      <div style="display: flex; flex-direction: column; gap: 1rem; text-align: center; padding: 0.5rem 0 0 0;">
         <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
-          You need publisher authorization. Click below to pay the one-time $12 publishing fee via Stripe.
+          You need publisher authorization. Click below to pay the $12 fee via Stripe to write an article.
         </p>
         <button id="btn-pay-blog-fee" class="btn-action" style="width: 100%; background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));">
           Pay $12 Publishing Fee
         </button>
       </div>
     `;
-    
-    document.getElementById('btn-pay-blog-fee').addEventListener('click', async () => {
-      try {
-        const res = await fetch('/api/stripe/blog-checkout', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Stripe redirect failed');
-        
-        showToast('Redirecting to Stripe payment page...', 'info');
-        window.location.href = data.url;
-      } catch (err) {
-        showToast(err.message, 'error');
-      }
-    });
-    return;
+  } else {
+    actionHtml = `
+      <div style="display: flex; flex-direction: column; gap: 1rem; width: 100%;">
+        <button id="btn-open-compose" class="btn-action" style="width: 100%; background: var(--accent-success); font-weight: 600; padding: 0.75rem 1rem;">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="margin-right: 0.5rem; display: inline-block; vertical-align: middle;">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          </svg>
+          Write New Article
+        </button>
+      </div>
+    `;
   }
-  
+
   container.innerHTML = `
-    <form id="blog-compose-form" class="compose-box">
-      <div class="input-group">
-        <label class="input-label" for="blog-title">Article Title</label>
-        <input type="text" id="blog-title" class="text-input" placeholder="Title of your post" required />
+    <div style="display: flex; flex-direction: column; gap: 1.25rem; width: 100%;">
+      <div class="blog-author-settings" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 0.75rem; padding: 1rem; width: 100%;">
+        <h4 style="margin-bottom: 0.5rem; font-size: 0.9rem;">Author Profile Settings</h4>
+        <form id="author-name-form" style="display: flex; flex-direction: column; gap: 0.5rem; width: 100%;">
+          <div style="width: 100%;">
+            <label class="input-label" style="font-size: 0.8rem; margin-bottom: 0.25rem;">Display Name</label>
+            <input type="text" id="blog-author-name" class="text-input" placeholder="${escapeHTML(displayNamePlaceholder)}" value="${escapeHTML(displayNameValue)}" style="height: 36px; font-size: 0.85rem; width: 100%;" />
+          </div>
+          <button type="submit" class="btn-action" style="height: 36px; font-size: 0.85rem; background: var(--accent-primary); width: 100%;">Update Display Name</button>
+        </form>
       </div>
-      <div class="input-group">
-        <label class="input-label" for="blog-content">Content</label>
-        <textarea id="blog-content" class="text-input" style="height: 150px; resize: vertical;" placeholder="Write your content here..." required></textarea>
-      </div>
-      <button type="submit" class="btn-action" style="background: var(--accent-success); width: 100%;">
-        Publish Post
-      </button>
-    </form>
+      ${actionHtml}
+    </div>
   `;
-  
-  document.getElementById('blog-compose-form').addEventListener('submit', async (e) => {
+
+  // Bind display name form submit
+  document.getElementById('author-name-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const title = document.getElementById('blog-title').value;
-    const content = document.getElementById('blog-content').value;
-    
+    const displayName = document.getElementById('blog-author-name').value;
     try {
-      const res = await fetch('/api/blog', {
+      const res = await fetch('/api/user/display-name', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ title, content })
+        body: JSON.stringify({ displayName })
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to publish article');
-      
-      showToast('Article published successfully!', 'success');
+      if (!res.ok) throw new Error(data.error || 'Failed to update display name');
+
+      currentUser.display_name = data.displayName;
+      showToast('Display name updated successfully!', 'success');
       loadBlogPosts();
-      
-      document.getElementById('blog-title').value = '';
-      document.getElementById('blog-content').value = '';
+      renderBlogComposeSection();
     } catch (err) {
       showToast(err.message, 'error');
     }
   });
+
+  // Bind Action Buttons
+  if (currentUser && !currentUser.can_blog) {
+    document.getElementById('btn-pay-blog-fee').addEventListener('click', async () => {
+      try {
+        const res = await fetch('/api/stripe/blog-checkout', { method: 'POST' });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Stripe redirect failed');
+        
+        showToast('Redirecting to Stripe payment page...', 'info');
+        performCheckoutRedirect(data.url);
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    });
+  } else {
+    document.getElementById('btn-open-compose').addEventListener('click', () => {
+      document.getElementById('blog-compose-overlay').classList.add('active');
+      
+      // Initialize Quill if not already done
+      if (!blogQuill) {
+        blogQuill = new Quill('#blog-editor-quill', {
+          theme: 'snow',
+          placeholder: 'Write your masterpiece here...',
+          modules: {
+            toolbar: [
+              [{ 'header': [1, 2, 3, false] }],
+              ['bold', 'italic', 'underline', 'strike'],
+              [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+              ['link', 'blockquote', 'code-block'],
+              [{ 'align': [] }],
+              ['clean']
+            ]
+          }
+        });
+      }
+    });
+  }
 }
 
 function escapeHTML(str) {

@@ -1,4 +1,6 @@
 import 'dotenv/config';
+import dns from 'dns';
+dns.setDefaultResultOrder('ipv4first');
 import express from 'express';
 import multer from 'multer';
 import cors from 'cors';
@@ -44,12 +46,20 @@ if (!fs.existsSync('uploads')) {
   fs.mkdirSync('uploads');
 }
 
+// Ensure blog-uploads directory exists
+const blogUploadsDir = path.join(__dirname, 'blog-uploads');
+if (!fs.existsSync(blogUploadsDir)) {
+  fs.mkdirSync(blogUploadsDir, { recursive: true });
+}
+
 // Enable CORS
 app.use(cors());
 
 // Custom Request Logger middleware
 app.use((req, res, next) => {
-  console.log(`[Express] Request: ${req.method} ${req.path}`);
+  if (req.path !== '/api/log' && !req.path.includes('log')) {
+    console.log(`[Express] Request: ${req.method} ${req.path}`);
+  }
   next();
 });
 
@@ -80,10 +90,29 @@ app.use((req, res, next) => {
 });
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
+// Serve blog uploads statically
+app.use('/api/blog-uploads', express.static(blogUploadsDir));
+
 // Multer configured to stream uploads to disk rather than keeping in RAM
 const upload = multer({ 
   dest: 'uploads/',
   limits: { fileSize: 100 * 1024 * 1024 } // 100MB limit
+});
+
+// Multer storage engine for blog uploads, keeping original file extensions
+const blogStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'blog-uploads/');
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    cb(null, file.fieldname + '-' + uniqueSuffix + ext);
+  }
+});
+const blogUpload = multer({ 
+  storage: blogStorage,
+  limits: { fileSize: 50 * 1024 * 1024 } // 50MB limit for blog uploads
 });
 
 // Helper: Convert HEX color to RGB object
@@ -124,11 +153,10 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
-// Limit Middleware: Validate file size (12MB limit for free tier)
+// Limit Middleware: Validate file size (10MB limit for free tier, including session cumulative size)
 const checkUploadLimit = async (req, res, next) => {
-  if (!req.file && (!req.files || req.files.length === 0)) {
-    return next();
-  }
+  const clientCumulativeSize = parseInt(req.headers['x-cumulative-size'] || '0', 10);
+  const maxFreeSize = 10 * 1024 * 1024; // 10MB limit
 
   let totalSize = 0;
   if (req.file) {
@@ -137,16 +165,14 @@ const checkUploadLimit = async (req, res, next) => {
     totalSize = req.files.reduce((sum, f) => sum + f.size, 0);
   }
 
-  const maxFreeSize = 12 * 1024 * 1024; // 12MB limit
-
-  if (totalSize > maxFreeSize) {
+  if (clientCumulativeSize > maxFreeSize || totalSize + clientCumulativeSize > maxFreeSize) {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
 
     if (!token) {
       // Clean temp upload files
       cleanTempFiles(req);
-      return res.status(403).json({ error: 'File size exceeds 12MB limit. Please log in and upgrade to Premium.' });
+      return res.status(403).json({ error: 'File size exceeds 10MB limit. Please log in and upgrade to Premium.' });
     }
 
     try {
@@ -161,7 +187,7 @@ const checkUploadLimit = async (req, res, next) => {
     }
 
     cleanTempFiles(req);
-    return res.status(403).json({ error: 'File size exceeds 12MB limit. Please upgrade to Premium.' });
+    return res.status(403).json({ error: 'File size exceeds 10MB limit. Please upgrade to Premium.' });
   }
 
   next();
@@ -193,7 +219,7 @@ app.post('/api/auth/signup', authLimiter, async (req, res) => {
     const user = await User.create({ email, password: hashedPassword });
 
     const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
-    res.json({ token, user: { id: user.id, email: user.email, is_premium: user.is_premium, can_blog: user.can_blog } });
+    res.json({ token, user: { id: user.id, email: user.email, is_premium: user.is_premium, can_blog: user.can_blog, display_name: user.display_name } });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Signup processing failed.' });
@@ -212,7 +238,7 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
     if (!match) return res.status(400).json({ error: 'Invalid email or password.' });
 
     const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
-    res.json({ token, user: { id: user.id, email: user.email, is_premium: user.is_premium, can_blog: user.can_blog } });
+    res.json({ token, user: { id: user.id, email: user.email, is_premium: user.is_premium, can_blog: user.can_blog, display_name: user.display_name } });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Login processing failed.' });
@@ -223,7 +249,7 @@ app.get('/api/auth/me', authenticateToken, async (req, res) => {
   try {
     const user = await User.findByPk(req.user.id);
     if (!user) return res.status(404).json({ error: 'User profile not found.' });
-    res.json({ user: { id: user.id, email: user.email, is_premium: user.is_premium, can_blog: user.can_blog } });
+    res.json({ user: { id: user.id, email: user.email, is_premium: user.is_premium, can_blog: user.can_blog, display_name: user.display_name } });
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch user state.' });
   }
@@ -269,7 +295,7 @@ app.post('/api/stripe/checkout', authenticateToken, async (req, res) => {
         quantity: 1
       }],
       mode: 'subscription',
-      success_url: `${req.headers.origin || 'http://localhost:5173'}/?payment=success`,
+      success_url: `${req.headers.origin || 'http://localhost:5173'}/?payment=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.origin || 'http://localhost:5173'}/?payment=cancel`,
       metadata: {
         userId: user.id,
@@ -292,7 +318,7 @@ app.post('/api/stripe/blog-checkout', authenticateToken, async (req, res) => {
 
     const isMock = STRIPE_SECRET_KEY === 'sk_test_mockstripekey';
     if (isMock) {
-      const mockUrl = `/api/stripe/mock-checkout?type=blog_pass&userId=${user.id}&success_url=${encodeURIComponent(req.headers.origin || 'http://localhost:5173')}/?payment=success`;
+      const mockUrl = `/api/stripe/mock-checkout?type=blog_pass&userId=${user.id}&success_url=${encodeURIComponent(req.headers.origin || 'http://localhost:5173')}/?payment=blog-success`;
       return res.json({ url: mockUrl });
     }
 
@@ -311,15 +337,15 @@ app.post('/api/stripe/blog-checkout', authenticateToken, async (req, res) => {
         price_data: {
           currency: 'usd',
           product_data: {
-            name: 'AeroPDF Blog Writer Lifetime Pass',
-            description: 'Allows you to publish articles on the AeroPDF Blog page'
+            name: 'AeroPDF Single Blog Post Publishing Pass',
+            description: 'Allows you to publish a single article on the AeroPDF Blog page'
           },
           unit_amount: 1200 // $12.00
         },
         quantity: 1
       }],
       mode: 'payment',
-      success_url: `${req.headers.origin || 'http://localhost:5173'}/?payment=success`,
+      success_url: `${req.headers.origin || 'http://localhost:5173'}/?payment=blog-success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.origin || 'http://localhost:5173'}/?payment=cancel`,
       metadata: {
         userId: user.id,
@@ -354,6 +380,62 @@ app.get('/api/stripe/mock-checkout', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).send('Mock payment processing failed.');
+  }
+});
+
+// Route: Verify Stripe checkout session status (Fallback for local dev without webhooks)
+app.post('/api/stripe/verify-payment', authenticateToken, async (req, res) => {
+  try {
+    const { sessionId } = req.body;
+    if (!sessionId) return res.status(400).json({ error: 'Session ID is required.' });
+
+    const isMock = STRIPE_SECRET_KEY === 'sk_test_mockstripekey';
+    if (isMock) {
+      const user = await User.findByPk(req.user.id);
+      return res.json({ 
+        success: true, 
+        user: { 
+          id: user.id, 
+          email: user.email, 
+          is_premium: user.is_premium, 
+          can_blog: user.can_blog, 
+          display_name: user.display_name 
+        } 
+      });
+    }
+
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    if (!session) return res.status(404).json({ error: 'Checkout session not found.' });
+
+    const user = await User.findByPk(req.user.id);
+    if (!user) return res.status(404).json({ error: 'User not found.' });
+
+    if (session.payment_status === 'paid') {
+      const type = session.metadata.type;
+      if (type === 'subscription') {
+        user.is_premium = true;
+      } else if (type === 'blog_pass') {
+        user.can_blog = true;
+      }
+      await user.save();
+      
+      console.log(`[Stripe Verification] Verified payment and updated ${user.email} status (type: ${type}).`);
+      return res.json({ 
+        success: true, 
+        user: { 
+          id: user.id, 
+          email: user.email, 
+          is_premium: user.is_premium, 
+          can_blog: user.can_blog, 
+          display_name: user.display_name 
+        } 
+      });
+    }
+
+    res.json({ success: false, error: 'Payment session is not fully paid.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Stripe verification failed: ' + err.message });
   }
 });
 
@@ -424,12 +506,68 @@ app.post('/api/blog', authenticateToken, async (req, res) => {
       title,
       content,
       author_id: user.id,
-      author_email: user.email
+      author_email: user.email,
+      author_name: user.display_name || user.email
     });
+
+    // Consume the blog publishing token
+    user.can_blog = false;
+    await user.save();
 
     res.json({ post });
   } catch (err) {
     res.status(500).json({ error: 'Failed to create blog post.' });
+  }
+});
+
+// Route: Upload file or image for blog posts
+app.post('/api/blog/upload', authenticateToken, blogUpload.single('file'), async (req, res) => {
+  try {
+    const file = req.file;
+    if (!file) return res.status(400).json({ error: 'No file uploaded.' });
+
+    // File URL path
+    const fileUrl = `/api/blog-uploads/${file.filename}`;
+    res.json({ url: fileUrl, name: file.originalname });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to upload blog file.' });
+  }
+});
+
+// Route: Update user display name and update past posts
+app.post('/api/user/display-name', authenticateToken, async (req, res) => {
+  try {
+    const { displayName } = req.body;
+    if (displayName === undefined) {
+      return res.status(400).json({ error: 'Display name is required.' });
+    }
+
+    const user = await User.findByPk(req.user.id);
+    if (!user) return res.status(404).json({ error: 'User not found.' });
+
+    const updatedName = displayName.trim() || null;
+    user.display_name = updatedName;
+    await user.save();
+
+    // Propagate display name to all past blog posts
+    const nameForBlogs = updatedName || user.email;
+    await BlogPost.update({ author_name: nameForBlogs }, { where: { author_id: user.id } });
+
+    res.json({ 
+      success: true, 
+      displayName: updatedName, 
+      user: { 
+        id: user.id, 
+        email: user.email, 
+        is_premium: user.is_premium, 
+        can_blog: user.can_blog, 
+        display_name: user.display_name 
+      } 
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to update display name.' });
   }
 });
 
@@ -596,42 +734,43 @@ app.post('/api/image/remove-background', upload.single('file'), checkUploadLimit
     if (!file) return res.status(400).json({ error: 'Image file is required.' });
 
     fileBuffer = fs.readFileSync(file.path);
-    const isMock = !REMOVE_BG_API_KEY || REMOVE_BG_API_KEY.includes('mock') || REMOVE_BG_API_KEY.includes('replace-me');
-    if (isMock) {
-      fs.unlink(file.path, () => {});
-      res.setHeader('x-mock-active', 'true');
-      res.setHeader('Content-Type', file.mimetype);
-      return res.send(fileBuffer);
-    }
 
-    const formData = new FormData();
-    const fileBlob = new Blob([fileBuffer], { type: file.mimetype });
-    formData.append('image_file', fileBlob, file.originalname);
-    formData.append('size', 'auto');
-    fs.unlink(file.path, () => {});
+    const isRemoveBgValid = REMOVE_BG_API_KEY && !REMOVE_BG_API_KEY.includes('mock') && !REMOVE_BG_API_KEY.includes('replace-me');
 
-    try {
-      const response = await fetch('https://api.remove.bg/v1.0/removebg', {
-        method: 'POST',
-        headers: {
-          'X-Api-Key': REMOVE_BG_API_KEY
-        },
-        body: formData
-      });
+    if (isRemoveBgValid) {
+      try {
+        console.log('[Remove.bg] Sending request to Remove.bg API...');
+        const formData = new FormData();
+        const fileBlob = new Blob([fileBuffer], { type: file.mimetype });
+        formData.append('image_file', fileBlob, file.originalname);
+        formData.append('size', 'auto');
 
-      if (!response.ok) {
-        const errText = await response.text();
-        console.warn(`[Remove.bg API Error] Status ${response.status}: ${errText}. Falling back to browser canvas mode.`);
-        res.setHeader('x-mock-active', 'true');
-        res.setHeader('Content-Type', file.mimetype);
-        return res.send(fileBuffer);
+        const response = await fetch('https://api.remove.bg/v1.0/removebg', {
+          method: 'POST',
+          headers: {
+            'X-Api-Key': REMOVE_BG_API_KEY
+          },
+          body: formData
+        });
+
+        if (!response.ok) {
+          const errText = await response.text();
+          throw new Error(`Remove.bg API returned status ${response.status}: ${errText}`);
+        }
+
+        const arrayBuffer = await response.arrayBuffer();
+        fs.unlink(file.path, () => {});
+        res.setHeader('Content-Type', 'image/png');
+        return res.send(Buffer.from(arrayBuffer));
+      } catch (err) {
+        fs.unlink(file.path, () => {});
+        console.error(`[Remove.bg API Error]: ${err.message}`);
+        return res.status(500).json({ error: `Background removal failed: ${err.message}` });
       }
-
-      const arrayBuffer = await response.arrayBuffer();
-      res.setHeader('Content-Type', 'image/png');
-      return res.send(Buffer.from(arrayBuffer));
-    } catch (apiErr) {
-      console.warn(`[Remove.bg Connection Error]: ${apiErr.message}. Falling back to browser canvas mode.`);
+    } else {
+      // Free fallback mode: send the original file back with x-mock-active header to trigger browser canvas processing
+      console.log('[Background Remover] No active Remove.bg API key configured. Falling back to browser-side chroma-key mode.');
+      fs.unlink(file.path, () => {});
       res.setHeader('x-mock-active', 'true');
       res.setHeader('Content-Type', file.mimetype);
       return res.send(fileBuffer);
@@ -651,26 +790,19 @@ app.post('/api/image/upscale', upload.single('file'), checkUploadLimit, apiLimit
     if (!file) return res.status(400).json({ error: 'Image file is required.' });
 
     fileBuffer = fs.readFileSync(file.path);
-    const isMock = (!STABILITY_API_KEY && !DEEPAI_API_KEY) || 
-                   (STABILITY_API_KEY && STABILITY_API_KEY.includes('mock')) ||
-                   (DEEPAI_API_KEY && DEEPAI_API_KEY.includes('mock'));
-    if (isMock) {
-      fs.unlink(file.path, () => {});
-      res.setHeader('x-mock-active', 'true');
-      res.setHeader('x-upscale-factor', factor || '2');
-      res.setHeader('Content-Type', file.mimetype);
-      return res.send(fileBuffer);
-    }
 
-    if (STABILITY_API_KEY) {
-      const formData = new FormData();
-      const fileBlob = new Blob([fileBuffer], { type: file.mimetype });
-      formData.append('image', fileBlob, file.originalname);
-      formData.append('prompt', 'upscale image, high quality, detailed, sharp focus');
-      formData.append('output_format', 'png');
-      fs.unlink(file.path, () => {});
+    const isStabilityValid = STABILITY_API_KEY && !STABILITY_API_KEY.includes('mock') && !STABILITY_API_KEY.includes('replace-me');
+    const isDeepAIValid = DEEPAI_API_KEY && !DEEPAI_API_KEY.includes('mock') && !DEEPAI_API_KEY.includes('replace-me');
 
+    if (isStabilityValid) {
       try {
+        console.log('[Stability AI] Sending request to Upscaler API...');
+        const formData = new FormData();
+        const fileBlob = new Blob([fileBuffer], { type: file.mimetype });
+        formData.append('image', fileBlob, file.originalname);
+        formData.append('prompt', 'upscale image, high quality, detailed, sharp focus');
+        formData.append('output_format', 'png');
+
         const response = await fetch('https://api.stability.ai/v2beta/stable-image/upscale/conservative', {
           method: 'POST',
           headers: {
@@ -682,32 +814,25 @@ app.post('/api/image/upscale', upload.single('file'), checkUploadLimit, apiLimit
 
         if (!response.ok) {
           const errText = await response.text();
-          console.warn(`[Stability AI API Error] Status ${response.status}: ${errText}. Falling back to browser canvas mode.`);
-          res.setHeader('x-mock-active', 'true');
-          res.setHeader('x-upscale-factor', factor || '2');
-          res.setHeader('Content-Type', file.mimetype);
-          return res.send(fileBuffer);
+          throw new Error(`Stability AI API returned status ${response.status}: ${errText}`);
         }
 
         const arrayBuffer = await response.arrayBuffer();
+        fs.unlink(file.path, () => {});
         res.setHeader('Content-Type', 'image/png');
         return res.send(Buffer.from(arrayBuffer));
-      } catch (apiErr) {
-        console.warn(`[Stability AI Connection Error]: ${apiErr.message}. Falling back to browser canvas mode.`);
-        res.setHeader('x-mock-active', 'true');
-        res.setHeader('x-upscale-factor', factor || '2');
-        res.setHeader('Content-Type', file.mimetype);
-        return res.send(fileBuffer);
+      } catch (err) {
+        fs.unlink(file.path, () => {});
+        console.error(`[Stability AI API Error]: ${err.message}`);
+        return res.status(500).json({ error: `Image upscaling failed: ${err.message}` });
       }
-    }
-
-    if (DEEPAI_API_KEY) {
-      const formData = new FormData();
-      const fileBlob = new Blob([fileBuffer], { type: file.mimetype });
-      formData.append('image', fileBlob, file.originalname);
-      fs.unlink(file.path, () => {});
-
+    } else if (isDeepAIValid) {
       try {
+        console.log('[DeepAI] Sending request to Super Resolution API...');
+        const formData = new FormData();
+        const fileBlob = new Blob([fileBuffer], { type: file.mimetype });
+        formData.append('image', fileBlob, file.originalname);
+
         const response = await fetch('https://api.deepai.org/api/super-resolution', {
           method: 'POST',
           headers: {
@@ -718,29 +843,32 @@ app.post('/api/image/upscale', upload.single('file'), checkUploadLimit, apiLimit
 
         if (!response.ok) {
           const errText = await response.text();
-          console.warn(`[DeepAI API Error] Status ${response.status}: ${errText}. Falling back to browser canvas mode.`);
-          res.setHeader('x-mock-active', 'true');
-          res.setHeader('x-upscale-factor', factor || '2');
-          res.setHeader('Content-Type', file.mimetype);
-          return res.send(fileBuffer);
+          throw new Error(`DeepAI API returned status ${response.status}: ${errText}`);
         }
 
         const data = await response.json();
         if (!data.output_url) {
-          throw new Error('DeepAI upscaling failed - no output URL returned.');
+          throw new Error('No output URL returned.');
         }
 
         const imgRes = await fetch(data.output_url);
         const arrayBuffer = await imgRes.arrayBuffer();
+        fs.unlink(file.path, () => {});
         res.setHeader('Content-Type', 'image/png');
         return res.send(Buffer.from(arrayBuffer));
-      } catch (apiErr) {
-        console.warn(`[DeepAI Connection Error]: ${apiErr.message}. Falling back to browser canvas mode.`);
-        res.setHeader('x-mock-active', 'true');
-        res.setHeader('x-upscale-factor', factor || '2');
-        res.setHeader('Content-Type', file.mimetype);
-        return res.send(fileBuffer);
+      } catch (err) {
+        fs.unlink(file.path, () => {});
+        console.error(`[DeepAI API Error]: ${err.message}`);
+        return res.status(500).json({ error: `Image upscaling failed: ${err.message}` });
       }
+    } else {
+      // Free fallback mode: send original file back with x-mock-active to trigger browser canvas processing
+      console.log('[Image Upscaler] No active Stability AI or DeepAI API keys configured. Falling back to browser-side upscaling mode.');
+      fs.unlink(file.path, () => {});
+      res.setHeader('x-mock-active', 'true');
+      res.setHeader('x-upscale-factor', factor || '2');
+      res.setHeader('Content-Type', file.mimetype);
+      return res.send(fileBuffer);
     }
   } catch (err) {
     cleanTempFiles(req);
