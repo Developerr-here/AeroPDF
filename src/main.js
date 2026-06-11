@@ -176,6 +176,10 @@ const TOOL_META = {
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
+  // Retrieve persisted theme and update UI
+  const savedTheme = safeStorage.getItem('pixelpdf_theme') || 'light';
+  updateThemeUI(savedTheme === 'dark');
+
   setupEventListeners();
   setupSignaturePad();
   await checkAuthSession();
@@ -243,6 +247,21 @@ function setupCardMouseEffect() {
       card.style.setProperty('--mouse-y', `${y}px`);
     });
   });
+}
+
+function updateThemeUI(isDark) {
+  const btn = document.getElementById('btn-toggle-dark');
+  if (!btn) return;
+  
+  if (isDark) {
+    document.body.classList.add('dark-theme');
+    btn.title = "Toggle Light Mode";
+    btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>`;
+  } else {
+    document.body.classList.remove('dark-theme');
+    btn.title = "Toggle Night Mode";
+    btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>`;
+  }
 }
 
 function setupEventListeners() {
@@ -351,9 +370,10 @@ function setupEventListeners() {
   
   // Dark/Night Mode Toggle
   document.getElementById('btn-toggle-dark').addEventListener('click', () => {
-    document.body.classList.toggle('dark-theme');
-    const isDark = document.body.classList.contains('dark-theme');
-    showToast(isDark ? 'Night mode enabled!' : 'Light mode enabled!', 'info');
+    const isDarkNow = !document.body.classList.contains('dark-theme');
+    updateThemeUI(isDarkNow);
+    safeStorage.setItem('pixelpdf_theme', isDarkNow ? 'dark' : 'light');
+    showToast(isDarkNow ? 'Night mode enabled!' : 'Light mode enabled!', 'info');
   });
   
   // Upload drops
