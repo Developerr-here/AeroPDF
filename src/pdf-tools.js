@@ -320,6 +320,28 @@ export async function generatePagePreviews(pdfBuffer, onProgress) {
    PDF AI INTELLIGENCE API METHODS
    ========================================== */
 
+export async function aiAssistantPDF(file, mode, options = {}, token) {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('mode', mode);
+  if (options.question) {
+    formData.append('question', options.question);
+  }
+  if (options.targetLanguage) {
+    formData.append('targetLanguage', options.targetLanguage);
+  }
+  const headers = {};
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  const res = await fetch('/api/ai/assistant', {
+    method: 'POST',
+    headers: headers,
+    body: formData
+  });
+  return handleJSONResponse(res, 'AI Assistant failed.');
+}
+
 export async function aiSummarizePDF(file, token) {
   const formData = new FormData();
   formData.append('file', file);

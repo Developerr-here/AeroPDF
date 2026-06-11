@@ -4,8 +4,8 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="AeroPDF - The ultimate client-server PDF toolkit. Merge, split, compress, convert, edit, and secure PDFs with 24 complete tools. 100% private, clean, and commercial ready." />
-    <title>AeroPDF - Complete Client-Server PDF Tools Platform</title>
+    <meta name="description" content="PixelPDF - The ultimate client-server PDF toolkit. Merge, split, compress, convert, edit, and secure PDFs with 24 complete tools. 100% private, clean, and commercial ready." />
+    <title>PixelPDF - Complete Client-Server PDF Tools Platform</title>
     <!-- Quill.js Rich Text Editor Integration -->
     <link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
@@ -14,19 +14,31 @@
     <!-- Navigation Header -->
     <header>
       <div class="nav-container">
-        <a href="/" class="logo" id="logo-link">
-          <div class="logo-icon">A</div>
-          <span>AeroPDF</span>
-        </a>
+        <div style="display: flex; align-items: center;">
+          <a href="/" class="logo" id="logo-link">
+            <div class="logo-icon">P</div>
+            <span>PixelPDF</span>
+          </a>
+          <div class="header-nav-menu">
+            <a class="nav-menu-link" id="nav-link-all-tools">All Tools <svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-left: 0.15rem;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg></a>
+            <a class="nav-menu-link" id="nav-link-ai-tools">AI Tools <span class="badge-new">New</span></a>
+            <a class="nav-menu-link" id="nav-link-pricing">Pricing</a>
+            <a class="nav-menu-link" id="nav-link-blog">Blog</a>
+          </div>
+        </div>
         <div class="nav-links">
-          <button id="btn-goto-blog" class="btn-nav-back">Blog</button>
-          <button id="btn-back-to-dashboard" class="btn-nav-back" style="display: none;">
+          <button id="btn-back-to-dashboard" class="btn-nav-back" style="display: none; border-radius: 2rem;">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
             Back to Dashboard
           </button>
-          <div class="user-auth-nav" id="user-auth-nav">
-            <button id="btn-show-login" class="btn-nav-back">Login</button>
-            <button id="btn-show-signup" class="btn-nav-back">Sign Up</button>
+          <div class="header-right-actions">
+            <button id="btn-toggle-dark" class="btn-theme-toggle" title="Toggle Night Mode">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
+            </button>
+            <div class="user-auth-nav" id="user-auth-nav" style="display: flex; gap: 0.75rem; align-items: center;">
+              <button id="btn-show-login" class="btn-nav-back" style="border-radius: 2rem;">Login</button>
+              <button id="btn-show-signup" class="btn-nav-back btn-signup-grad" style="border-radius: 2rem;">Sign Up</button>
+            </div>
           </div>
         </div>
       </div>
@@ -36,9 +48,265 @@
     <main>
       <!-- DASHBOARD PAGE -->
       <section id="dashboard-page">
-        <div class="hero">
-          <h1>Every PDF Tool at Your Fingertips</h1>
-          <p>Access all 24 tools to organize, optimize, convert, edit, and secure your PDF documents.</p>
+        <!-- Hero Section (Split Layout) -->
+        <div class="hero-split-container">
+          <div class="hero-left-content">
+            <div class="hero-free-badge">
+              <span>✨ 100% Free • No Sign Up Required</span>
+            </div>
+            <h1>Transform PDFs<br/>in <span class="gradient-text">Seconds</span></h1>
+            <p>
+              Merge, compress, convert, edit & secure your PDFs with 24 powerful tools. Simple, fast & AI-powered.
+            </p>
+            <div class="hero-action-row">
+              <button class="btn-hero-primary" id="btn-hero-upload">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" /></svg>
+                Upload PDF Now
+              </button>
+              <button class="btn-hero-secondary" id="btn-hero-explore">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" viewBox="0 0 24 24"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
+                Explore All Tools
+              </button>
+            </div>
+            <div class="hero-security-footer">
+              <svg width="14" height="14" fill="none" stroke="var(--accent-success)" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>
+              <span>Your files are safe and secure with enterprise-grade encryption.</span>
+            </div>
+          </div>
+          <div class="hero-right-graphic">
+            <!-- Mockup Window Frame -->
+            <div class="mockup-main-window">
+              <div class="mockup-window-header">
+                <div class="mockup-dots">
+                  <div class="mockup-dot red"></div>
+                  <div class="mockup-dot yellow"></div>
+                  <div class="mockup-dot green"></div>
+                </div>
+                <div style="font-size: 0.7rem; font-weight: 700; color: var(--text-secondary);">PixelPDF Workspace</div>
+                <div style="width: 30px;"></div>
+              </div>
+              <div class="mockup-window-body" style="padding: 1.25rem; display: flex; flex-direction: column; align-items: stretch; justify-content: center; gap: 0.75rem; background: var(--bg-primary);">
+                <!-- Document Info Card -->
+                <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.2); padding: 0.5rem 0.75rem; border-radius: 0.5rem; text-align: left;">
+                  <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <div style="font-size: 1.25rem;">📄</div>
+                    <div>
+                      <div style="font-size: 0.7rem; font-weight: 700; color: var(--text-primary); max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">business_proposal.pdf</div>
+                      <div style="font-size: 0.55rem; color: var(--text-secondary); margin-top: 0.05rem;">4.8 MB • 12 Pages</div>
+                    </div>
+                  </div>
+                  <div style="font-size: 0.5rem; padding: 0.15rem 0.35rem; background: linear-gradient(135deg, #a855f7, #6366f1); color: white; border-radius: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.025em; box-shadow: 0 2px 5px rgba(168,85,247,0.2);">Premium</div>
+                </div>
+
+                <!-- Engine Progress Logs -->
+                <div style="text-align: left; background: rgba(0, 0, 0, 0.15); border-radius: 0.5rem; padding: 0.6rem 0.75rem; font-family: monospace; font-size: 0.55rem; color: #a5b4fc; display: flex; flex-direction: column; gap: 0.35rem; border: 1px solid rgba(255, 255, 255, 0.05);">
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="color: #34d399; font-weight: bold;">✔ PARSED TEXT LAYERS</span>
+                    <span style="opacity: 0.6;">OK</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="color: #34d399; font-weight: bold;">✔ DETECTED 3 SIGNATURES</span>
+                    <span style="opacity: 0.6;">OK</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="color: #a855f7; font-weight: bold; animation: pulse 1.5s infinite;">⚡ AI COMPRESSION OPTIMIZER</span>
+                    <span style="color: #a855f7; font-weight: bold;">84%</span>
+                  </div>
+                </div>
+
+                <button class="btn-mockup-choose" id="btn-mockup-choose-action" style="pointer-events: none; opacity: 1; cursor: default; background: linear-gradient(135deg, #a855f7, #6366f1); border: none; font-size: 0.7rem; font-weight: 700; padding: 0.5rem 1rem; color: white; width: 100%; border-radius: 0.5rem; box-shadow: 0 4px 12px rgba(168, 85, 247, 0.25); text-transform: uppercase; letter-spacing: 0.025em;">Enhance & Export Now</button>
+              </div>
+            </div>
+            <!-- Floating Elements -->
+            <div class="floating-badge f-badge-pdf">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
+              <span>PDF</span>
+            </div>
+            <div class="floating-badge f-badge-image">🖼️</div>
+            <div class="floating-badge f-badge-lock">🔒</div>
+            <div class="floating-badge f-badge-edit">✏️</div>
+            <div class="floating-badge f-badge-ai">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9.813 15.904L9 21l-.813-5.096L3.096 15 8.187 14.187 9 9l.813 5.187 5.096.813-5.096.813zM19.071 7.071l-.39-.39-2.032.508.508-2.032-.39-.39-.508 2.032-2.032-.508.39.39.508 2.032 2.032.508-.39-.39-.508-2.032z" /></svg>
+              <span>AI Powered</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Premium Stats Bar -->
+        <div class="premium-stats-grid">
+          <div class="stat-glow-card stat-card-1">
+            <div class="stat-icon-container">
+              <svg width="22" height="22" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
+            </div>
+            <div class="stat-number-info">
+              <h2>Private</h2>
+              <p>Files Deleted Instantly</p>
+            </div>
+          </div>
+          <div class="stat-glow-card stat-card-2">
+            <div class="stat-icon-container">
+              <svg width="22" height="22" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" viewBox="0 0 24 24"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
+            </div>
+            <div class="stat-number-info">
+              <h2>24+</h2>
+              <p>Powerful PDF Tools</p>
+            </div>
+          </div>
+          <div class="stat-glow-card stat-card-3">
+            <div class="stat-icon-container">
+              <svg width="22" height="22" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>
+            </div>
+            <div class="stat-number-info">
+              <h2>Secure</h2>
+              <p>End-to-End Encryption</p>
+            </div>
+          </div>
+          <div class="stat-glow-card stat-card-4">
+            <div class="stat-icon-container">
+              <svg width="22" height="22" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A11.952 11.952 0 0112 16.5c-2.998 0-5.74-1.1-7.843-2.918m0 0A8.959 8.959 0 013 12c0-.778.099-1.533.284-2.253" /></svg>
+            </div>
+            <div class="stat-number-info">
+              <h2>Online</h2>
+              <p>Works on Any Device</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Popular Tools vs AI PDF Assistant Section -->
+        <div class="split-dashboard-layout">
+          <!-- Popular Tools Column -->
+          <div class="popular-tools-column">
+            <div class="split-section-header">
+              <div class="split-section-title">
+                <h2>🔥 Popular Tools</h2>
+                <p>Most used PDF tools by our community</p>
+              </div>
+              <button class="btn-view-all" id="btn-popular-view-all">Explore All Tools &rarr;</button>
+            </div>
+            <div class="popular-tools-grid">
+              <div class="pop-tool-card" data-tool="merge">
+                <div class="pop-icon-box" style="color: #a855f7; background: rgba(168, 85, 247, 0.08);">📄</div>
+                <div>
+                  <h3>Merge PDF</h3>
+                  <p>Combine multiple PDFs into one</p>
+                </div>
+              </div>
+              <div class="pop-tool-card" data-tool="compress">
+                <div class="pop-icon-box" style="color: #f97316; background: rgba(249, 115, 22, 0.08);">🗜️</div>
+                <div>
+                  <h3>Compress PDF</h3>
+                  <p>Reduce PDF file size without losing quality</p>
+                </div>
+              </div>
+              <div class="pop-tool-card" data-tool="pdf-to-word">
+                <div class="pop-icon-box" style="color: #3b82f6; background: rgba(59, 130, 246, 0.08);">📝</div>
+                <div>
+                  <h3>PDF to Word</h3>
+                  <p>Convert PDF to editable Word document</p>
+                </div>
+              </div>
+              <div class="pop-tool-card" data-tool="img-to-pdf">
+                <div class="pop-icon-box" style="color: #10b981; background: rgba(16, 185, 129, 0.08);">🖼️</div>
+                <div>
+                  <h3>JPG to PDF</h3>
+                  <p>Convert images to high quality PDF</p>
+                </div>
+              </div>
+              <div class="pop-tool-card" data-tool="split">
+                <div class="pop-icon-box" style="color: #ec4899; background: rgba(236, 72, 153, 0.08);">✂️</div>
+                <div>
+                  <h3>Split PDF</h3>
+                  <p>Extract pages or split PDF into parts</p>
+                </div>
+              </div>
+              <div class="pop-tool-card" data-tool="remove-pages">
+                <div class="pop-icon-box" style="color: #ef4444; background: rgba(239, 68, 68, 0.08);">🗑️</div>
+                <div>
+                  <h3>Remove Pages</h3>
+                  <p>Delete unwanted pages from PDF</p>
+                </div>
+              </div>
+              <div class="pop-tool-card" data-tool="pdf-to-img">
+                <div class="pop-icon-box" style="color: #eab308; background: rgba(234, 179, 8, 0.08);">🖼️</div>
+                <div>
+                  <h3>PDF to JPG</h3>
+                  <p>Convert PDF pages to images</p>
+                </div>
+              </div>
+              <div class="pop-tool-card" data-tool="protect">
+                <div class="pop-icon-box" style="color: #3b82f6; background: rgba(59, 130, 246, 0.08);">🔒</div>
+                <div>
+                  <h3>Protect PDF</h3>
+                  <p>Add password encryption to files</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- AI Assistant Column -->
+          <div class="ai-assistant-side-card">
+            <div class="ai-assistant-header">
+              <span class="ai-assistant-badge">AI PDF Assistant</span>
+              <h3>Your Intelligent Companion</h3>
+              <p>Chat, summarize, translate & extract insights from any PDF instantly</p>
+            </div>
+            
+            <div class="robot-mascot-wrapper">
+              <div class="robot-mascot">
+                <div class="robot-antenna"></div>
+                <div class="robot-antenna-tip"></div>
+                <div class="robot-head">
+                  <div class="robot-eyes">
+                    <div class="robot-eye"></div>
+                    <div class="robot-eye"></div>
+                  </div>
+                </div>
+                <div class="robot-ears"></div>
+                <div class="robot-body-stub"></div>
+              </div>
+            </div>
+
+            <div class="ai-features-list">
+              <div class="ai-feature-item">
+                <div class="ai-feature-icon">📝</div>
+                <div class="ai-feature-text">
+                  <span>Summarize PDF</span>
+                  <span>Get structured takeaways of long files</span>
+                </div>
+              </div>
+              <div class="ai-feature-item">
+                <div class="ai-feature-icon">💬</div>
+                <div class="ai-feature-text">
+                  <span>Chat with PDF</span>
+                  <span>Ask questions and get answers (coming soon)</span>
+                </div>
+              </div>
+              <div class="ai-feature-item">
+                <div class="ai-feature-icon">🌐</div>
+                <div class="ai-feature-text">
+                  <span>Translate PDF</span>
+                  <span>Translate text to 10+ languages</span>
+                </div>
+              </div>
+              <div class="ai-feature-item">
+                <div class="ai-feature-icon">📓</div>
+                <div class="ai-feature-text">
+                  <span>Generate Notes</span>
+                  <span>Create study guides and summaries</span>
+                </div>
+              </div>
+            </div>
+
+            <button class="btn-ai-assistant" id="btn-try-ai-assistant">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9.813 15.904L9 21l-.813-5.096L3.096 15 8.187 14.187 9 9l.813 5.187 5.096.813-5.096.813z" /></svg>
+              Try AI Tools Now
+            </button>
+          </div>
+        </div>
+
+        <!-- Filter bar header text -->
+        <div class="all-tools-header">
+          <h2>All PDF Tools</h2>
+          <p>Complete collection of 24 powerful tools</p>
         </div>
 
         <!-- Category Navigation Tabs -->
@@ -340,19 +608,11 @@
               <span>PDF Intelligence</span>
             </div>
 
-            <div class="tool-card" data-tool="ai-summarize">
+            <div class="tool-card" data-tool="ai-assistant">
               <div class="tool-icon-wrapper" style="background: rgba(168, 85, 247, 0.15); color: var(--accent-secondary);">🤖</div>
               <div>
-                <h3>AI Summarizer</h3>
-                <p>Generate structured summaries from PDF text.</p>
-              </div>
-            </div>
-
-            <div class="tool-card" data-tool="ai-translate">
-              <div class="tool-icon-wrapper" style="background: rgba(168, 85, 247, 0.15); color: var(--accent-secondary);">🌐</div>
-              <div>
-                <h3>Translate PDF</h3>
-                <p>Translate PDF text using Groq AI.</p>
+                <h3>AI PDF Assistant</h3>
+                <p>Chat, translate, summarize, or generate study notes.</p>
               </div>
             </div>
           </div>
@@ -379,6 +639,30 @@
                 <p>Enhance resolution and quality of images.</p>
               </div>
             </div>
+          </div>
+        </div>
+
+        <!-- Bottom Features Bar -->
+        <div class="bottom-features-bar">
+          <div class="feature-badge-item">
+            <span class="feature-badge-icon">⚡</span>
+            <span>Lightning Fast</span>
+          </div>
+          <div class="feature-badge-item">
+            <span class="feature-badge-icon">🛡️</span>
+            <span>100% Secure</span>
+          </div>
+          <div class="feature-badge-item">
+            <span class="feature-badge-icon">👤</span>
+            <span>No Registration</span>
+          </div>
+          <div class="feature-badge-item">
+            <span class="feature-badge-icon">💻</span>
+            <span>Works Everywhere</span>
+          </div>
+          <div class="feature-badge-item">
+            <span class="feature-badge-icon">❤️</span>
+            <span>Free Up To 10MB</span>
           </div>
         </div>
       </section>
@@ -618,6 +902,27 @@
                 </p>
               </div>
 
+              <!-- Settings: Edit PDF -->
+              <div id="settings-edit-pdf" style="display: none;" class="input-group">
+                <label class="input-label" for="edit-text-input">Text to Overlay:</label>
+                <input type="text" id="edit-text-input" class="text-input" placeholder="Type text to stamp..." value="Draft" style="margin-bottom: 0.75rem;" />
+                
+                <label class="input-label" for="edit-font-size-select">Font Size:</label>
+                <select id="edit-font-size-select" class="text-input" style="background: rgba(0,0,0,0.3); margin-bottom: 0.75rem;">
+                  <option value="12">12 pt</option>
+                  <option value="16" selected>16 pt</option>
+                  <option value="20">20 pt</option>
+                  <option value="24">24 pt</option>
+                  <option value="28">28 pt</option>
+                  <option value="36">36 pt</option>
+                  <option value="48">48 pt</option>
+                </select>
+                
+                <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4;">
+                  Click anywhere on a page preview on the left to stamp your custom text overlay. Click a stamped text box to remove it.
+                </p>
+              </div>
+
               <!-- Settings: Default Settings Panel -->
               <div id="settings-generic" style="display: none;">
                 <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4;">
@@ -625,28 +930,45 @@
                 </p>
               </div>
 
-              <!-- Settings: AI Summarizer -->
-              <div id="settings-ai-summarize" style="display: none;" class="input-group">
-                <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4;">
-                  Extract text from the PDF and generate a detailed structured summary using Groq AI.
-                </p>
-              </div>
-
-              <!-- Settings: AI Translate -->
-              <div id="settings-ai-translate" style="display: none;" class="input-group">
-                <label class="input-label" for="translate-lang-select">Target Language:</label>
-                <select id="translate-lang-select" class="text-input" style="background: rgba(0,0,0,0.3);">
-                  <option value="Spanish">Spanish</option>
-                  <option value="French">French</option>
-                  <option value="German">German</option>
-                  <option value="Chinese">Chinese</option>
-                  <option value="Hindi">Hindi</option>
-                  <option value="Arabic">Arabic</option>
-                  <option value="Portuguese">Portuguese</option>
-                  <option value="Japanese">Japanese</option>
-                  <option value="Italian">Italian</option>
-                  <option value="Russian">Russian</option>
+              <!-- Settings: AI Assistant -->
+              <div id="settings-ai-assistant" style="display: none;" class="input-group">
+                <label class="input-label" for="ai-assistant-mode-select">Select Feature:</label>
+                <select id="ai-assistant-mode-select" class="text-input" style="background: rgba(0,0,0,0.3); margin-bottom: 0.75rem;">
+                  <option value="summarize">Summarize PDF</option>
+                  <option value="chat">Chat with PDF</option>
+                  <option value="translate">Translate PDF</option>
+                  <option value="notes">Generate Notes</option>
                 </select>
+
+                <!-- Mode Specific Descriptions / Inputs -->
+                <div id="ai-mode-description-summarize" class="ai-mode-panel" style="font-size: 0.825rem; color: var(--text-secondary); line-height: 1.4; margin-bottom: 0.5rem;">
+                  Extract text from the PDF and generate a detailed structured summary using Groq AI.
+                </div>
+
+                <div id="ai-mode-description-notes" class="ai-mode-panel" style="display: none; font-size: 0.825rem; color: var(--text-secondary); line-height: 1.4; margin-bottom: 0.5rem;">
+                  Analyze PDF contents to generate comprehensive study notes, key terms, definitions, and a review test.
+                </div>
+
+                <div id="ai-mode-input-chat" class="ai-mode-panel" style="display: none; margin-bottom: 0.75rem;">
+                  <label class="input-label" for="ai-chat-question-input">Ask a Question:</label>
+                  <textarea id="ai-chat-question-input" class="text-input" rows="3" style="background: rgba(0,0,0,0.3); resize: vertical; font-family: inherit; font-size: 0.85rem;" placeholder="Ask something about this PDF..."></textarea>
+                </div>
+
+                <div id="ai-mode-input-translate" class="ai-mode-panel" style="display: none; margin-bottom: 0.75rem;">
+                  <label class="input-label" for="ai-translate-lang-select">Target Language:</label>
+                  <select id="ai-translate-lang-select" class="text-input" style="background: rgba(0,0,0,0.3);">
+                    <option value="Spanish">Spanish</option>
+                    <option value="French">French</option>
+                    <option value="German">German</option>
+                    <option value="Chinese">Chinese</option>
+                    <option value="Hindi">Hindi</option>
+                    <option value="Arabic">Arabic</option>
+                    <option value="Portuguese">Portuguese</option>
+                    <option value="Japanese">Japanese</option>
+                    <option value="Italian">Italian</option>
+                    <option value="Russian">Russian</option>
+                  </select>
+                </div>
               </div>
 
               <!-- Settings: Background Remover -->
@@ -686,7 +1008,7 @@
       <!-- BLOG PAGE -->
       <section id="blog-page" style="display: none; animation: fadeIn 0.4s ease-out; margin-top: 1rem;">
         <div class="hero" style="margin-bottom: 2rem;">
-          <h1>AeroPDF Blog Hub</h1>
+          <h1>PixelPDF Blog Hub</h1>
           <p>Read tech articles from our global community, or pay a one-time $12 fee to publish your own article.</p>
         </div>
 
@@ -722,7 +1044,7 @@
     <div id="toast-container-element" class="toast-container"></div>
 
     <footer>
-      <p>&copy; 2026 AeroPDF. Complete 24-Tool Suite. Built Locally & Securely.</p>
+      <p>&copy; 2026 PixelPDF. Complete 24-Tool Suite. 100% Private & Secure.</p>
     </footer>
 
     <!-- Authentication Modals Overlay -->
@@ -730,7 +1052,7 @@
       <!-- Login Modal -->
       <div id="login-modal" class="loading-container modal-content-box" style="display: none; max-width: 400px; text-align: left; align-items: stretch; gap: 1rem; width: 100%;">
         <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-          <h3 style="font-size: 1.35rem; font-weight: 700; margin: 0;">Login to AeroPDF</h3>
+          <h3 style="font-size: 1.35rem; font-weight: 700; margin: 0;">Login to PixelPDF</h3>
           <button class="btn-close-modal btn-icon" id="btn-close-login" style="background:none; border:none; color:var(--text-muted); cursor:pointer;">&times;</button>
         </div>
         <form id="login-form" style="display: flex; flex-direction: column; gap: 1rem; width: 100%;">
@@ -794,7 +1116,7 @@
         <div id="upgrade-logged-out-actions" style="display: none; flex-direction: column; gap: 0.5rem; width: 100%;">
           <button id="btn-upgrade-login" class="btn-action" style="width: 100%;">Log In to Subscribe</button>
           <p style="font-size: 0.85rem; color: var(--text-secondary); text-align: center; margin: 0.5rem 0 0 0; width: 100%;">
-            New to AeroPDF? <a href="#" id="link-upgrade-signup" style="color: var(--accent-primary); text-decoration: none; font-weight: 600;">Create an account</a>
+            New to PixelPDF? <a href="#" id="link-upgrade-signup" style="color: var(--accent-primary); text-decoration: none; font-weight: 600;">Create an account</a>
           </p>
         </div>
       </div>
@@ -840,6 +1162,57 @@
         </form>
       </div>
     </div>
+
+    <!-- Hero Feature Modal Overlay -->
+    <div id="hero-feature-overlay" class="overlay" style="z-index: 1200;">
+      <div class="loading-container modal-content-box" style="max-width: 480px; width: 90%; text-align: center; align-items: center; gap: 1.5rem; display: flex; flex-direction: column; padding: 2rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+          <h3 style="font-size: 1.35rem; font-weight: 700; margin: 0; background: linear-gradient(135deg, #a855f7, #6366f1); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">What do you need to do?</h3>
+          <button id="btn-close-hero-feature" class="btn-close-modal" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-secondary);">&times;</button>
+        </div>
+        <p style="font-size: 0.9rem; color: var(--text-secondary); margin: 0; text-align: left; width: 100%;">
+          Select your target action to launch the tool and pick your file:
+        </p>
+        <div style="display: grid; grid-template-columns: 1fr; gap: 0.75rem; width: 100%;">
+          <button class="btn-action hero-feature-btn" data-tool="merge" style="background: linear-gradient(135deg, #6366f1, #3b82f6); display: flex; align-items: center; justify-content: flex-start; gap: 1rem; padding: 0.85rem 1.25rem; border: none; border-radius: 0.5rem; color: #fff; cursor: pointer; width: 100%;">
+            <span style="font-size: 1.25rem;">🔀</span>
+            <div style="text-align: left;">
+              <div style="font-weight: 600;">Merge PDFs</div>
+              <div style="font-size: 0.75rem; opacity: 0.85;">Combine multiple files into one document</div>
+            </div>
+          </button>
+          <button class="btn-action hero-feature-btn" data-tool="compress" style="background: linear-gradient(135deg, #10b981, #059669); display: flex; align-items: center; justify-content: flex-start; gap: 1rem; padding: 0.85rem 1.25rem; border: none; border-radius: 0.5rem; color: #fff; cursor: pointer; width: 100%;">
+            <span style="font-size: 1.25rem;">🗜️</span>
+            <div style="text-align: left;">
+              <div style="font-weight: 600;">Compress PDF</div>
+              <div style="font-size: 0.75rem; opacity: 0.85;">Reduce file size without quality loss</div>
+            </div>
+          </button>
+          <button class="btn-action hero-feature-btn" data-tool="pdf-to-word" style="background: linear-gradient(135deg, #f59e0b, #d97706); display: flex; align-items: center; justify-content: flex-start; gap: 1rem; padding: 0.85rem 1.25rem; border: none; border-radius: 0.5rem; color: #fff; cursor: pointer; width: 100%;">
+            <span style="font-size: 1.25rem;">🔄</span>
+            <div style="text-align: left;">
+              <div style="font-weight: 600;">Convert PDF</div>
+              <div style="font-size: 0.75rem; opacity: 0.85;">Convert PDF to Word, Excel, JPG, or HTML</div>
+            </div>
+          </button>
+          <button class="btn-action hero-feature-btn" data-tool="edit-pdf" style="background: linear-gradient(135deg, #ec4899, #db2777); display: flex; align-items: center; justify-content: flex-start; gap: 1rem; padding: 0.85rem 1.25rem; border: none; border-radius: 0.5rem; color: #fff; cursor: pointer; width: 100%;">
+            <span style="font-size: 1.25rem;">✏️</span>
+            <div style="text-align: left;">
+              <div style="font-weight: 600;">Edit PDF</div>
+              <div style="font-size: 0.75rem; opacity: 0.85;">Modify text, rotate, crop, or sign PDFs</div>
+            </div>
+          </button>
+          <button class="btn-action hero-feature-btn" data-tool="protect" style="background: linear-gradient(135deg, #6b7280, #4b5563); display: flex; align-items: center; justify-content: flex-start; gap: 1rem; padding: 0.85rem 1.25rem; border: none; border-radius: 0.5rem; color: #fff; cursor: pointer; width: 100%;">
+            <span style="font-size: 1.25rem;">🔒</span>
+            <div style="text-align: left;">
+              <div style="font-weight: 600;">Secure PDF</div>
+              <div style="font-size: 0.75rem; opacity: 0.85;">Add passwords, watermark, or redact sensitive text</div>
+            </div>
+          </button>
+        </div>
+      </div>
+
+
 
     <script type="module" src="/src/main.js"></script>
   </body>

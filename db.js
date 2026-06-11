@@ -22,10 +22,10 @@ if (connectionString) {
     logging: false
   });
 } else {
-  console.log('Database: DATABASE_URL not set. Falling back to local SQLite database (aeropdf_dev.sqlite) for local development...');
+  console.log('Database: DATABASE_URL not set. Falling back to local SQLite database (pixelpdf_dev.sqlite) for local development...');
   sequelize = new Sequelize({
     dialect: 'sqlite',
-    storage: './aeropdf_dev.sqlite',
+    storage: './pixelpdf_dev.sqlite',
     logging: false
   });
 }

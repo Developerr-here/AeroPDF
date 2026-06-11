@@ -25,6 +25,7 @@ import {
   comparePDFs,
   pdfToImages,
   generatePagePreviews,
+  aiAssistantPDF,
   aiSummarizePDF,
   aiTranslatePDF,
   aiRemoveBackground,
@@ -40,6 +41,7 @@ let selectedPages = new Set();
 let signatureDataUrl = null;
 let signaturePlacement = null; // { page: 0, x: 0, y: 0, w: 100, h: 50 }
 let redactionBoxes = []; // [ { page: 0, x, y, w, h } ]
+let editTextBoxes = []; // [ { page: 0, x: 0, y: 0, text: '', size: 12, type: 'text' } ]
 
 // Safe storage wrapper to prevent DOMException when Tracking Prevention blocks storage access
 const memoryStorage = {};
@@ -168,8 +170,7 @@ const TOOL_META = {
   sign: { title: 'Sign PDF', desc: 'Visually stamp custom signature drawings onto pages.', uploadHeadline: 'Upload a PDF to sign', uploadSubline: 'or drag and drop it here', accepts: '.pdf', multiple: false },
   redact: { title: 'Redact PDF', desc: 'Visually black out sensitive section coordinates on pages.', uploadHeadline: 'Upload a PDF to redact sections', uploadSubline: 'or drag and drop it here', accepts: '.pdf', multiple: false },
   compare: { title: 'Compare PDF', desc: 'Validate metadata and page alignment comparisons between two PDFs.', uploadHeadline: 'Upload two PDF documents to compare', uploadSubline: 'or drag and drop them here', accepts: '.pdf', multiple: true },
-  'ai-summarize': { title: 'AI Summarizer', desc: 'Generate concise structured summaries from PDF text using Groq.', uploadHeadline: 'Upload a PDF to summarize', uploadSubline: 'or drag and drop it here', accepts: '.pdf', multiple: false },
-  'ai-translate': { title: 'Translate PDF', desc: 'Translate PDF text content to other languages using Groq.', uploadHeadline: 'Upload a PDF to translate', uploadSubline: 'or drag and drop it here', accepts: '.pdf', multiple: false },
+  'ai-assistant': { title: 'AI PDF Assistant', desc: 'Chat, translate, summarize, or generate study notes from PDF text.', uploadHeadline: 'Upload a PDF to analyze with AI', uploadSubline: 'or drag and drop it here', accepts: '.pdf', multiple: false },
   'remove-background': { title: 'Background Remover', desc: 'Remove background from images automatically using AI.', uploadHeadline: 'Upload an image to remove background', uploadSubline: 'or drag and drop it here', accepts: 'image/png, image/jpeg, image/jpg', multiple: false },
   'upscale-image': { title: 'Image Upscaler', desc: 'Enhance resolution and quality of images.', uploadHeadline: 'Upload an image to upscale', uploadSubline: 'or drag and drop it here', accepts: 'image/png, image/jpeg, image/jpg', multiple: false }
 };
@@ -251,12 +252,108 @@ function setupEventListeners() {
   });
   
   document.getElementById('btn-back-to-dashboard').addEventListener('click', navigateToDashboard);
+
+  // AI Assistant Mode Selection Change Listener
+  const aiModeSelect = document.getElementById('ai-assistant-mode-select');
+  if (aiModeSelect) {
+    aiModeSelect.addEventListener('change', (e) => {
+      const mode = e.target.value;
+      // Hide all mode-specific panels
+      document.querySelectorAll('.ai-mode-panel').forEach(panel => {
+        panel.style.display = 'none';
+      });
+      // Show selected panel
+      if (mode === 'summarize') {
+        document.getElementById('ai-mode-description-summarize').style.display = 'block';
+      } else if (mode === 'notes') {
+        document.getElementById('ai-mode-description-notes').style.display = 'block';
+      } else if (mode === 'chat') {
+        document.getElementById('ai-mode-input-chat').style.display = 'block';
+      } else if (mode === 'translate') {
+        document.getElementById('ai-mode-input-translate').style.display = 'block';
+      }
+    });
+  }
   
   // Dashboard routing cards
   document.querySelectorAll('.tool-card').forEach(card => {
     card.addEventListener('click', () => {
       navigateToTool(card.dataset.tool);
     });
+  });
+
+  // Popular Tools click routing
+  document.querySelectorAll('.pop-tool-card').forEach(card => {
+    card.addEventListener('click', () => {
+      navigateToTool(card.dataset.tool);
+    });
+  });
+
+  // Hero action buttons (launch feature modal)
+  const showHeroFeatureModal = () => {
+    const overlay = document.getElementById('hero-feature-overlay');
+    if (overlay) overlay.classList.add('active');
+  };
+  const hideHeroFeatureModal = () => {
+    const overlay = document.getElementById('hero-feature-overlay');
+    if (overlay) overlay.classList.remove('active');
+  };
+
+  const btnHeroUpload = document.getElementById('btn-hero-upload');
+  if (btnHeroUpload) {
+    btnHeroUpload.addEventListener('click', showHeroFeatureModal);
+  }
+  const btnCloseHeroFeature = document.getElementById('btn-close-hero-feature');
+  if (btnCloseHeroFeature) {
+    btnCloseHeroFeature.addEventListener('click', hideHeroFeatureModal);
+  }
+
+  document.querySelectorAll('.hero-feature-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const selectedTool = btn.dataset.tool;
+      hideHeroFeatureModal();
+      navigateToTool(selectedTool);
+      setTimeout(() => {
+        const fileInput = document.getElementById('file-input-element');
+        if (fileInput) fileInput.click();
+      }, 50);
+    });
+  });
+
+  const scrollExplore = (e) => {
+    e.preventDefault();
+    navigateToDashboard();
+    document.querySelector('.all-tools-header').scrollIntoView({ behavior: 'smooth' });
+  };
+  document.getElementById('btn-hero-explore').addEventListener('click', scrollExplore);
+  document.getElementById('btn-popular-view-all').addEventListener('click', scrollExplore);
+
+  // AI assistant CTA
+  document.getElementById('btn-try-ai-assistant').addEventListener('click', () => {
+    navigateToTool('ai-assistant');
+  });
+
+  // Header Nav Menu Links
+  document.getElementById('nav-link-all-tools').addEventListener('click', scrollExplore);
+  document.getElementById('nav-link-ai-tools').addEventListener('click', (e) => {
+    e.preventDefault();
+    navigateToDashboard();
+    document.querySelector('.ai-assistant-side-card').scrollIntoView({ behavior: 'smooth' });
+  });
+  document.getElementById('nav-link-pricing').addEventListener('click', (e) => {
+    e.preventDefault();
+    showAuthModal('upgrade');
+  });
+  document.getElementById('nav-link-blog').addEventListener('click', (e) => {
+    e.preventDefault();
+    navigateToBlog();
+  });
+  
+  // Dark/Night Mode Toggle
+  document.getElementById('btn-toggle-dark').addEventListener('click', () => {
+    document.body.classList.toggle('dark-theme');
+    const isDark = document.body.classList.contains('dark-theme');
+    showToast(isDark ? 'Night mode enabled!' : 'Light mode enabled!', 'info');
   });
   
   // Upload drops
@@ -531,8 +628,8 @@ function toggleSettingsPanels(tool) {
     'settings-split', 'settings-protect', 'settings-img-to-pdf', 'settings-rotate', 
     'settings-html', 'settings-compress', 'settings-unlock', 'settings-watermark', 
     'settings-page-numbers', 'settings-sign', 'settings-redact', 'settings-crop', 
-    'settings-ai-summarize', 'settings-ai-translate', 'settings-remove-background', 
-    'settings-upscale-image', 'settings-generic'
+    'settings-ai-assistant', 'settings-remove-background', 
+    'settings-upscale-image', 'settings-edit-pdf', 'settings-generic'
   ];
   sections.forEach(id => {
     const el = document.getElementById(id);
@@ -569,14 +666,14 @@ function toggleSettingsPanels(tool) {
     document.getElementById('settings-redact').style.display = 'block';
   } else if (tool === 'crop') {
     document.getElementById('settings-crop').style.display = 'block';
-  } else if (tool === 'ai-summarize') {
-    document.getElementById('settings-ai-summarize').style.display = 'block';
-  } else if (tool === 'ai-translate') {
-    document.getElementById('settings-ai-translate').style.display = 'block';
+  } else if (tool === 'ai-assistant') {
+    document.getElementById('settings-ai-assistant').style.display = 'block';
   } else if (tool === 'remove-background') {
     document.getElementById('settings-remove-background').style.display = 'block';
   } else if (tool === 'upscale-image') {
     document.getElementById('settings-upscale-image').style.display = 'block';
+  } else if (tool === 'edit-pdf') {
+    document.getElementById('settings-edit-pdf').style.display = 'block';
   }
 }
 
@@ -760,6 +857,7 @@ function renderPreviewsGrid() {
         <!-- Interactive overlays -->
         ${currentTool === 'sign' ? `<div class="signature-drag-wrapper" data-page="${index}"></div>` : ''}
         ${currentTool === 'redact' ? `<div class="redact-marker-overlay" data-page="${index}"></div>` : ''}
+        ${currentTool === 'edit-pdf' ? `<div class="edit-text-drag-wrapper" data-page="${index}"></div>` : ''}
       </div>
       <div class="preview-card-info">
         <span class="preview-page-number">Page ${preview.pageNum}</span>
@@ -804,6 +902,11 @@ function renderPreviewsGrid() {
   // Wire up redaction box placements
   if (currentTool === 'redact') {
     wireRedactionBoxEvents();
+  }
+  
+  // Wire up edit text overlay placement
+  if (currentTool === 'edit-pdf') {
+    wireEditTextPlacementEvents();
   }
 }
 
@@ -959,6 +1062,65 @@ function wireRedactionBoxEvents() {
   });
 }
 
+function wireEditTextPlacementEvents() {
+  const wrappers = document.querySelectorAll('.edit-text-drag-wrapper');
+  wrappers.forEach(wrapper => {
+    wrapper.addEventListener('click', (e) => {
+      const textInput = document.getElementById('edit-text-input');
+      const text = textInput ? textInput.value.trim() : '';
+      if (!text) {
+        showToast('Please type some text in the sidebar first!', 'info');
+        return;
+      }
+      
+      const fontSizeSelect = document.getElementById('edit-font-size-select');
+      const fontSize = fontSizeSelect ? parseInt(fontSizeSelect.value, 10) : 16;
+      
+      const pageIndex = parseInt(wrapper.dataset.page, 10);
+      const rect = wrapper.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      
+      const stamp = document.createElement('div');
+      stamp.className = 'text-stamp-element';
+      stamp.style.left = `${x}px`;
+      stamp.style.top = `${y}px`;
+      stamp.style.fontSize = `${fontSize * (rect.height / 841.89)}px`;
+      stamp.textContent = text;
+      stamp.title = 'Click to remove';
+      
+      stamp.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        stamp.remove();
+        editTextBoxes = editTextBoxes.filter(box => box._element !== stamp);
+        updateProcessButtonState();
+      });
+      
+      wrapper.appendChild(stamp);
+      
+      const wrapperWidth = rect.width;
+      const wrapperHeight = rect.height;
+      const pdfWidth = 595.28;
+      const pdfHeight = 841.89;
+      
+      const ptX = (x / wrapperWidth) * pdfWidth;
+      const ptY = ((wrapperHeight - y) / wrapperHeight) * pdfHeight;
+      
+      editTextBoxes.push({
+        page: pageIndex,
+        x: ptX,
+        y: ptY,
+        text: text,
+        size: fontSize,
+        type: 'text',
+        _element: stamp
+      });
+      
+      updateProcessButtonState();
+    });
+  });
+}
+
 // Side by side comparisons
 async function runPDFComparison() {
   const overlay = document.getElementById('loading-overlay');
@@ -1045,6 +1207,7 @@ function clearWorkspace() {
   selectedPages.clear();
   signaturePlacement = null;
   redactionBoxes = [];
+  editTextBoxes = [];
   
   const fileInput = document.getElementById('file-input-element');
   if (fileInput) fileInput.value = '';
@@ -1111,6 +1274,8 @@ function updateProcessButtonState() {
     btn.disabled = !signatureDataUrl || !signaturePlacement;
   } else if (currentTool === 'redact') {
     btn.disabled = redactionBoxes.length === 0;
+  } else if (currentTool === 'edit-pdf') {
+    btn.disabled = editTextBoxes.length === 0;
   } else if (currentTool === 'compare') {
     btn.disabled = uploadedFiles.length < 2;
   } else {
@@ -1132,7 +1297,7 @@ async function processFiles() {
   
   try {
     let outputBytes = null;
-    let filename = `aeropdf-${currentTool}.pdf`;
+    let filename = `pixelpdf-${currentTool}.pdf`;
     let mimeType = 'application/pdf';
     
     switch (currentTool) {
@@ -1292,49 +1457,40 @@ async function processFiles() {
         outputBytes = await redactPDF(uploadedFiles[0], redactionBoxes);
         break;
 
-      case 'ai-summarize':
+      case 'edit-pdf':
+        outputBytes = await editPDF(uploadedFiles[0], editTextBoxes);
+        break;
+
+      case 'ai-assistant':
+        const aiMode = document.getElementById('ai-assistant-mode-select').value;
+        const aiLang = document.getElementById('ai-translate-lang-select').value;
+        const aiQuestion = document.getElementById('ai-chat-question-input').value;
         try {
-          const resData = await aiSummarizePDF(uploadedFiles[0], token);
-          loadingTitle.textContent = 'Summary Generated';
+          loadingTitle.textContent = 'Analyzing PDF...';
+          loadingMessage.textContent = 'Parsing and executing LLM request...';
+          const resData = await aiAssistantPDF(uploadedFiles[0], aiMode, { targetLanguage: aiLang, question: aiQuestion }, token);
+          loadingTitle.textContent = 'Analysis Complete';
           loadingMessage.textContent = 'Rendering content...';
           
           const aiResults = document.getElementById('ai-results-panel');
           const aiContent = document.getElementById('ai-results-content');
           const aiTitle = document.getElementById('ai-results-title');
           
-          aiTitle.textContent = 'AI Document Summary';
-          aiContent.textContent = resData.summary;
+          let titleText = 'AI Assistant Output';
+          if (aiMode === 'summarize') titleText = 'AI Document Summary';
+          else if (aiMode === 'chat') titleText = `AI Chat: "${aiQuestion.substring(0, 30)}${aiQuestion.length > 30 ? '...' : ''}"`;
+          else if (aiMode === 'translate') titleText = `AI Document Translation (${aiLang})`;
+          else if (aiMode === 'notes') titleText = 'AI Study Notes';
+
+          aiTitle.textContent = titleText;
+          aiContent.textContent = resData.result;
           aiResults.style.display = 'block';
           aiResults.scrollIntoView({ behavior: 'smooth' });
           
           addCumulativeUploadSize(uploadedFiles[0].size);
-          showToast('Summary generated successfully!', 'success');
+          showToast('AI analysis completed successfully!', 'success');
         } catch (err) {
-          showToast(err.message || 'AI Summarizer failed', 'error');
-        }
-        overlay.classList.remove('active');
-        return;
-        
-      case 'ai-translate':
-        const targetLang = document.getElementById('translate-lang-select').value;
-        try {
-          const resData = await aiTranslatePDF(uploadedFiles[0], targetLang, token);
-          loadingTitle.textContent = 'Translation Complete';
-          loadingMessage.textContent = 'Rendering content...';
-          
-          const aiResults = document.getElementById('ai-results-panel');
-          const aiContent = document.getElementById('ai-results-content');
-          const aiTitle = document.getElementById('ai-results-title');
-          
-          aiTitle.textContent = `AI Document Translation (${targetLang})`;
-          aiContent.textContent = resData.translation;
-          aiResults.style.display = 'block';
-          aiResults.scrollIntoView({ behavior: 'smooth' });
-          
-          addCumulativeUploadSize(uploadedFiles[0].size);
-          showToast(`Translated to ${targetLang} successfully!`, 'success');
-        } catch (err) {
-          showToast(err.message || 'AI Translation failed', 'error');
+          showToast(err.message || 'AI Assistant failed', 'error');
         }
         overlay.classList.remove('active');
         return;
@@ -1490,8 +1646,8 @@ function updateAuthNav(user) {
     });
   } else {
     authNav.innerHTML = `
-      <button id="btn-show-login" class="btn-nav-back">Login</button>
-      <button id="btn-show-signup" class="btn-nav-back" style="background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); border: none; color: white;">Sign Up</button>
+      <button id="btn-show-login" class="btn-nav-back" style="border-radius: 2rem;">Login</button>
+      <button id="btn-show-signup" class="btn-nav-back btn-signup-grad" style="border-radius: 2rem;">Sign Up</button>
     `;
     
     document.getElementById('btn-show-login').addEventListener('click', () => showAuthModal('login'));
@@ -1647,103 +1803,122 @@ function setupAuthEventListeners() {
    ========================================== */
 
 function setupBlogEventListeners() {
-  document.getElementById('btn-goto-blog').addEventListener('click', navigateToBlog);
+  const btnGotoBlog = document.getElementById('btn-goto-blog');
+  if (btnGotoBlog) {
+    btnGotoBlog.addEventListener('click', navigateToBlog);
+  }
 
   // Close Compose Modal handlers
-  document.getElementById('btn-close-compose').addEventListener('click', () => {
-    document.getElementById('blog-compose-overlay').classList.remove('active');
-  });
-  document.getElementById('btn-cancel-compose').addEventListener('click', () => {
-    document.getElementById('blog-compose-overlay').classList.remove('active');
-  });
+  const btnCloseCompose = document.getElementById('btn-close-compose');
+  if (btnCloseCompose) {
+    btnCloseCompose.addEventListener('click', () => {
+      const overlay = document.getElementById('blog-compose-overlay');
+      if (overlay) overlay.classList.remove('active');
+    });
+  }
+  const btnCancelCompose = document.getElementById('btn-cancel-compose');
+  if (btnCancelCompose) {
+    btnCancelCompose.addEventListener('click', () => {
+      const overlay = document.getElementById('blog-compose-overlay');
+      if (overlay) overlay.classList.remove('active');
+    });
+  }
 
   // Attach File in Blog compose modal handler
-  document.getElementById('blog-file-attach').addEventListener('change', async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+  const blogFileAttach = document.getElementById('blog-file-attach');
+  if (blogFileAttach) {
+    blogFileAttach.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
 
-    // Check size limit for blog attachments (20MB)
-    const maxAttachSize = 20 * 1024 * 1024;
-    if (file.size > maxAttachSize) {
-      showToast('Attachment exceeds the 20MB limit.', 'error');
-      e.target.value = '';
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append('file', file);
-
-    try {
-      showToast('Uploading attachment...', 'info');
-      const res = await fetch('/api/blog/upload', {
-        method: 'POST',
-        body: formData
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to upload attachment.');
-
-      showToast('Attachment uploaded successfully!', 'success');
-
-      if (!blogQuill) return;
-
-      const range = blogQuill.getSelection() || { index: blogQuill.getLength() };
-      if (file.type.startsWith('image/')) {
-        blogQuill.insertEmbed(range.index, 'image', data.url);
-      } else {
-        // Link to file download
-        blogQuill.insertText(range.index, `[Download ${file.name}]`, 'link', data.url);
+      // Check size limit for blog attachments (20MB)
+      const maxAttachSize = 20 * 1024 * 1024;
+      if (file.size > maxAttachSize) {
+        showToast('Attachment exceeds the 20MB limit.', 'error');
+        e.target.value = '';
+        return;
       }
-    } catch (err) {
-      showToast(err.message, 'error');
-    } finally {
-      e.target.value = ''; // Reset file input
-    }
-  });
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        showToast('Uploading attachment...', 'info');
+        const res = await fetch('/api/blog/upload', {
+          method: 'POST',
+          body: formData
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to upload attachment.');
+
+        showToast('Attachment uploaded successfully!', 'success');
+
+        if (!blogQuill) return;
+
+        const range = blogQuill.getSelection() || { index: blogQuill.getLength() };
+        if (file.type.startsWith('image/')) {
+          blogQuill.insertEmbed(range.index, 'image', data.url);
+        } else {
+          // Link to file download
+          blogQuill.insertText(range.index, `[Download ${file.name}]`, 'link', data.url);
+        }
+      } catch (err) {
+        showToast(err.message, 'error');
+      } finally {
+        e.target.value = ''; // Reset file input
+      }
+    });
+  }
 
   // Submit Blog compose modal handler
-  document.getElementById('blog-compose-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    if (!blogQuill) return;
+  const blogComposeForm = document.getElementById('blog-compose-form');
+  if (blogComposeForm) {
+    blogComposeForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!blogQuill) return;
 
-    const title = document.getElementById('blog-title').value.trim();
-    const content = blogQuill.root.innerHTML;
+      const titleInput = document.getElementById('blog-title');
+      const title = titleInput ? titleInput.value.trim() : '';
+      const content = blogQuill.root.innerHTML;
 
-    if (!title || blogQuill.getText().trim().length === 0) {
-      showToast('Please enter both title and content for your article.', 'error');
-      return;
-    }
-
-    try {
-      showToast('Publishing article...', 'info');
-      const res = await fetch('/api/blog', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ title, content })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to publish article');
-
-      showToast('Article published successfully!', 'success');
-
-      // Clear compose form
-      document.getElementById('blog-title').value = '';
-      blogQuill.setContents([]);
-
-      // Hide modal
-      document.getElementById('blog-compose-overlay').classList.remove('active');
-
-      // Update user state and re-render compose sidebar (permission is consumed)
-      if (currentUser) {
-        currentUser.can_blog = false;
-        updateAuthNav(currentUser);
+      if (!title || blogQuill.getText().trim().length === 0) {
+        showToast('Please enter both title and content for your article.', 'error');
+        return;
       }
-      loadBlogPosts();
-    } catch (err) {
-      showToast(err.message, 'error');
-    }
-  });
+
+      try {
+        showToast('Publishing article...', 'info');
+        const res = await fetch('/api/blog', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ title, content })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to publish article');
+
+        showToast('Article published successfully!', 'success');
+
+        // Clear compose form
+        if (titleInput) titleInput.value = '';
+        blogQuill.setContents([]);
+
+        // Hide modal
+        const overlay = document.getElementById('blog-compose-overlay');
+        if (overlay) overlay.classList.remove('active');
+
+        // Update user state and re-render compose sidebar (permission is consumed)
+        if (currentUser) {
+          currentUser.can_blog = false;
+          updateAuthNav(currentUser);
+        }
+        loadBlogPosts();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    });
+  }
 }
 
 function navigateToBlog() {
@@ -1780,7 +1955,7 @@ async function loadBlogPosts() {
       container.innerHTML = `
         <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 0.75rem; padding: 3rem; text-align: center; color: var(--text-secondary); width: 100%;">
           <h3>No articles published yet</h3>
-          <p style="margin-top: 0.5rem;">Be the first to publish an article on AeroPDF!</p>
+          <p style="margin-top: 0.5rem;">Be the first to publish an article on PixelPDF!</p>
         </div>
       `;
       return;

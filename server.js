@@ -28,7 +28,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const port = process.env.PORT || 3000;
 
-const JWT_SECRET = process.env.JWT_SECRET || 'aeropdf-enterprise-security-secret-passphrase';
+const JWT_SECRET = process.env.JWT_SECRET || 'pixelpdf-enterprise-security-secret-passphrase';
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || 'sk_test_mockstripekey';
 const stripe = new Stripe(STRIPE_SECRET_KEY);
 
@@ -286,7 +286,7 @@ app.post('/api/stripe/checkout', authenticateToken, async (req, res) => {
         price_data: {
           currency: 'usd',
           product_data: {
-            name: 'AeroPDF Premium Subscription',
+            name: 'PixelPDF Premium Subscription',
             description: 'Unlock uploads larger than 12MB'
           },
           unit_amount: 500, // $5.00
@@ -337,8 +337,8 @@ app.post('/api/stripe/blog-checkout', authenticateToken, async (req, res) => {
         price_data: {
           currency: 'usd',
           product_data: {
-            name: 'AeroPDF Single Blog Post Publishing Pass',
-            description: 'Allows you to publish a single article on the AeroPDF Blog page'
+            name: 'PixelPDF Single Blog Post Publishing Pass',
+            description: 'Allows you to publish a single article on the PixelPDF Blog page'
           },
           unit_amount: 1200 // $12.00
         },
@@ -572,8 +572,133 @@ app.post('/api/user/display-name', authenticateToken, async (req, res) => {
 });
 
 /* ==========================================
-   PDF AI INTELLIGENCE SYSTEM
+   PDF AI INTELLIGENCE SYSTEM (UNIFIED)
    ========================================== */
+
+app.post('/api/ai/assistant', upload.single('file'), checkUploadLimit, apiLimiter, async (req, res) => {
+  try {
+    const file = req.file;
+    const { mode, question, targetLanguage } = req.body;
+
+    if (!file) return res.status(400).json({ error: 'PDF file is required.' });
+    if (!mode) return res.status(400).json({ error: 'Mode (summarize, chat, translate, notes) is required.' });
+
+    // Stream text parsing from file
+    let pdfData;
+    try {
+      const dataBuffer = fs.readFileSync(file.path);
+      const parser = new PDFParse({ data: new Uint8Array(dataBuffer) });
+      pdfData = await parser.getText();
+    } catch (parseErr) {
+      fs.unlink(file.path, () => {});
+      console.error('[PDF Parse Error]:', parseErr);
+      return res.status(400).json({ error: 'Failed to parse PDF document text. The file might be corrupted, password protected, or not a valid PDF.' });
+    }
+    fs.unlink(file.path, () => {});
+
+    if (!pdfData.text || pdfData.text.trim().length === 0) {
+      return res.status(400).json({ error: 'No copyable text found in PDF.' });
+    }
+
+    const isMockGroq = !GROQ_API_KEY || 
+                       GROQ_API_KEY === 'MOCK_GROQ_KEY' || 
+                       !GROQ_API_KEY.startsWith('gsk_') || 
+                       GROQ_API_KEY.includes('mock') || 
+                       GROQ_API_KEY.includes('replace-me');
+
+    if (isMockGroq) {
+      if (mode === 'chat') {
+        return res.json({
+          result: `### AI PDF Chat Response (Mock - No GROQ_API_KEY Configured)
+
+You asked: *"${question || 'No question provided.'}"*
+
+This is a mock chat response because no valid Groq API Key was found in your configuration. To enable full interactive AI chat, please configure a valid \`GROQ_API_KEY\` in your environment.`
+        });
+      } else if (mode === 'translate') {
+        return res.json({
+          result: `### AI Document Translation to ${targetLanguage || 'selected language'} (Mock - No GROQ_API_KEY Configured)
+
+This is a mock translation of your document text into **${targetLanguage || 'selected language'}** because no valid Groq API Key was found. Configure a valid \`GROQ_API_KEY\` in your \`.env\` file to see real translations.`
+        });
+      } else if (mode === 'notes') {
+        return res.json({
+          result: `### AI Study Notes (Mock - No GROQ_API_KEY Configured)
+
+* **Key Topic:** Study Notes Generation
+* **Summary:** This is a mock study notes outline because no valid Groq API Key was found in the environment variables.
+* **Next Steps:** Set a valid \`GROQ_API_KEY\` in your \`.env\` file to generate structured study guides and summaries automatically.`
+        });
+      } else {
+        // summarize (default)
+        return res.json({
+          result: `### AI Document Summary (Mock - No GROQ_API_KEY Configured)
+
+* **Main Theme:** This is a mock summary because no valid Groq API Key (which typically starts with "gsk_") was found in the environment variables.
+* **Uploaded File:** The server processed the PDF text content successfully.
+* **Next Steps:** To see real Groq AI generation, set the \`GROQ_API_KEY\` environment variable in your \`.env\` file.`
+        });
+      }
+    }
+
+    let prompt = '';
+    let systemPrompt = '';
+
+    if (mode === 'chat') {
+      prompt = `The user has a question about the following PDF text. First, see if the PDF text contains the answer. If not, use your general knowledge but mention it is not directly in the PDF text.\n\nPDF Text Content:\n${pdfData.text.substring(0, 15000)}\n\nUser Question: ${question || 'Summarize the document'}`;
+      systemPrompt = 'You are a helpful AI PDF assistant. Answer the user\'s questions based on the PDF content provided.';
+    } else if (mode === 'translate') {
+      prompt = `Translate the following text extracted from a PDF document into ${targetLanguage || 'Spanish'}. Keep paragraphs clean and formatted:\n\n${pdfData.text.substring(0, 12000)}`;
+      systemPrompt = 'You are a professional translator. Translate the text accurately into the requested language.';
+    } else if (mode === 'notes') {
+      prompt = `Generate detailed study notes, key concepts, formulas/definitions, and a quick self-test quiz based on the following PDF text:\n\n${pdfData.text.substring(0, 15000)}`;
+      systemPrompt = 'You are an expert educator and study assistant. Generate clear, structured study notes, bullet points of key concepts, and summaries from the provided text.';
+    } else {
+      // summarize
+      prompt = `Provide a concise, detailed, and structured bullet-point summary of the following PDF text content:\n\n${pdfData.text.substring(0, 15000)}`;
+      systemPrompt = 'You are a professional PDF analyzer. Provide structured, accurate, and concise summaries.';
+    }
+
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${GROQ_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: GROQ_MODEL,
+        messages: [
+          {
+            role: 'system',
+            content: systemPrompt
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        temperature: 0
+      })
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(`Groq API returned status ${response.status}: ${errText}`);
+    }
+
+    const data = await response.json();
+    const result = data.choices?.[0]?.message?.content || 'No output generated.';
+    res.json({ result });
+  } catch (err) {
+    cleanTempFiles(req);
+    console.error(err);
+    const errMsg = err.message || '';
+    if (errMsg.includes('API key') || errMsg.includes('API_KEY') || errMsg.includes('key not valid') || errMsg.includes('unauthorized') || errMsg.includes('status 401')) {
+      return res.status(401).json({ error: 'Groq API rejected your API key. Please check that GROQ_API_KEY in your .env file is a valid Groq API Key starting with "gsk_".' });
+    }
+    res.status(500).json({ error: 'AI Assistant failed: ' + err.message, message: err.message, stack: err.stack });
+  }
+});
 
 app.post('/api/ai/summarize', upload.single('file'), checkUploadLimit, apiLimiter, async (req, res) => {
   try {
@@ -581,9 +706,16 @@ app.post('/api/ai/summarize', upload.single('file'), checkUploadLimit, apiLimite
     if (!file) return res.status(400).json({ error: 'PDF file is required.' });
 
     // Stream text parsing from file
-    const dataBuffer = fs.readFileSync(file.path);
-    const parser = new PDFParse({ data: new Uint8Array(dataBuffer) });
-    const pdfData = await parser.getText();
+    let pdfData;
+    try {
+      const dataBuffer = fs.readFileSync(file.path);
+      const parser = new PDFParse({ data: new Uint8Array(dataBuffer) });
+      pdfData = await parser.getText();
+    } catch (parseErr) {
+      fs.unlink(file.path, () => {});
+      console.error('[PDF Parse Error]:', parseErr);
+      return res.status(400).json({ error: 'Failed to parse PDF document text. The file might be corrupted, password protected, or not a valid PDF.' });
+    }
     fs.unlink(file.path, () => {});
 
     if (!pdfData.text || pdfData.text.trim().length === 0) {
@@ -656,9 +788,16 @@ app.post('/api/ai/translate', upload.single('file'), checkUploadLimit, apiLimite
       return res.status(400).json({ error: 'PDF file and target language are required.' });
     }
 
-    const dataBuffer = fs.readFileSync(file.path);
-    const parser = new PDFParse({ data: new Uint8Array(dataBuffer) });
-    const pdfData = await parser.getText();
+    let pdfData;
+    try {
+      const dataBuffer = fs.readFileSync(file.path);
+      const parser = new PDFParse({ data: new Uint8Array(dataBuffer) });
+      pdfData = await parser.getText();
+    } catch (parseErr) {
+      fs.unlink(file.path, () => {});
+      console.error('[PDF Parse Error]:', parseErr);
+      return res.status(400).json({ error: 'Failed to parse PDF document text. The file might be corrupted, password protected, or not a valid PDF.' });
+    }
     fs.unlink(file.path, () => {});
 
     if (!pdfData.text || pdfData.text.trim().length === 0) {
@@ -1058,7 +1197,7 @@ app.post('/api/ocr', upload.single('file'), checkUploadLimit, apiLimiter, async 
     const pages = pdf.getPages();
     
     pages.forEach((page, i) => {
-      page.drawText(`AeroPDF OCR Text Layer (Page ${i+1})`, {
+      page.drawText(`PixelPDF OCR Text Layer (Page ${i+1})`, {
         x: 50, y: 20, size: 8, font, color: rgb(0.7, 0.7, 0.7), opacity: 0.15
       });
     });
@@ -1366,7 +1505,7 @@ app.post('/api/pdf-to-office', upload.single('file'), checkUploadLimit, apiLimit
       const rawText = pdfData.text || '';
 
       const csvLines = [
-        `"AeroPDF Table Extraction","${title.replace(/"/g, '""')}"`,
+        `"PixelPDF Table Extraction","${title.replace(/"/g, '""')}"`,
         `"Page Count","${pageCount}"`,
         `"Exported On","${new Date().toLocaleString().replace(/"/g, '""')}"`,
         `""`
@@ -1591,7 +1730,7 @@ app.post('/api/pdf-forms', upload.single('file'), checkUploadLimit, apiLimiter, 
       try {
         const firstField = fields[0];
         if (firstField.constructor.name === 'PDFTextField') {
-          firstField.setText('AeroPDF Autocomplete');
+          firstField.setText('PixelPDF Autocomplete');
         }
       } catch(e) {}
     }
