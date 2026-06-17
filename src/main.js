@@ -25,6 +25,7 @@ import {
   comparePDFs,
   pdfToImages,
   generatePagePreviews,
+  getPDFFirstPageThumbnail,
   aiAssistantPDF,
   aiSummarizePDF,
   aiTranslatePDF,
@@ -739,7 +740,7 @@ function captureWebcamSnapshot() {
     
     // Alert the user and update lists
     showToast('Snapshot captured!', 'success');
-    document.getElementById('files-list').style.display = 'block';
+    document.getElementById('files-list').style.display = 'grid';
     renderFilesList();
     updateProcessButtonState();
   }, 'image/png');
@@ -809,7 +810,7 @@ async function handleFilesSelected(fileList) {
   } else {
     document.getElementById('previews-container').style.display = 'none';
     document.getElementById('compare-workspace').style.display = 'none';
-    document.getElementById('files-list').style.display = 'block';
+    document.getElementById('files-list').style.display = 'grid';
   }
   
   updateProcessButtonState();
@@ -1172,7 +1173,111 @@ async function runPDFComparison() {
   }
 }
 
-// Display file details list (Merge and Image to PDF)
+// Draw mock document thumbnails dynamically on canvas
+function generateMockDocThumbnail(type) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 200;
+  canvas.height = 280;
+  const ctx = canvas.getContext('2d');
+  
+  // Background
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, 200, 280);
+  
+  // Border
+  ctx.strokeStyle = '#cbd5e1';
+  ctx.lineWidth = 4;
+  ctx.strokeRect(2, 2, 196, 276);
+  
+  // Header Accent Strip
+  if (type === 'word') {
+    ctx.fillStyle = '#2b579a'; // Word Blue
+    ctx.fillRect(10, 10, 180, 30);
+  } else if (type === 'excel') {
+    ctx.fillStyle = '#107c41'; // Excel Green
+    ctx.fillRect(10, 10, 180, 30);
+  } else if (type === 'pdf') {
+    ctx.fillStyle = '#f40f0f'; // PDF Red
+    ctx.fillRect(10, 10, 180, 30);
+  } else {
+    ctx.fillStyle = '#718096'; // Gray
+    ctx.fillRect(10, 10, 180, 30);
+  }
+  
+  // Draw lines representing text
+  ctx.fillStyle = '#cbd5e1';
+  if (type === 'excel') {
+    ctx.strokeStyle = '#cbd5e1';
+    ctx.lineWidth = 2;
+    for (let y = 60; y < 260; y += 30) {
+      ctx.beginPath();
+      ctx.moveTo(10, y);
+      ctx.lineTo(190, y);
+      ctx.stroke();
+    }
+    for (let x = 10; x < 190; x += 44) {
+      ctx.beginPath();
+      ctx.moveTo(x, 50);
+      ctx.lineTo(x, 260);
+      ctx.stroke();
+    }
+  } else {
+    let y = 64;
+    const lineCount = 8;
+    for (let i = 0; i < lineCount; i++) {
+      const w = i === lineCount - 1 ? 100 : 160;
+      ctx.fillRect(20, y, w, 12);
+      y += 26;
+    }
+  }
+  
+  // Draw small icon badge at bottom right
+  ctx.font = 'bold 24px sans-serif';
+  if (type === 'word') {
+    ctx.fillStyle = '#2b579a';
+    ctx.fillText('W', 150, 256);
+  } else if (type === 'excel') {
+    ctx.fillStyle = '#107c41';
+    ctx.fillText('X', 150, 256);
+  } else if (type === 'pdf') {
+    ctx.fillStyle = '#f40f0f';
+    ctx.fillText('PDF', 130, 256);
+  }
+  
+  return canvas.toDataURL();
+}
+
+// Generate thumbnail URL for any uploaded file type
+async function generateFileThumbnail(file) {
+  const type = file.type;
+  const name = file.name.toLowerCase();
+  
+  if (type.startsWith('image/')) {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target.result);
+      reader.readAsDataURL(file);
+    });
+  }
+  
+  if (name.endsWith('.pdf')) {
+    const dataUrl = await getPDFFirstPageThumbnail(file);
+    if (dataUrl) return dataUrl;
+    return generateMockDocThumbnail('pdf');
+  }
+  
+  if (name.endsWith('.docx') || name.endsWith('.doc')) {
+    return generateMockDocThumbnail('word');
+  }
+  
+  if (name.endsWith('.xlsx') || name.endsWith('.xls') || name.endsWith('.csv')) {
+    return generateMockDocThumbnail('excel');
+  }
+  
+  return generateMockDocThumbnail('generic');
+}
+
+// Display file details list with visual thumbnail pages
 function renderFilesList() {
   const listElement = document.getElementById('files-list');
   listElement.innerHTML = '';
@@ -1185,24 +1290,42 @@ function renderFilesList() {
     const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
     
     card.innerHTML = `
-      <div class="file-info">
-        <div class="file-icon" style="color: var(--accent-primary)">
-          📄
-        </div>
-        <div class="file-details">
-          <div class="file-name" title="${file.name}">${file.name}</div>
-          <div class="file-size">${sizeMB} MB</div>
-        </div>
-      </div>
       <div class="file-actions">
-        ${currentTool === 'merge' || currentTool === 'img-to-pdf' || currentTool === 'scan-to-pdf' ? `
-          <button class="btn-icon btn-reorder-up" data-index="${index}" ${index === 0 ? 'disabled' : ''} title="Move Up">▲</button>
-          <button class="btn-icon btn-reorder-down" data-index="${index}" ${index === uploadedFiles.length - 1 ? 'disabled' : ''} title="Move Down">▼</button>
-        ` : ''}
         <button class="btn-icon btn-icon-danger btn-remove-file" data-index="${index}" title="Remove file">✖</button>
+        ${currentTool === 'merge' || currentTool === 'img-to-pdf' || currentTool === 'scan-to-pdf' ? `
+          <button class="btn-icon btn-reorder-up" data-index="${index}" ${index === 0 ? 'disabled' : ''} title="Move Left">◀</button>
+          <button class="btn-icon btn-reorder-down" data-index="${index}" ${index === uploadedFiles.length - 1 ? 'disabled' : ''} title="Move Right">▶</button>
+        ` : ''}
+      </div>
+      <div class="file-preview-card">
+        <img id="file-thumb-${index}" src="" alt="Thumbnail" />
+      </div>
+      <div class="file-details">
+        <div class="file-name" title="${file.name}">${file.name}</div>
+        <div class="file-size">${sizeMB} MB</div>
       </div>
     `;
     listElement.appendChild(card);
+    
+    // Set placeholder thumbnail immediately
+    const thumbImg = document.getElementById(`file-thumb-${index}`);
+    const name = file.name.toLowerCase();
+    let mockType = 'generic';
+    if (name.endsWith('.pdf')) mockType = 'pdf';
+    else if (name.endsWith('.docx') || name.endsWith('.doc')) mockType = 'word';
+    else if (name.endsWith('.xlsx') || name.endsWith('.xls') || name.endsWith('.csv')) mockType = 'excel';
+    
+    if (thumbImg) {
+      thumbImg.src = generateMockDocThumbnail(mockType);
+    }
+    
+    // Generate real thumbnail asynchronously
+    generateFileThumbnail(file).then(dataUrl => {
+      const img = document.getElementById(`file-thumb-${index}`);
+      if (img && dataUrl) {
+        img.src = dataUrl;
+      }
+    });
   });
 }
 
@@ -1636,22 +1759,51 @@ function updateAuthNav(user) {
   
   if (user) {
     const badgeClass = user.is_premium ? 'auth-badge-premium' : 'auth-badge-free';
-    const badgeText = user.is_premium ? 'Premium' : 'Free';
+    
+    const planNames = {
+      free: 'Free',
+      starter: 'Starter',
+      base: 'Base',
+      pro: 'Pro',
+      enterprise: 'Enterprise',
+      collaborator: 'Collaborator'
+    };
+    
+    const currentPlan = user.subscription_plan || (user.is_premium ? 'starter' : 'free');
+    const badgeText = planNames[currentPlan] || 'Premium';
     const badgeStyle = user.is_premium ? '' : 'style="cursor: pointer;" title="Upgrade to Premium"';
     const badgeId = user.is_premium ? '' : 'id="btn-nav-upgrade"';
+    
+    const showTeamBtn = ['base', 'pro', 'enterprise'].includes(currentPlan);
+    const teamBtnHtml = showTeamBtn 
+      ? `<button id="btn-nav-team" class="btn-nav-back" style="padding: 0.35rem 0.75rem; font-size: 0.85rem; border-color: var(--accent-primary); color: var(--accent-primary);">Manage Team</button>`
+      : '';
     
     authNav.innerHTML = `
       <span style="font-size: 0.95rem; color: var(--text-secondary); max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500;">
         ${user.email}
       </span>
       <span ${badgeId} class="auth-badge ${badgeClass}" ${badgeStyle}>${badgeText}</span>
+      ${teamBtnHtml}
       <button id="btn-logout" class="btn-nav-back" style="padding: 0.35rem 0.75rem; font-size: 0.85rem;">Logout</button>
     `;
     
     if (!user.is_premium) {
-      document.getElementById('btn-nav-upgrade').addEventListener('click', () => {
-        showAuthModal('upgrade');
-      });
+      const upgradeBtn = document.getElementById('btn-nav-upgrade');
+      if (upgradeBtn) {
+        upgradeBtn.addEventListener('click', () => {
+          showAuthModal('upgrade');
+        });
+      }
+    }
+    
+    if (showTeamBtn) {
+      const teamBtn = document.getElementById('btn-nav-team');
+      if (teamBtn) {
+        teamBtn.addEventListener('click', () => {
+          showTeamModal();
+        });
+      }
     }
     
     document.getElementById('btn-logout').addEventListener('click', () => {
@@ -1684,11 +1836,13 @@ function showAuthModal(type) {
   const login = document.getElementById('login-modal');
   const signup = document.getElementById('signup-modal');
   const upgrade = document.getElementById('upgrade-modal');
+  const team = document.getElementById('team-modal');
   
   overlay.classList.add('active');
   login.style.display = 'none';
   signup.style.display = 'none';
   upgrade.style.display = 'none';
+  if (team) team.style.display = 'none';
   
   if (type === 'login') {
     login.style.display = 'flex';
@@ -1696,21 +1850,161 @@ function showAuthModal(type) {
     signup.style.display = 'flex';
   } else if (type === 'upgrade') {
     upgrade.style.display = 'flex';
-    const btnCheckout = document.getElementById('btn-trigger-checkout');
     const loggedOutActions = document.getElementById('upgrade-logged-out-actions');
+    const cardButtons = document.querySelectorAll('.btn-plan-choose');
+    
     if (token) {
-      btnCheckout.style.display = 'block';
-      loggedOutActions.style.display = 'none';
+      if (loggedOutActions) loggedOutActions.style.display = 'none';
+      cardButtons.forEach(btn => {
+        const plan = btn.getAttribute('data-plan');
+        if (currentUser && currentUser.subscription_plan === plan) {
+          btn.textContent = 'Current Plan';
+          btn.disabled = true;
+          btn.style.opacity = '0.5';
+        } else {
+          btn.textContent = `Choose ${plan.charAt(0).toUpperCase() + plan.slice(1)}`;
+          btn.disabled = false;
+          btn.style.opacity = '1';
+        }
+      });
     } else {
-      btnCheckout.style.display = 'none';
-      loggedOutActions.style.display = 'flex';
+      if (loggedOutActions) loggedOutActions.style.display = 'flex';
+      cardButtons.forEach(btn => {
+        btn.textContent = 'Sign In to Choose';
+        btn.disabled = false;
+        btn.style.opacity = '1';
+      });
     }
+    
+    // Set initial active plan based on slider
+    updateActivePricingCard();
   }
 }
 
 function hideAuthModal() {
   const overlay = document.getElementById('auth-modal-overlay');
   overlay.classList.remove('active');
+}
+
+function updateActivePricingCard() {
+  const slider = document.getElementById('pricing-seats-slider');
+  if (!slider) return;
+  const seats = parseInt(slider.value, 10);
+  const seatsCount = document.getElementById('pricing-seats-count');
+  
+  if (seatsCount) {
+    if (seats >= 30) {
+      seatsCount.textContent = '30+ users (Enterprise)';
+    } else {
+      seatsCount.textContent = `${seats} user${seats > 1 ? 's' : ''}`;
+    }
+  }
+  
+  // Remove active-plan from all cards
+  const cards = document.querySelectorAll('.pricing-card');
+  cards.forEach(c => c.classList.remove('active-plan'));
+  
+  let targetPlan = 'starter';
+  if (seats === 1) {
+    targetPlan = 'starter';
+  } else if (seats >= 2 && seats <= 5) {
+    targetPlan = 'base';
+  } else if (seats >= 6 && seats <= 15) {
+    targetPlan = 'pro';
+  } else {
+    targetPlan = 'enterprise';
+  }
+  
+  const targetCard = document.getElementById(`card-plan-${targetPlan}`);
+  if (targetCard) {
+    targetCard.classList.add('active-plan');
+  }
+}
+
+function showTeamModal() {
+  const overlay = document.getElementById('auth-modal-overlay');
+  const login = document.getElementById('login-modal');
+  const signup = document.getElementById('signup-modal');
+  const upgrade = document.getElementById('upgrade-modal');
+  const team = document.getElementById('team-modal');
+  
+  overlay.classList.add('active');
+  login.style.display = 'none';
+  signup.style.display = 'none';
+  upgrade.style.display = 'none';
+  if (team) team.style.display = 'flex';
+  
+  fetchTeamMembers();
+}
+
+function hideTeamModal() {
+  const overlay = document.getElementById('auth-modal-overlay');
+  overlay.classList.remove('active');
+}
+
+async function fetchTeamMembers() {
+  if (!token) return;
+  
+  try {
+    const res = await fetch('/api/collaboration/list', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to fetch team list');
+    
+    document.getElementById('team-seat-usage').textContent = `${data.seatsUsed} / ${data.maxSeats} used`;
+    
+    const listContainer = document.getElementById('team-members-list');
+    listContainer.innerHTML = '';
+    
+    if (data.collaborators.length === 0) {
+      listContainer.innerHTML = `<p style="font-size: 0.85rem; color: var(--text-muted); text-align: center; padding: 1rem 0;">No team members invited yet.</p>`;
+      return;
+    }
+    
+    data.collaborators.forEach(c => {
+      const row = document.createElement('div');
+      row.className = 'team-member-row';
+      row.innerHTML = `
+        <span class="team-member-email">${c.email}</span>
+        <button class="btn-remove-member" data-email="${c.email}">Remove</button>
+      `;
+      listContainer.appendChild(row);
+    });
+    
+    listContainer.querySelectorAll('.btn-remove-member').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const email = e.currentTarget.getAttribute('data-email');
+        if (confirm(`Are you sure you want to remove ${email} from your collaboration team?`)) {
+          await removeTeamMember(email);
+        }
+      });
+    });
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+async function removeTeamMember(email) {
+  try {
+    const res = await fetch('/api/collaboration/remove', {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ email })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to remove member');
+    
+    showToast(data.message || 'Collaborator removed', 'success');
+    fetchTeamMembers();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
 }
 
 function setupAuthEventListeners() {
@@ -1792,30 +2086,76 @@ function setupAuthEventListeners() {
     }
   });
   
-  document.getElementById('btn-trigger-checkout').addEventListener('click', async () => {
-    if (!token) {
-      showToast('Please login first', 'error');
-      showAuthModal('login');
-      return;
-    }
-    
-    try {
-      const res = await fetch('/api/stripe/checkout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Checkout redirect failed');
+  // Seats range slider event listener
+  const pricingSlider = document.getElementById('pricing-seats-slider');
+  if (pricingSlider) {
+    pricingSlider.addEventListener('input', updateActivePricingCard);
+  }
+
+  // Choose pricing plan button event listeners
+  document.querySelectorAll('.btn-plan-choose').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      const plan = e.currentTarget.getAttribute('data-plan');
       
-      showToast('Redirecting to secure Stripe billing portal...', 'info');
-      performCheckoutRedirect(data.url);
-    } catch (err) {
-      showToast(err.message, 'error');
-    }
+      if (!token) {
+        showToast('Please login first to upgrade', 'error');
+        showAuthModal('login');
+        return;
+      }
+      
+      try {
+        const res = await fetch('/api/stripe/checkout', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ plan })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Checkout redirect failed');
+        
+        showToast('Redirecting to secure Stripe billing portal...', 'info');
+        performCheckoutRedirect(data.url);
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    });
   });
+
+  // Team collaboration modal listeners
+  const teamCloseBtn = document.getElementById('btn-close-team');
+  if (teamCloseBtn) {
+    teamCloseBtn.addEventListener('click', hideTeamModal);
+  }
+
+  const teamInviteForm = document.getElementById('team-invite-form');
+  if (teamInviteForm) {
+    teamInviteForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const emailInput = document.getElementById('team-invite-email');
+      const email = emailInput.value.trim();
+      
+      try {
+        const res = await fetch('/api/collaboration/add', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ email })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to invite collaborator');
+        
+        showToast(data.message || 'Collaborator invited successfully!', 'success');
+        emailInput.value = '';
+        fetchTeamMembers();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    });
+  }
 }
 
 /* ==========================================

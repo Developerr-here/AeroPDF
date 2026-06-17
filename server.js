@@ -20,7 +20,7 @@ import { fileURLToPath } from 'url';
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 const mammoth = require('mammoth');
-import { User, BlogPost, syncDatabase } from './db.js';
+import { User, BlogPost, CollaborationEmail, syncDatabase } from './db.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -139,6 +139,38 @@ function sanitizeWinAnsi(text) {
    AUTHENTICATION & SECURITY MIDDLEWARE
    ========================================== */
 
+// Helper: Calculate dynamic premium status (including collaboration membership)
+async function getPremiumStatus(user) {
+  if (!user) return false;
+  if (user.is_premium || (user.subscription_plan && user.subscription_plan !== 'free')) {
+    return true;
+  }
+  
+  const isCollaborator = await CollaborationEmail.findOne({
+    where: { email: user.email }
+  });
+  if (isCollaborator) {
+    const owner = await User.findByPk(isCollaborator.owner_id);
+    if (owner && ['base', 'pro', 'enterprise'].includes(owner.subscription_plan)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// Helper: Serialize user responses consistently with dynamic premium and plan information
+async function formatUserResponse(user) {
+  if (!user) return null;
+  return {
+    id: user.id,
+    email: user.email,
+    is_premium: await getPremiumStatus(user),
+    subscription_plan: user.subscription_plan,
+    can_blog: user.can_blog,
+    display_name: user.display_name
+  };
+}
+
 // Auth Middleware: Verify JWT Token
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
@@ -178,7 +210,8 @@ const checkUploadLimit = async (req, res, next) => {
     try {
       const decoded = jwt.verify(token, JWT_SECRET);
       const dbUser = await User.findByPk(decoded.id);
-      if (dbUser && dbUser.is_premium) {
+      const isPremium = dbUser ? await getPremiumStatus(dbUser) : false;
+      if (dbUser && isPremium) {
         req.user = decoded;
         return next();
       }
@@ -219,7 +252,7 @@ app.post('/api/auth/signup', authLimiter, async (req, res) => {
     const user = await User.create({ email, password: hashedPassword });
 
     const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
-    res.json({ token, user: { id: user.id, email: user.email, is_premium: user.is_premium, can_blog: user.can_blog, display_name: user.display_name } });
+    res.json({ token, user: await formatUserResponse(user) });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Signup processing failed.' });
@@ -238,7 +271,7 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
     if (!match) return res.status(400).json({ error: 'Invalid email or password.' });
 
     const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
-    res.json({ token, user: { id: user.id, email: user.email, is_premium: user.is_premium, can_blog: user.can_blog, display_name: user.display_name } });
+    res.json({ token, user: await formatUserResponse(user) });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Login processing failed.' });
@@ -249,7 +282,7 @@ app.get('/api/auth/me', authenticateToken, async (req, res) => {
   try {
     const user = await User.findByPk(req.user.id);
     if (!user) return res.status(404).json({ error: 'User profile not found.' });
-    res.json({ user: { id: user.id, email: user.email, is_premium: user.is_premium, can_blog: user.can_blog, display_name: user.display_name } });
+    res.json({ user: await formatUserResponse(user) });
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch user state.' });
   }
@@ -265,9 +298,26 @@ app.post('/api/stripe/checkout', authenticateToken, async (req, res) => {
     const user = await User.findByPk(req.user.id);
     if (!user) return res.status(404).json({ error: 'User not found.' });
 
+    const { plan } = req.body;
+    const validPlans = ['starter', 'base', 'pro', 'enterprise'];
+    const selectedPlan = validPlans.includes(plan) ? plan : 'starter';
+
+    const planPrices = {
+      starter: 1000,
+      base: 2900,
+      pro: 9900,
+      enterprise: 12000
+    };
+    const planNames = {
+      starter: 'PixelPDF Starter Plan',
+      base: 'PixelPDF Base Plan',
+      pro: 'PixelPDF Pro Plan',
+      enterprise: 'PixelPDF Enterprise Plan'
+    };
+
     const isMock = STRIPE_SECRET_KEY === 'sk_test_mockstripekey';
     if (isMock) {
-      const mockUrl = `/api/stripe/mock-checkout?type=premium&userId=${user.id}&success_url=${encodeURIComponent(req.headers.origin || 'http://localhost:5173')}/?payment=success`;
+      const mockUrl = `/api/stripe/mock-checkout?type=${selectedPlan}&userId=${user.id}&success_url=${encodeURIComponent(req.headers.origin || 'http://localhost:5173')}/?payment=success`;
       return res.json({ url: mockUrl });
     }
 
@@ -286,10 +336,10 @@ app.post('/api/stripe/checkout', authenticateToken, async (req, res) => {
         price_data: {
           currency: 'usd',
           product_data: {
-            name: 'PixelPDF Premium Subscription',
-            description: 'Unlock uploads larger than 12MB'
+            name: planNames[selectedPlan],
+            description: `Unlock premium features for the ${selectedPlan} plan.`
           },
-          unit_amount: 500, // $5.00
+          unit_amount: planPrices[selectedPlan],
           recurring: { interval: 'month' }
         },
         quantity: 1
@@ -299,7 +349,8 @@ app.post('/api/stripe/checkout', authenticateToken, async (req, res) => {
       cancel_url: `${req.headers.origin || 'http://localhost:5173'}/?payment=cancel`,
       metadata: {
         userId: user.id,
-        type: 'subscription'
+        type: 'subscription',
+        plan: selectedPlan
       }
     });
 
@@ -360,6 +411,123 @@ app.post('/api/stripe/blog-checkout', authenticateToken, async (req, res) => {
   }
 });
 
+/* ==========================================
+   USER COLLABORATION & TEAM ENDPOINTS
+   ========================================== */
+
+// Route: Get invited collaboration emails for logged in user
+app.get('/api/collaboration/list', authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.id);
+    if (!user) return res.status(404).json({ error: 'User not found.' });
+
+    const collaborators = await CollaborationEmail.findAll({
+      where: { owner_id: user.id }
+    });
+
+    const planLimits = {
+      base: 4,
+      pro: 14,
+      enterprise: 99
+    };
+    const currentPlan = user.subscription_plan || 'free';
+    const maxCollaborators = planLimits[currentPlan] || 0;
+
+    res.json({
+      success: true,
+      collaborators: collaborators.map(c => ({ id: c.id, email: c.email })),
+      seatsUsed: collaborators.length,
+      maxSeats: maxCollaborators,
+      canCollaborate: ['base', 'pro', 'enterprise'].includes(currentPlan)
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to fetch collaborator list.' });
+  }
+});
+
+// Route: Add user email to collaboration list
+app.post('/api/collaboration/add', authenticateToken, async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email address is required.' });
+    const formattedEmail = email.trim().toLowerCase();
+
+    const user = await User.findByPk(req.user.id);
+    if (!user) return res.status(404).json({ error: 'User not found.' });
+
+    const currentPlan = user.subscription_plan || 'free';
+    const planLimits = {
+      base: 4,
+      pro: 14,
+      enterprise: 99
+    };
+    const maxCollaborators = planLimits[currentPlan] || 0;
+
+    if (!['base', 'pro', 'enterprise'].includes(currentPlan)) {
+      return res.status(403).json({ error: 'Your current plan does not support multi-user collaboration. Please upgrade to Base or higher.' });
+    }
+
+    const existingCollaborators = await CollaborationEmail.findAll({
+      where: { owner_id: user.id }
+    });
+
+    if (existingCollaborators.length >= maxCollaborators) {
+      return res.status(400).json({ error: `Invite limit reached. Your plan allows up to ${maxCollaborators} collaborators.` });
+    }
+
+    const alreadyInvited = existingCollaborators.find(c => c.email.toLowerCase() === formattedEmail);
+    if (alreadyInvited) {
+      return res.status(400).json({ error: 'This user is already in your collaboration team.' });
+    }
+
+    const newInvite = await CollaborationEmail.create({
+      owner_id: user.id,
+      email: formattedEmail
+    });
+
+    res.json({
+      success: true,
+      collaborator: { id: newInvite.id, email: newInvite.email },
+      message: 'Collaborator added successfully.'
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to invite collaborator.' });
+  }
+});
+
+// Route: Remove email from collaboration list
+app.delete('/api/collaboration/remove', authenticateToken, async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email address is required.' });
+    const formattedEmail = email.trim().toLowerCase();
+
+    const user = await User.findByPk(req.user.id);
+    if (!user) return res.status(404).json({ error: 'User not found.' });
+
+    const deleted = await CollaborationEmail.destroy({
+      where: {
+        owner_id: user.id,
+        email: formattedEmail
+      }
+    });
+
+    if (!deleted) {
+      return res.status(404).json({ error: 'Collaborator not found in your team.' });
+    }
+
+    res.json({
+      success: true,
+      message: 'Collaborator removed successfully.'
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to remove collaborator.' });
+  }
+});
+
 // Route: Mock checkout processor for local testing
 app.get('/api/stripe/mock-checkout', async (req, res) => {
   const { type, userId, success_url } = req.query;
@@ -368,8 +536,14 @@ app.get('/api/stripe/mock-checkout', async (req, res) => {
     if (user) {
       if (type === 'premium') {
         user.is_premium = true;
+        user.subscription_plan = 'starter';
         await user.save();
-        console.log(`[Mock Stripe] Upgraded user ${user.email} to Premium.`);
+        console.log(`[Mock Stripe] Upgraded user ${user.email} to Premium (Starter).`);
+      } else if (['starter', 'base', 'pro', 'enterprise'].includes(type)) {
+        user.is_premium = true;
+        user.subscription_plan = type;
+        await user.save();
+        console.log(`[Mock Stripe] Upgraded user ${user.email} to ${type.toUpperCase()} plan.`);
       } else if (type === 'blog_pass') {
         user.can_blog = true;
         await user.save();
@@ -394,13 +568,7 @@ app.post('/api/stripe/verify-payment', authenticateToken, async (req, res) => {
       const user = await User.findByPk(req.user.id);
       return res.json({ 
         success: true, 
-        user: { 
-          id: user.id, 
-          email: user.email, 
-          is_premium: user.is_premium, 
-          can_blog: user.can_blog, 
-          display_name: user.display_name 
-        } 
+        user: await formatUserResponse(user)
       });
     }
 
@@ -412,8 +580,10 @@ app.post('/api/stripe/verify-payment', authenticateToken, async (req, res) => {
 
     if (session.payment_status === 'paid') {
       const type = session.metadata.type;
+      const plan = session.metadata.plan || 'starter';
       if (type === 'subscription') {
         user.is_premium = true;
+        user.subscription_plan = plan;
       } else if (type === 'blog_pass') {
         user.can_blog = true;
       }
@@ -422,13 +592,7 @@ app.post('/api/stripe/verify-payment', authenticateToken, async (req, res) => {
       console.log(`[Stripe Verification] Verified payment and updated ${user.email} status (type: ${type}).`);
       return res.json({ 
         success: true, 
-        user: { 
-          id: user.id, 
-          email: user.email, 
-          is_premium: user.is_premium, 
-          can_blog: user.can_blog, 
-          display_name: user.display_name 
-        } 
+        user: await formatUserResponse(user)
       });
     }
 
@@ -466,7 +630,8 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
       if (user) {
         if (type === 'subscription') {
           user.is_premium = true;
-          console.log(`[Stripe] Upgraded user ${user.email} to Premium.`);
+          user.subscription_plan = session.metadata.plan || 'starter';
+          console.log(`[Stripe] Upgraded user ${user.email} to Premium (${user.subscription_plan} plan).`);
         } else if (type === 'blog_pass') {
           user.can_blog = true;
           console.log(`[Stripe] Granted blog writer permissions to ${user.email}.`);
@@ -557,13 +722,7 @@ app.post('/api/user/display-name', authenticateToken, async (req, res) => {
     res.json({ 
       success: true, 
       displayName: updatedName, 
-      user: { 
-        id: user.id, 
-        email: user.email, 
-        is_premium: user.is_premium, 
-        can_blog: user.can_blog, 
-        display_name: user.display_name 
-      } 
+      user: await formatUserResponse(user) 
     });
   } catch (err) {
     console.error(err);

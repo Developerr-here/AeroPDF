@@ -443,57 +443,110 @@ body.dark-theme .upload-zone {
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
   border-radius: 0.75rem;
-  padding: 1.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  max-height: 520px;
+  padding: 1.5rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 220px); /* Fixed width for columns, prevents stretching! */
+  justify-content: center; /* Center-align the grid items inside the container */
+  gap: 1.5rem;
+  max-height: 580px;
   overflow-y: auto;
   box-shadow: var(--shadow-soft);
 }
 
 .file-item-card {
-  background: rgba(244, 245, 248, 0.4);
-  border: 1px solid var(--border-color);
-  border-radius: 0.5rem;
-  padding: 0.75rem 1rem;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  transition: var(--transition-smooth);
-}
-
-.file-item-card:hover {
-  background: rgba(244, 245, 248, 0.8);
-  border-color: var(--border-hover);
-}
-
-.file-info {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  min-width: 0;
-}
-
-.file-name {
-  font-weight: 600;
-  font-size: 0.9rem;
-  color: var(--text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.file-size {
-  font-size: 0.75rem;
-  color: var(--text-secondary);
+  width: 220px;
+  position: relative;
 }
 
 .file-actions {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
+  justify-content: center;
+  gap: 0.75rem;
+  width: 100%;
+  margin-bottom: 0.5rem;
+}
+
+.file-actions .btn-icon {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition-smooth);
+}
+
+.file-actions .btn-icon:hover:not(:disabled) {
+  color: var(--text-primary);
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.file-actions .btn-icon-danger:hover:not(:disabled) {
+  color: var(--accent-danger);
+  background: rgba(220, 38, 38, 0.08);
+}
+
+.file-actions .btn-icon:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.file-preview-card {
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  width: 100%;
+  height: 300px; /* Increased from 240px to match portrait aspect ratio for 220px width */
+  padding: 0.75rem; /* Margins around the page so it looks like a real doc sheet */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-soft);
+  transition: var(--transition-smooth);
+  overflow: hidden;
+}
+
+.file-preview-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-medium);
+  border-color: var(--border-hover);
+}
+
+.file-preview-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* The whole portrait should appear */
+  border-radius: 4px;
+}
+
+.file-details {
+  margin-top: 0.5rem;
+  text-align: center;
+  width: 100%;
+}
+
+.file-name {
+  font-weight: 500;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+}
+
+.file-size {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-top: 0.125rem;
 }
 
 .btn-icon {
@@ -867,6 +920,196 @@ body.dark-theme .upload-zone {
 
 .btn-close-modal:hover {
   color: var(--text-primary);
+}
+
+/* Pricing Wide Modal styling */
+.pricing-modal-wide {
+  box-sizing: border-box;
+}
+
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.25rem;
+}
+
+/* Pricing Card Default state */
+.pricing-card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 0.85rem;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow-soft);
+  opacity: 0.6; /* Dim inactive cards */
+}
+
+/* Hover effect for inactive cards */
+.pricing-card:hover {
+  opacity: 0.85;
+  transform: translateY(-2px);
+}
+
+/* Highlight / Active card state from slider */
+.pricing-card.active-plan {
+  opacity: 1 !important;
+  transform: translateY(-4px);
+  border-color: var(--accent-primary);
+  box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.15), 0 8px 10px -6px rgba(99, 102, 241, 0.15);
+}
+
+/* Standout styling for Pro (or highlighted) plan when active */
+.pricing-card.highlighted-plan.active-plan {
+  background: linear-gradient(135deg, #0e1124 0%, #15102a 100%);
+  border-color: #a855f7;
+  color: #ffffff;
+  box-shadow: 0 15px 30px -5px rgba(168, 85, 247, 0.25);
+}
+
+.dark-theme .pricing-card.highlighted-plan.active-plan {
+  background: linear-gradient(135deg, #090c1a 0%, #120921 100%);
+  border-color: #a855f7;
+}
+
+/* Specific inner element styling */
+.pricing-card .plan-name {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0 0 0.25rem 0;
+  color: var(--text-primary);
+}
+
+.pricing-card.highlighted-plan.active-plan .plan-name {
+  color: #ffffff;
+}
+
+.pricing-card .plan-price {
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: baseline;
+}
+
+.pricing-card .price-amount {
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.pricing-card.highlighted-plan.active-plan .price-amount {
+  color: #ffffff;
+}
+
+.pricing-card .price-period {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-left: 0.25rem;
+}
+
+.pricing-card.highlighted-plan.active-plan .price-period {
+  color: rgba(255,255,255,0.7);
+}
+
+.pricing-card .plan-desc {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin: 0 0 0.75rem 0;
+  line-height: 1.4;
+  min-height: auto;
+}
+
+.pricing-card.highlighted-plan.active-plan .plan-desc {
+  color: rgba(255,255,255,0.8);
+}
+
+.pricing-card .plan-features {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  flex: 1;
+}
+
+.pricing-card .plan-features li {
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  line-height: 1.3;
+}
+
+/* Features Included & Excluded indicator icons */
+.pricing-card .plan-features li.feature-included::before {
+  content: "✔";
+  color: #10b981;
+  font-weight: bold;
+}
+
+.pricing-card .plan-features li.feature-excluded {
+  color: var(--text-muted);
+  opacity: 0.5;
+}
+
+.pricing-card.highlighted-plan.active-plan .plan-features li.feature-excluded {
+  color: rgba(255,255,255,0.3);
+}
+
+.pricing-card .plan-features li.feature-excluded::before {
+  content: "✕";
+  color: var(--text-muted);
+  font-weight: bold;
+}
+
+/* popular-badge styling */
+.popular-badge {
+  position: absolute;
+  top: -10px;
+  right: 1.5rem;
+  background: linear-gradient(135deg, #a855f7, #6366f1);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.25rem 0.75rem;
+  border-radius: 2rem;
+  box-shadow: 0 4px 10px rgba(168, 85, 247, 0.3);
+}
+
+/* Team modal collaborator row */
+.team-member-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+}
+
+.team-member-email {
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.btn-remove-member {
+  background: none;
+  border: none;
+  color: #ef4444;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  transition: background 0.2s;
+}
+
+.btn-remove-member:hover {
+  background: rgba(239, 68, 68, 0.1);
 }
 
 /* ==========================================
@@ -2007,9 +2250,16 @@ body.dark-theme .files-container {
   background: #1e293b;
   border-color: #334155;
 }
-body.dark-theme .file-item-card {
-  background: rgba(15, 23, 42, 0.4);
+body.dark-theme .file-preview-card {
+  background: #0f172a;
   border-color: #334155;
+}
+body.dark-theme .file-preview-card:hover {
+  border-color: #475569;
+}
+body.dark-theme .file-actions .btn-icon:hover:not(:disabled) {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
 }
 body.dark-theme .sidebar-panel {
   background: #1e293b;
@@ -2250,6 +2500,22 @@ body.dark-theme select {
   .mockup-window-body {
     padding: 0.75rem !important;
     gap: 0.5rem !important;
+  }
+
+  /* Force vertical list stacked presentation for preview cards on mobile devices */
+  .files-container {
+    grid-template-columns: 1fr !important;
+    justify-items: center;
+    gap: 1.25rem;
+  }
+
+  .file-item-card {
+    width: 100% !important;
+    max-width: 240px;
+  }
+
+  .file-preview-card {
+    height: 330px !important;
   }
 }
 

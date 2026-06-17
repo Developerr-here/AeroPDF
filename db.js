@@ -64,6 +64,30 @@ export const User = sequelize.define('User', {
   stripe_customer_id: {
     type: DataTypes.STRING,
     allowNull: true
+  },
+  subscription_plan: {
+    type: DataTypes.STRING,
+    defaultValue: 'free'
+  }
+});
+
+// Model: CollaborationEmail
+export const CollaborationEmail = sequelize.define('CollaborationEmail', {
+  id: {
+    type: DataTypes.UUID,
+    defaultValue: DataTypes.UUIDV4,
+    primaryKey: true
+  },
+  owner_id: {
+    type: DataTypes.UUID,
+    allowNull: false
+  },
+  email: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    validate: {
+      isEmail: true
+    }
   }
 });
 

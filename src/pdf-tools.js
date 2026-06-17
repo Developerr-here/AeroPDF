@@ -316,6 +316,28 @@ export async function generatePagePreviews(pdfBuffer, onProgress) {
   return previews;
 }
 
+export async function getPDFFirstPageThumbnail(file) {
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) });
+    const pdf = await loadingTask.promise;
+    if (pdf.numPages > 0) {
+      const page = await pdf.getPage(1);
+      const viewport = page.getViewport({ scale: 0.8 });
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      const renderContext = { canvasContext: context, viewport: viewport };
+      await page.render(renderContext).promise;
+      return canvas.toDataURL('image/jpeg', 0.8);
+    }
+  } catch (err) {
+    console.error('Failed to render PDF first page thumbnail:', err);
+  }
+  return null;
+}
+
 /* ==========================================
    PDF AI INTELLIGENCE API METHODS
    ========================================== */
