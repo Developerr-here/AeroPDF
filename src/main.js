@@ -2760,6 +2760,18 @@ function setupAuthEventListeners() {
               width: loginContainer.offsetWidth || 300,
               text: 'signin_with'
             });
+            const oldWarn = loginContainer.parentNode.querySelector('.google-placeholder-warning');
+            if (oldWarn) oldWarn.remove();
+            if (clientId.includes('placeholder')) {
+              const warn = document.createElement('p');
+              warn.className = 'google-placeholder-warning';
+              warn.style.fontSize = '0.75rem';
+              warn.style.color = '#ef4444';
+              warn.style.marginTop = '0.5rem';
+              warn.style.textAlign = 'center';
+              warn.innerText = '⚠️ Real Google Login requires setting GOOGLE_CLIENT_ID in your .env file.';
+              loginContainer.parentNode.insertBefore(warn, loginContainer.nextSibling);
+            }
           }
           
           if (signupContainer) {
@@ -2770,6 +2782,18 @@ function setupAuthEventListeners() {
               width: signupContainer.offsetWidth || 300,
               text: 'signup_with'
             });
+            const oldWarn = signupContainer.parentNode.querySelector('.google-placeholder-warning');
+            if (oldWarn) oldWarn.remove();
+            if (clientId.includes('placeholder')) {
+              const warn = document.createElement('p');
+              warn.className = 'google-placeholder-warning';
+              warn.style.fontSize = '0.75rem';
+              warn.style.color = '#ef4444';
+              warn.style.marginTop = '0.5rem';
+              warn.style.textAlign = 'center';
+              warn.innerText = '⚠️ Real Google Login requires setting GOOGLE_CLIENT_ID in your .env file.';
+              signupContainer.parentNode.insertBefore(warn, signupContainer.nextSibling);
+            }
           }
         } catch (gsiErr) {
           console.error('GSI Button rendering failed:', gsiErr);
