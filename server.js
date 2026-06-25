@@ -323,8 +323,10 @@ app.get('/api/auth/google/popup', (req, res) => {
       width: 100%;
       max-width: 448px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-      text-align: center;
       box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
     }
     @media (max-width: 450px) {
       body {
@@ -336,12 +338,11 @@ app.get('/api/auth/google/popup', (req, res) => {
         box-shadow: none;
         padding: 24px;
         min-height: 100vh;
-        display: flex;
-        flex-direction: column;
         justify-content: center;
       }
     }
     .logo {
+      text-align: center;
       margin-bottom: 16px;
     }
     h1 {
@@ -349,12 +350,95 @@ app.get('/api/auth/google/popup', (req, res) => {
       font-weight: 400;
       color: #1f1f1f;
       margin: 0 0 8px 0;
+      text-align: center;
     }
     .subtitle {
       font-size: 16px;
       color: #444746;
-      margin: 0 0 32px 0;
+      margin: 0 0 28px 0;
+      text-align: center;
     }
+    
+    /* Accounts Chooser list */
+    .accounts-list {
+      display: flex;
+      flex-direction: column;
+      border: 1px solid #c4c7c5;
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+    .account-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      border-bottom: 1px solid #e3e3e3;
+      cursor: pointer;
+      background: transparent;
+      transition: background-color 0.15s;
+    }
+    .account-item:last-child {
+      border-bottom: none;
+    }
+    .account-item:hover {
+      background-color: #f7f9fc;
+    }
+    .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      color: white;
+      font-size: 14px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-transform: uppercase;
+    }
+    .account-details {
+      flex: 1;
+      text-align: left;
+    }
+    .account-name {
+      font-size: 14px;
+      font-weight: 500;
+      color: #1f1f1f;
+      margin-bottom: 2px;
+    }
+    .account-email {
+      font-size: 12px;
+      color: #444746;
+    }
+    .use-another-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      cursor: pointer;
+      background: transparent;
+      transition: background-color 0.15s;
+      color: #0b57d0;
+      font-size: 14px;
+      font-weight: 500;
+      text-align: left;
+    }
+    .use-another-row:hover {
+      background-color: #f7f9fc;
+    }
+    .use-another-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #f0f4f9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      color: #0b57d0;
+    }
+
+    /* Manual form styles */
     .input-wrapper {
       position: relative;
       margin-bottom: 20px;
@@ -376,7 +460,7 @@ app.get('/api/auth/google/popup', (req, res) => {
     input:focus {
       border-color: #0b57d0;
       border-width: 2px;
-      padding: 15px; /* Offset the 2px border */
+      padding: 15px;
     }
     .forgot-link {
       color: #0b57d0;
@@ -442,6 +526,20 @@ app.get('/api/auth/google/popup', (req, res) => {
       background-color: #0842a0;
       box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
+    .btn-back {
+      color: #444746;
+      background: none;
+      border: none;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      padding: 10px 16px;
+      border-radius: 100px;
+      transition: background-color 0.2s;
+    }
+    .btn-back:hover {
+      background-color: rgba(68, 71, 70, 0.08);
+    }
   </style>
 </head>
 <body>
@@ -454,28 +552,85 @@ app.get('/api/auth/google/popup', (req, res) => {
         <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
       </svg>
     </div>
-    <h1>Sign in</h1>
-    <div class="subtitle">to continue to PixelPDF</div>
-    
-    <form id="loginForm" onsubmit="handleSubmit(event)">
-      <div class="input-wrapper">
-        <input type="email" id="email" placeholder="Email or phone" required autocomplete="username" autofocus />
-      </div>
+
+    <!-- View 1: Choose Account -->
+    <div id="chooserView" style="display: flex; flex-direction: column;">
+      <h1>Choose an account</h1>
+      <div class="subtitle">to continue to PixelPDF</div>
       
-      <a href="#" class="forgot-link" onclick="event.preventDefault()">Forgot email?</a>
-      
-      <div class="privacy-notice">
-        To continue, Google will share your name, email address, language preference, and profile picture with PixelPDF. Before using this app, you can review its <a href="#" onclick="event.preventDefault()">privacy policy</a> and <a href="#" onclick="event.preventDefault()">terms of service</a>.
+      <div class="accounts-list">
+        <div class="account-item" onclick="selectAccount('John Doe', 'johndoe@gmail.com', '#4f46e5')">
+          <div class="avatar" style="background-color: #4f46e5;">JD</div>
+          <div class="account-details">
+            <div class="account-name">John Doe</div>
+            <div class="account-email">johndoe@gmail.com</div>
+          </div>
+        </div>
+        <div class="account-item" onclick="selectAccount('Jane Smith', 'janesmith@gmail.com', '#db2777')">
+          <div class="avatar" style="background-color: #db2777;">JS</div>
+          <div class="account-details">
+            <div class="account-name">Jane Smith</div>
+            <div class="account-email">janesmith@gmail.com</div>
+          </div>
+        </div>
+        <div class="account-item" onclick="selectAccount('Developer Tester', 'dev@pixelpdf.com', '#7c3aed')">
+          <div class="avatar" style="background-color: #7c3aed;">DT</div>
+          <div class="account-details">
+            <div class="account-name">Developer Tester</div>
+            <div class="account-email">dev@pixelpdf.com</div>
+          </div>
+        </div>
+        <div class="use-another-row" onclick="showFormView()">
+          <div class="use-another-icon">👤</div>
+          <div>Use another account</div>
+        </div>
       </div>
+    </div>
+
+    <!-- View 2: Manual Login -->
+    <div id="formView" style="display: none; flex-direction: column;">
+      <h1>Sign in</h1>
+      <div class="subtitle">to continue to PixelPDF</div>
       
-      <div class="footer-actions">
-        <button type="button" class="btn-create" onclick="alert('Account creation is handled via email signup on the main page.')">Create account</button>
-        <button type="submit" class="btn-next">Next</button>
-      </div>
-    </form>
+      <form id="loginForm" onsubmit="handleSubmit(event)">
+        <div class="input-wrapper">
+          <input type="email" id="email" placeholder="Email or phone" required autocomplete="username" />
+        </div>
+        
+        <a href="#" class="forgot-link" onclick="event.preventDefault()">Forgot email?</a>
+        
+        <div class="privacy-notice">
+          To continue, Google will share your name, email address, language preference, and profile picture with PixelPDF. Before using this app, you can review its <a href="#" onclick="event.preventDefault()">privacy policy</a> and <a href="#" onclick="event.preventDefault()">terms of service</a>.
+        </div>
+        
+        <div class="footer-actions">
+          <button type="button" class="btn-back" onclick="showChooserView()">Back</button>
+          <button type="submit" class="btn-next">Next</button>
+        </div>
+      </form>
+    </div>
   </div>
 
   <script>
+    function showFormView() {
+      document.getElementById('chooserView').style.display = 'none';
+      document.getElementById('formView').style.display = 'flex';
+      document.getElementById('email').focus();
+    }
+
+    function showChooserView() {
+      document.getElementById('chooserView').style.display = 'flex';
+      document.getElementById('formView').style.display = 'none';
+    }
+
+    function selectAccount(name, email, color) {
+      const names = name.split(' ');
+      const firstName = names[0] || 'Google';
+      const lastName = names.slice(1).join(' ') || 'User';
+      
+      sendAuthSuccess(email, firstName, lastName);
+    }
+
     function parseNameFromEmail(email) {
       const namePart = email.split('@')[0];
       const cleanPart = namePart.replace(/[0-9_\\-\\.]/g, ' ').trim();
@@ -496,13 +651,16 @@ app.get('/api/auth/google/popup', (req, res) => {
       if (!email) return;
       
       const parsed = parseNameFromEmail(email);
-      
+      sendAuthSuccess(email, parsed.first_name, parsed.last_name);
+    }
+
+    function sendAuthSuccess(email, first_name, last_name) {
       if (window.opener) {
         window.opener.postMessage({
           type: 'google-auth-success',
           email: email,
-          first_name: parsed.first_name,
-          last_name: parsed.last_name
+          first_name: first_name,
+          last_name: last_name
         }, window.location.origin);
       }
       window.close();
