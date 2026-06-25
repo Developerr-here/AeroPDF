@@ -260,6 +260,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         navigateToBlog();
       } else if (paymentStatus === 'success') {
         showToast('Subscription updated successfully! Welcome to Premium.', 'success');
+      } else if (paymentStatus === 'newsletter-success') {
+        showToast('Thank you for subscribing to our newsletter! Your subscription is active.', 'success');
       } else if (paymentStatus === 'cancel') {
         showToast('Payment cancelled.', 'info');
       }
@@ -816,13 +818,33 @@ function setupEventListeners() {
 
   const newsletterForm = document.getElementById('newsletter-form');
   if (newsletterForm) {
-    newsletterForm.addEventListener('submit', (e) => {
+    newsletterForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const emailInput = document.getElementById('newsletter-email');
       const email = emailInput ? emailInput.value.trim() : '';
       if (email) {
-        showToast('Thank you for subscribing to our newsletter!', 'success');
-        if (emailInput) emailInput.value = '';
+        showToast('Redirecting to Stripe checkout...', 'info');
+        try {
+          const res = await fetch('/api/stripe/newsletter-checkout', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ email })
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            throw new Error(data.error || 'Failed to initialize newsletter checkout');
+          }
+          if (data.url) {
+            window.location.href = data.url;
+          } else {
+            throw new Error('Checkout URL not received');
+          }
+        } catch (err) {
+          console.error(err);
+          showToast(err.message || 'Newsletter checkout failed.', 'error');
+        }
       }
     });
   }
@@ -2718,13 +2740,13 @@ function setupAuthEventListeners() {
 
     const loginContainer = document.getElementById('google-login-btn-container');
     const signupContainer = document.getElementById('google-signup-btn-container');
+    const clientId = googleClientId || 'your-google-client-id-placeholder.apps.googleusercontent.com';
 
-    if (googleClientId) {
-      // Official Google Sign-In SDK
-      if (window.google) {
+    const checkAndRender = () => {
+      if (window.google && window.google.accounts) {
         try {
           google.accounts.id.initialize({
-            client_id: googleClientId,
+            client_id: clientId,
             callback: async (response) => {
               await handleGoogleAuth(response.credential);
             }
@@ -2753,54 +2775,12 @@ function setupAuthEventListeners() {
           console.error('GSI Button rendering failed:', gsiErr);
         }
       } else {
-        console.warn('Google Identity Services SDK script not loaded.');
+        setTimeout(checkAndRender, 100);
       }
-    } else {
-      // Sandbox Fallback Mode
-      const sandboxButtonHtml = `
-        <button type="button" class="btn-google-login" style="display: flex; align-items: center; justify-content: center; gap: 0.75rem; padding: 0.65rem 1rem; border-radius: 2rem; border: 1.5px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: background 0.2s, border-color 0.2s; width: 100%; box-sizing: border-box;">
-          <svg viewBox="0 0 24 24" width="18" height="18" xmlns="http://www.w3.org/2000/svg">
-            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/>
-            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-          </svg>
-          <span>Continue with Google</span>
-        </button>
-      `;
+    };
 
-      if (loginContainer) {
-        loginContainer.innerHTML = sandboxButtonHtml;
-        loginContainer.querySelector('button').addEventListener('click', openGoogleAuthPopup);
-      }
-      
-      if (signupContainer) {
-        signupContainer.innerHTML = sandboxButtonHtml;
-        signupContainer.querySelector('button').addEventListener('click', openGoogleAuthPopup);
-      }
-    }
+    checkAndRender();
   };
-
-  const openGoogleAuthPopup = () => {
-    const w = 520;
-    const h = 600;
-    const left = screen.width / 2 - w / 2;
-    const top = screen.height / 2 - h / 2;
-    const popup = window.open(
-      '/api/auth/google/popup',
-      'GoogleLoginPopup',
-      `width=${w},height=${h},top=${top},left=${left},resizable=yes,scrollbars=yes,status=yes`
-    );
-    if (popup) popup.focus();
-  };
-
-  window.addEventListener('message', async (event) => {
-    if (event.origin !== window.location.origin) return;
-    const { type, email, first_name, last_name } = event.data;
-    if (type === 'google-auth-success') {
-      await handleGoogleAuth(null, email, first_name, last_name);
-    }
-  });
   
   async function handleGoogleAuth(credential, email, first_name, last_name) {
     try {

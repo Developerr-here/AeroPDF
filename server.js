@@ -21,7 +21,7 @@ import { createRequire } from 'module';
 import { OAuth2Client } from 'google-auth-library';
 const require = createRequire(import.meta.url);
 const mammoth = require('mammoth');
-import { User, BlogPost, CollaborationEmail, syncDatabase } from './db.js';
+import { User, BlogPost, CollaborationEmail, NewsletterSubscriber, syncDatabase } from './db.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -295,381 +295,17 @@ app.get('/api/config/google-client-id', (req, res) => {
   res.json({ clientId: process.env.GOOGLE_CLIENT_ID || null });
 });
 
-// HTML mock page for simulated Google accounts popup
-app.get('/api/auth/google/popup', (req, res) => {
-  res.send(`
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sign in - Google Accounts</title>
-  <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background-color: #f0f4f9;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      margin: 0;
-      padding: 16px;
-      box-sizing: border-box;
-    }
-    .card {
-      background: #ffffff;
-      border-radius: 28px;
-      padding: 40px;
-      width: 100%;
-      max-width: 448px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-      box-sizing: border-box;
-      display: flex;
-      flex-direction: column;
-      align-items: stretch;
-    }
-    @media (max-width: 450px) {
-      body {
-        background-color: #ffffff;
-        padding: 0;
-      }
-      .card {
-        border-radius: 0;
-        box-shadow: none;
-        padding: 24px;
-        min-height: 100vh;
-        justify-content: center;
-      }
-    }
-    .logo {
-      text-align: center;
-      margin-bottom: 16px;
-    }
-    h1 {
-      font-size: 24px;
-      font-weight: 400;
-      color: #1f1f1f;
-      margin: 0 0 8px 0;
-      text-align: center;
-    }
-    .subtitle {
-      font-size: 16px;
-      color: #444746;
-      margin: 0 0 28px 0;
-      text-align: center;
-    }
-    
-    /* Accounts Chooser list */
-    .accounts-list {
-      display: flex;
-      flex-direction: column;
-      border: 1px solid #c4c7c5;
-      border-radius: 8px;
-      overflow: hidden;
-      margin-bottom: 24px;
-    }
-    .account-item {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 14px 16px;
-      border-bottom: 1px solid #e3e3e3;
-      cursor: pointer;
-      background: transparent;
-      transition: background-color 0.15s;
-    }
-    .account-item:last-child {
-      border-bottom: none;
-    }
-    .account-item:hover {
-      background-color: #f7f9fc;
-    }
-    .avatar {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      color: white;
-      font-size: 14px;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-transform: uppercase;
-    }
-    .account-details {
-      flex: 1;
-      text-align: left;
-    }
-    .account-name {
-      font-size: 14px;
-      font-weight: 500;
-      color: #1f1f1f;
-      margin-bottom: 2px;
-    }
-    .account-email {
-      font-size: 12px;
-      color: #444746;
-    }
-    .use-another-row {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 14px 16px;
-      cursor: pointer;
-      background: transparent;
-      transition: background-color 0.15s;
-      color: #0b57d0;
-      font-size: 14px;
-      font-weight: 500;
-      text-align: left;
-    }
-    .use-another-row:hover {
-      background-color: #f7f9fc;
-    }
-    .use-another-icon {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background: #f0f4f9;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 16px;
-      color: #0b57d0;
-    }
-
-    /* Manual form styles */
-    .input-wrapper {
-      position: relative;
-      margin-bottom: 20px;
-      width: 100%;
-      text-align: left;
-    }
-    input {
-      width: 100%;
-      padding: 16px;
-      font-size: 16px;
-      border: 1px solid #747775;
-      border-radius: 4px;
-      box-sizing: border-box;
-      outline: none;
-      transition: border-color 0.2s, box-shadow 0.2s;
-      background: transparent;
-      color: #1f1f1f;
-    }
-    input:focus {
-      border-color: #0b57d0;
-      border-width: 2px;
-      padding: 15px;
-    }
-    .forgot-link {
-      color: #0b57d0;
-      text-decoration: none;
-      font-size: 14px;
-      font-weight: 500;
-      display: inline-block;
-      margin-bottom: 32px;
-      text-align: left;
-      width: 100%;
-    }
-    .forgot-link:hover {
-      text-decoration: underline;
-    }
-    .privacy-notice {
-      font-size: 12px;
-      color: #5e6278;
-      text-align: left;
-      line-height: 1.5;
-      margin-bottom: 32px;
-    }
-    .privacy-notice a {
-      color: #0b57d0;
-      text-decoration: none;
-    }
-    .privacy-notice a:hover {
-      text-decoration: underline;
-    }
-    .footer-actions {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      width: 100%;
-      margin-top: auto;
-    }
-    .btn-create {
-      color: #0b57d0;
-      background: none;
-      border: none;
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
-      padding: 10px 0;
-    }
-    .btn-create:hover {
-      background-color: rgba(11, 87, 208, 0.04);
-      border-radius: 4px;
-      padding: 10px 12px;
-      margin-left: -12px;
-    }
-    .btn-next {
-      background-color: #0b57d0;
-      color: #ffffff;
-      border: none;
-      border-radius: 100px;
-      padding: 12px 24px;
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: background-color 0.2s, box-shadow 0.2s;
-    }
-    .btn-next:hover {
-      background-color: #0842a0;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
-    .btn-back {
-      color: #444746;
-      background: none;
-      border: none;
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
-      padding: 10px 16px;
-      border-radius: 100px;
-      transition: background-color 0.2s;
-    }
-    .btn-back:hover {
-      background-color: rgba(68, 71, 70, 0.08);
-    }
-  </style>
-</head>
-<body>
-  <div class="card">
-    <div class="logo">
-      <svg viewBox="0 0 24 24" width="48" height="48" xmlns="http://www.w3.org/2000/svg">
-        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/>
-        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-      </svg>
-    </div>
-
-    <!-- View 1: Choose Account -->
-    <div id="chooserView" style="display: flex; flex-direction: column;">
-      <h1>Choose an account</h1>
-      <div class="subtitle">to continue to PixelPDF</div>
-      
-      <div class="accounts-list">
-        <div class="account-item" onclick="selectAccount('John Doe', 'johndoe@gmail.com', '#4f46e5')">
-          <div class="avatar" style="background-color: #4f46e5;">JD</div>
-          <div class="account-details">
-            <div class="account-name">John Doe</div>
-            <div class="account-email">johndoe@gmail.com</div>
-          </div>
-        </div>
-        <div class="account-item" onclick="selectAccount('Jane Smith', 'janesmith@gmail.com', '#db2777')">
-          <div class="avatar" style="background-color: #db2777;">JS</div>
-          <div class="account-details">
-            <div class="account-name">Jane Smith</div>
-            <div class="account-email">janesmith@gmail.com</div>
-          </div>
-        </div>
-        <div class="account-item" onclick="selectAccount('Developer Tester', 'dev@pixelpdf.com', '#7c3aed')">
-          <div class="avatar" style="background-color: #7c3aed;">DT</div>
-          <div class="account-details">
-            <div class="account-name">Developer Tester</div>
-            <div class="account-email">dev@pixelpdf.com</div>
-          </div>
-        </div>
-        <div class="use-another-row" onclick="showFormView()">
-          <div class="use-another-icon">👤</div>
-          <div>Use another account</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- View 2: Manual Login -->
-    <div id="formView" style="display: none; flex-direction: column;">
-      <h1>Sign in</h1>
-      <div class="subtitle">to continue to PixelPDF</div>
-      
-      <form id="loginForm" onsubmit="handleSubmit(event)">
-        <div class="input-wrapper">
-          <input type="email" id="email" placeholder="Email or phone" required autocomplete="username" />
-        </div>
-        
-        <a href="#" class="forgot-link" onclick="event.preventDefault()">Forgot email?</a>
-        
-        <div class="privacy-notice">
-          To continue, Google will share your name, email address, language preference, and profile picture with PixelPDF. Before using this app, you can review its <a href="#" onclick="event.preventDefault()">privacy policy</a> and <a href="#" onclick="event.preventDefault()">terms of service</a>.
-        </div>
-        
-        <div class="footer-actions">
-          <button type="button" class="btn-back" onclick="showChooserView()">Back</button>
-          <button type="submit" class="btn-next">Next</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <script>
-    function showFormView() {
-      document.getElementById('chooserView').style.display = 'none';
-      document.getElementById('formView').style.display = 'flex';
-      document.getElementById('email').focus();
-    }
-
-    function showChooserView() {
-      document.getElementById('chooserView').style.display = 'flex';
-      document.getElementById('formView').style.display = 'none';
-    }
-
-    function selectAccount(name, email, color) {
-      const names = name.split(' ');
-      const firstName = names[0] || 'Google';
-      const lastName = names.slice(1).join(' ') || 'User';
-      
-      sendAuthSuccess(email, firstName, lastName);
-    }
-
-    function parseNameFromEmail(email) {
-      const namePart = email.split('@')[0];
-      const cleanPart = namePart.replace(/[0-9_\\-\\.]/g, ' ').trim();
-      const words = cleanPart.split(/\\s+/);
-      let firstName = words[0] || '';
-      let lastName = words.slice(1).join(' ') || '';
-      
-      firstName = firstName.charAt(0).toUpperCase() + firstName.slice(1);
-      if (lastName) {
-        lastName = lastName.split(/\\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-      }
-      return { first_name: firstName, last_name: lastName || 'User' };
-    }
-
-    function handleSubmit(e) {
-      e.preventDefault();
-      const email = document.getElementById('email').value.trim();
-      if (!email) return;
-      
-      const parsed = parseNameFromEmail(email);
-      sendAuthSuccess(email, parsed.first_name, parsed.last_name);
-    }
-
-    function sendAuthSuccess(email, first_name, last_name) {
-      if (window.opener) {
-        window.opener.postMessage({
-          type: 'google-auth-success',
-          email: email,
-          first_name: first_name,
-          last_name: last_name
-        }, window.location.origin);
-      }
-      window.close();
-    }
-  </script>
-</body>
-</html>
-  `);
-});
+// Helper to decode a JWT token's payload without verifying signature (for dev fallback)
+const decodeJwt = (token) => {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    const payloadBuf = Buffer.from(parts[1], 'base64');
+    return JSON.parse(payloadBuf.toString('utf8'));
+  } catch (err) {
+    return null;
+  }
+};
 
 // Google Sign-In Endpoint (handles real or simulated Google profile payload)
 app.post('/api/auth/google', authLimiter, async (req, res) => {
@@ -684,16 +320,19 @@ app.post('/api/auth/google', authLimiter, async (req, res) => {
     if (credential) {
       // Real Google credential token verification
       const googleClientId = process.env.GOOGLE_CLIENT_ID;
-      if (!googleClientId) {
-        return res.status(400).json({ error: 'Google Client ID is not configured on the server.' });
+      let payload = null;
+      if (googleClientId) {
+        const client = new OAuth2Client(googleClientId);
+        const ticket = await client.verifyIdToken({
+          idToken: credential,
+          audience: googleClientId
+        });
+        payload = ticket.getPayload();
+      } else {
+        // Fallback: decode JWT locally without verifying signature for dev convenience
+        payload = decodeJwt(credential);
       }
       
-      const client = new OAuth2Client(googleClientId);
-      const ticket = await client.verifyIdToken({
-        idToken: credential,
-        audience: googleClientId
-      });
-      const payload = ticket.getPayload();
       if (!payload) {
         return res.status(400).json({ error: 'Invalid Google credential token.' });
       }
@@ -917,6 +556,66 @@ app.post('/api/stripe/blog-checkout', authenticateToken, async (req, res) => {
   }
 });
 
+// Route: Paid newsletter subscription checkout session
+app.post('/api/stripe/newsletter-checkout', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required for newsletter subscription.' });
+    }
+
+    const isMock = STRIPE_SECRET_KEY === 'sk_test_mockstripekey';
+    if (isMock) {
+      const mockUrl = `/api/stripe/mock-checkout?type=newsletter&email=${encodeURIComponent(email)}&success_url=${encodeURIComponent(req.headers.origin || 'http://localhost:5173')}/?payment=newsletter-success`;
+      return res.json({ url: mockUrl });
+    }
+
+    // Try to find if user has a stripe_customer_id already
+    let customerId = null;
+    const user = await User.findOne({ where: { email: email.toLowerCase() } });
+    if (user && user.stripe_customer_id) {
+      customerId = user.stripe_customer_id;
+    }
+
+    const sessionData = {
+      payment_method_types: ['card'],
+      line_items: [{
+        price_data: {
+          currency: 'usd',
+          product_data: {
+            name: 'PixelPDF Premium Newsletter Subscription',
+            description: 'Stay ahead with weekly PDF tool guides, updates, and templates.'
+          },
+          unit_amount: 500, // $5.00 USD
+          recurring: {
+            interval: 'month'
+          }
+        },
+        quantity: 1
+      }],
+      mode: 'subscription',
+      success_url: `${req.headers.origin || 'http://localhost:5173'}/?payment=newsletter-success`,
+      cancel_url: `${req.headers.origin || 'http://localhost:5173'}/?payment=cancel`,
+      metadata: {
+        type: 'newsletter',
+        email: email.toLowerCase()
+      }
+    };
+
+    if (customerId) {
+      sessionData.customer = customerId;
+    } else {
+      sessionData.customer_email = email.toLowerCase();
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionData);
+    res.json({ url: session.url });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Stripe newsletter checkout failed: ' + err.message, message: err.message });
+  }
+});
+
 /* ==========================================
    USER COLLABORATION & TEAM ENDPOINTS
    ========================================== */
@@ -1036,24 +735,34 @@ app.delete('/api/collaboration/remove', authenticateToken, async (req, res) => {
 
 // Route: Mock checkout processor for local testing
 app.get('/api/stripe/mock-checkout', async (req, res) => {
-  const { type, userId, success_url } = req.query;
+  const { type, userId, email, success_url } = req.query;
   try {
-    const user = await User.findByPk(userId);
-    if (user) {
-      if (type === 'premium') {
-        user.is_premium = true;
-        user.subscription_plan = 'starter';
-        await user.save();
-        console.log(`[Mock Stripe] Upgraded user ${user.email} to Premium (Starter).`);
-      } else if (['starter', 'base', 'pro', 'enterprise'].includes(type)) {
-        user.is_premium = true;
-        user.subscription_plan = type;
-        await user.save();
-        console.log(`[Mock Stripe] Upgraded user ${user.email} to ${type.toUpperCase()} plan.`);
-      } else if (type === 'blog_pass') {
-        user.can_blog = true;
-        await user.save();
-        console.log(`[Mock Stripe] Granted blog writer permissions to ${user.email}.`);
+    if (type === 'newsletter') {
+      if (email) {
+        await NewsletterSubscriber.upsert({
+          email: email.toLowerCase(),
+          status: 'active'
+        });
+        console.log(`[Mock Stripe] Newsletter subscription successful for ${email}.`);
+      }
+    } else if (userId) {
+      const user = await User.findByPk(userId);
+      if (user) {
+        if (type === 'premium') {
+          user.is_premium = true;
+          user.subscription_plan = 'starter';
+          await user.save();
+          console.log(`[Mock Stripe] Upgraded user ${user.email} to Premium (Starter).`);
+        } else if (['starter', 'base', 'pro', 'enterprise'].includes(type)) {
+          user.is_premium = true;
+          user.subscription_plan = type;
+          await user.save();
+          console.log(`[Mock Stripe] Upgraded user ${user.email} to ${type.toUpperCase()} plan.`);
+        } else if (type === 'blog_pass') {
+          user.can_blog = true;
+          await user.save();
+          console.log(`[Mock Stripe] Granted blog writer permissions to ${user.email}.`);
+        }
       }
     }
     res.redirect(success_url || 'http://localhost:5173/?payment=success');
@@ -1131,7 +840,18 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
     const userId = session.metadata.userId;
     const type = session.metadata.type;
 
-    if (userId) {
+    if (type === 'newsletter') {
+      const email = session.metadata.email || (session.customer_details && session.customer_details.email);
+      if (email) {
+        await NewsletterSubscriber.upsert({
+          email: email.toLowerCase(),
+          status: 'active',
+          stripe_customer_id: session.customer,
+          stripe_subscription_id: session.subscription
+        });
+        console.log(`[Stripe Webhook] Newsletter subscription completed for ${email}`);
+      }
+    } else if (userId) {
       const user = await User.findByPk(userId);
       if (user) {
         if (type === 'subscription') {
