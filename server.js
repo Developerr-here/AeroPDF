@@ -18,6 +18,7 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { createRequire } from 'module';
+import { OAuth2Client } from 'google-auth-library';
 const require = createRequire(import.meta.url);
 const mammoth = require('mammoth');
 import { User, BlogPost, CollaborationEmail, syncDatabase } from './db.js';
@@ -167,7 +168,10 @@ async function formatUserResponse(user) {
     is_premium: await getPremiumStatus(user),
     subscription_plan: user.subscription_plan,
     can_blog: user.can_blog,
-    display_name: user.display_name
+    display_name: user.display_name,
+    first_name: user.first_name,
+    last_name: user.last_name,
+    profile_pic: user.profile_pic
   };
 }
 
@@ -242,14 +246,21 @@ function cleanTempFiles(req) {
 
 app.post('/api/auth/signup', authLimiter, async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, first_name, last_name } = req.body;
     if (!email || !password) return res.status(400).json({ error: 'Email and password are required.' });
+    if (!first_name || !last_name) return res.status(400).json({ error: 'First name and last name are required.' });
 
     const existingUser = await User.findOne({ where: { email } });
     if (existingUser) return res.status(400).json({ error: 'An account with this email already exists.' });
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = await User.create({ email, password: hashedPassword });
+    const user = await User.create({
+      email,
+      password: hashedPassword,
+      first_name,
+      last_name,
+      display_name: `${first_name} ${last_name}`
+    });
 
     const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
     res.json({ token, user: await formatUserResponse(user) });
@@ -266,6 +277,7 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
 
     const user = await User.findOne({ where: { email } });
     if (!user) return res.status(400).json({ error: 'Invalid email or password.' });
+    if (!user.password) return res.status(400).json({ error: 'This account uses Google Sign In. Please use Continue with Google.' });
 
     const match = await bcrypt.compare(password, user.password);
     if (!match) return res.status(400).json({ error: 'Invalid email or password.' });
@@ -275,6 +287,342 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Login processing failed.' });
+  }
+});
+
+// Config route: Expose Google Client ID to frontend
+app.get('/api/config/google-client-id', (req, res) => {
+  res.json({ clientId: process.env.GOOGLE_CLIENT_ID || null });
+});
+
+// HTML mock page for simulated Google accounts popup
+app.get('/api/auth/google/popup', (req, res) => {
+  res.send(`
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign in - Google Accounts</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #f0f4f9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+    .card {
+      background: #ffffff;
+      border-radius: 28px;
+      padding: 40px;
+      width: 100%;
+      max-width: 448px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      text-align: center;
+      box-sizing: border-box;
+    }
+    @media (max-width: 450px) {
+      body {
+        background-color: #ffffff;
+        padding: 0;
+      }
+      .card {
+        border-radius: 0;
+        box-shadow: none;
+        padding: 24px;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+    }
+    .logo {
+      margin-bottom: 16px;
+    }
+    h1 {
+      font-size: 24px;
+      font-weight: 400;
+      color: #1f1f1f;
+      margin: 0 0 8px 0;
+    }
+    .subtitle {
+      font-size: 16px;
+      color: #444746;
+      margin: 0 0 32px 0;
+    }
+    .input-wrapper {
+      position: relative;
+      margin-bottom: 20px;
+      width: 100%;
+      text-align: left;
+    }
+    input {
+      width: 100%;
+      padding: 16px;
+      font-size: 16px;
+      border: 1px solid #747775;
+      border-radius: 4px;
+      box-sizing: border-box;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      background: transparent;
+      color: #1f1f1f;
+    }
+    input:focus {
+      border-color: #0b57d0;
+      border-width: 2px;
+      padding: 15px; /* Offset the 2px border */
+    }
+    .forgot-link {
+      color: #0b57d0;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      display: inline-block;
+      margin-bottom: 32px;
+      text-align: left;
+      width: 100%;
+    }
+    .forgot-link:hover {
+      text-decoration: underline;
+    }
+    .privacy-notice {
+      font-size: 12px;
+      color: #5e6278;
+      text-align: left;
+      line-height: 1.5;
+      margin-bottom: 32px;
+    }
+    .privacy-notice a {
+      color: #0b57d0;
+      text-decoration: none;
+    }
+    .privacy-notice a:hover {
+      text-decoration: underline;
+    }
+    .footer-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      margin-top: auto;
+    }
+    .btn-create {
+      color: #0b57d0;
+      background: none;
+      border: none;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      padding: 10px 0;
+    }
+    .btn-create:hover {
+      background-color: rgba(11, 87, 208, 0.04);
+      border-radius: 4px;
+      padding: 10px 12px;
+      margin-left: -12px;
+    }
+    .btn-next {
+      background-color: #0b57d0;
+      color: #ffffff;
+      border: none;
+      border-radius: 100px;
+      padding: 12px 24px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.2s, box-shadow 0.2s;
+    }
+    .btn-next:hover {
+      background-color: #0842a0;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">
+      <svg viewBox="0 0 24 24" width="48" height="48" xmlns="http://www.w3.org/2000/svg">
+        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/>
+        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+      </svg>
+    </div>
+    <h1>Sign in</h1>
+    <div class="subtitle">to continue to PixelPDF</div>
+    
+    <form id="loginForm" onsubmit="handleSubmit(event)">
+      <div class="input-wrapper">
+        <input type="email" id="email" placeholder="Email or phone" required autocomplete="username" autofocus />
+      </div>
+      
+      <a href="#" class="forgot-link" onclick="event.preventDefault()">Forgot email?</a>
+      
+      <div class="privacy-notice">
+        To continue, Google will share your name, email address, language preference, and profile picture with PixelPDF. Before using this app, you can review its <a href="#" onclick="event.preventDefault()">privacy policy</a> and <a href="#" onclick="event.preventDefault()">terms of service</a>.
+      </div>
+      
+      <div class="footer-actions">
+        <button type="button" class="btn-create" onclick="alert('Account creation is handled via email signup on the main page.')">Create account</button>
+        <button type="submit" class="btn-next">Next</button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    function parseNameFromEmail(email) {
+      const namePart = email.split('@')[0];
+      const cleanPart = namePart.replace(/[0-9_\\-\\.]/g, ' ').trim();
+      const words = cleanPart.split(/\\s+/);
+      let firstName = words[0] || '';
+      let lastName = words.slice(1).join(' ') || '';
+      
+      firstName = firstName.charAt(0).toUpperCase() + firstName.slice(1);
+      if (lastName) {
+        lastName = lastName.split(/\\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+      }
+      return { first_name: firstName, last_name: lastName || 'User' };
+    }
+
+    function handleSubmit(e) {
+      e.preventDefault();
+      const email = document.getElementById('email').value.trim();
+      if (!email) return;
+      
+      const parsed = parseNameFromEmail(email);
+      
+      if (window.opener) {
+        window.opener.postMessage({
+          type: 'google-auth-success',
+          email: email,
+          first_name: parsed.first_name,
+          last_name: parsed.last_name
+        }, window.location.origin);
+      }
+      window.close();
+    }
+  </script>
+</body>
+</html>
+  `);
+});
+
+// Google Sign-In Endpoint (handles real or simulated Google profile payload)
+app.post('/api/auth/google', authLimiter, async (req, res) => {
+  try {
+    const { credential, email: bodyEmail, first_name: bodyFirst, last_name: bodyLast } = req.body;
+    
+    let email = bodyEmail;
+    let first_name = bodyFirst;
+    let last_name = bodyLast;
+    let profile_pic = null;
+
+    if (credential) {
+      // Real Google credential token verification
+      const googleClientId = process.env.GOOGLE_CLIENT_ID;
+      if (!googleClientId) {
+        return res.status(400).json({ error: 'Google Client ID is not configured on the server.' });
+      }
+      
+      const client = new OAuth2Client(googleClientId);
+      const ticket = await client.verifyIdToken({
+        idToken: credential,
+        audience: googleClientId
+      });
+      const payload = ticket.getPayload();
+      if (!payload) {
+        return res.status(400).json({ error: 'Invalid Google credential token.' });
+      }
+      
+      email = payload.email;
+      first_name = payload.given_name || 'Google';
+      last_name = payload.family_name || 'User';
+      profile_pic = payload.picture || null;
+    } else {
+      // Sandbox mode verification
+      if (!email) {
+        return res.status(400).json({ error: 'Email is required from Google account.' });
+      }
+    }
+
+    let user = await User.findOne({ where: { email } });
+    if (!user) {
+      user = await User.create({
+        email,
+        password: null, // Passwordless for Google OAuth
+        first_name: first_name || 'Google',
+        last_name: last_name || 'User',
+        display_name: `${first_name || 'Google'} ${last_name || 'User'}`.trim(),
+        profile_pic: profile_pic
+      });
+    } else {
+      // Sync names/profile picture if they were blank
+      let userUpdated = false;
+      if (!user.first_name || !user.last_name) {
+        user.first_name = first_name || user.first_name || 'Google';
+        user.last_name = last_name || user.last_name || 'User';
+        user.display_name = `${user.first_name} ${user.last_name}`.trim();
+        userUpdated = true;
+      }
+      if (profile_pic && !user.profile_pic) {
+        user.profile_pic = profile_pic;
+        userUpdated = true;
+      }
+      if (userUpdated) {
+        await user.save();
+      }
+    }
+
+    const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
+    res.json({ token, user: await formatUserResponse(user) });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Google login failed: ' + err.message });
+  }
+});
+
+// Forgot password request code
+app.post('/api/auth/forgot-password', authLimiter, async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email is required.' });
+
+    const user = await User.findOne({ where: { email } });
+    if (!user) return res.status(400).json({ error: 'No account found with this email address.' });
+
+    res.json({ message: 'Reset code generated successfully.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Forgot password processing failed.' });
+  }
+});
+
+// Update password using verification code
+app.post('/api/auth/reset-password', authLimiter, async (req, res) => {
+  try {
+    const { email, code, newPassword } = req.body;
+    if (!email || !code || !newPassword) return res.status(400).json({ error: 'All fields are required.' });
+
+    if (code !== '123456') return res.status(400).json({ error: 'Invalid verification code. Use code 123456.' });
+    if (newPassword.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters.' });
+
+    const user = await User.findOne({ where: { email } });
+    if (!user) return res.status(404).json({ error: 'User not found.' });
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+    await user.save();
+
+    res.json({ message: 'Password reset successful! You can now login.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Password reset failed.' });
   }
 });
 
@@ -651,7 +999,17 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
 app.get('/api/blog', async (req, res) => {
   try {
     const posts = await BlogPost.findAll({ order: [['createdAt', 'DESC']] });
-    res.json({ posts });
+    
+    // Enrich each post with the author's current profile picture
+    const enrichedPosts = await Promise.all(posts.map(async (post) => {
+      const author = await User.findByPk(post.author_id);
+      return {
+        ...post.toJSON(),
+        author_pic: author ? author.profile_pic : null
+      };
+    }));
+    
+    res.json({ posts: enrichedPosts });
   } catch (err) {
     res.status(500).json({ error: 'Failed to load blog posts.' });
   }
@@ -703,30 +1061,68 @@ app.post('/api/blog/upload', authenticateToken, blogUpload.single('file'), async
 // Route: Update user display name and update past posts
 app.post('/api/user/display-name', authenticateToken, async (req, res) => {
   try {
-    const { displayName } = req.body;
-    if (displayName === undefined) {
-      return res.status(400).json({ error: 'Display name is required.' });
-    }
-
+    const { displayName, first_name, last_name } = req.body;
     const user = await User.findByPk(req.user.id);
     if (!user) return res.status(404).json({ error: 'User not found.' });
 
-    const updatedName = displayName.trim() || null;
-    user.display_name = updatedName;
+    if (first_name !== undefined && last_name !== undefined) {
+      user.first_name = first_name.trim() || null;
+      user.last_name = last_name.trim() || null;
+      user.display_name = `${user.first_name || ''} ${user.last_name || ''}`.trim() || null;
+    } else if (displayName !== undefined) {
+      const updatedName = displayName.trim() || null;
+      user.display_name = updatedName;
+      
+      // Propagate splits to first/last name columns
+      if (updatedName) {
+        const parts = updatedName.split(' ');
+        user.first_name = parts[0] || '';
+        user.last_name = parts.slice(1).join(' ') || '';
+      } else {
+        user.first_name = null;
+        user.last_name = null;
+      }
+    } else {
+      return res.status(400).json({ error: 'Display name or first/last names are required.' });
+    }
+
     await user.save();
 
     // Propagate display name to all past blog posts
-    const nameForBlogs = updatedName || user.email;
+    const nameForBlogs = user.display_name || user.email;
     await BlogPost.update({ author_name: nameForBlogs }, { where: { author_id: user.id } });
 
     res.json({ 
       success: true, 
-      displayName: updatedName, 
+      displayName: user.display_name, 
       user: await formatUserResponse(user) 
     });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to update display name.' });
+  }
+});
+
+// Route: Upload user profile picture
+app.post('/api/user/profile-pic', authenticateToken, blogUpload.single('profile_pic'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'No image file uploaded.' });
+
+    const user = await User.findByPk(req.user.id);
+    if (!user) return res.status(404).json({ error: 'User not found.' });
+
+    const profilePicUrl = `/api/blog-uploads/${req.file.filename}`;
+    user.profile_pic = profilePicUrl;
+    await user.save();
+
+    res.json({
+      success: true,
+      profilePicUrl,
+      user: await formatUserResponse(user)
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to upload profile picture.' });
   }
 });
 

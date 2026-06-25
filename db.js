@@ -47,7 +47,19 @@ export const User = sequelize.define('User', {
   },
   password: {
     type: DataTypes.STRING,
-    allowNull: false
+    allowNull: true
+  },
+  first_name: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  last_name: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  profile_pic: {
+    type: DataTypes.STRING,
+    allowNull: true
   },
   is_premium: {
     type: DataTypes.BOOLEAN,

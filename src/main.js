@@ -97,6 +97,39 @@ const safeSessionStorage = {
 let token = safeStorage.getItem('token') || null;
 let currentUser = null;
 
+const LOGGED_OUT_DRAWER_HTML = `
+  <div class="drawer-menu-links">
+    <a href="#" class="drawer-menu-link" id="mob-link-features">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+        <rect x="3" y="3" width="7" height="9" rx="1" />
+        <rect x="14" y="3" width="7" height="5" rx="1" />
+        <rect x="14" y="12" width="7" height="9" rx="1" />
+        <rect x="3" y="16" width="7" height="5" rx="1" />
+      </svg>
+      <span>Features</span>
+    </a>
+    <a href="#" class="drawer-menu-link" id="mob-link-about">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+        <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+      </svg>
+      <span>About us</span>
+    </a>
+    <hr style="border: none; border-top: 1px solid var(--border-color); margin: 1rem 0;" />
+    <a href="#" class="drawer-menu-link" id="mob-link-help">
+      <span>Help</span>
+      <span class="drawer-arrow">›</span>
+    </a>
+    <a href="#" class="drawer-menu-link" id="mob-link-language">
+      <span>Language</span>
+      <span class="drawer-arrow">›</span>
+    </a>
+  </div>
+  <div class="drawer-auth-actions" id="drawer-auth-actions">
+    <button class="drawer-btn-login" id="mob-btn-login">Login</button>
+    <button class="drawer-btn-signup" id="mob-btn-signup">Sign up</button>
+  </div>
+`;
+
 // Cumulative Size Session Tracking Helpers
 function getCumulativeUploadSize() {
   const size = safeSessionStorage.getItem('cumulative_upload_size');
@@ -186,6 +219,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   await checkAuthSession();
   setupAuthEventListeners();
   setupBlogEventListeners();
+  await loadFeaturedLandingBlogs();
 
   // Process query parameters for Stripe payment success redirects
   const urlParams = new URLSearchParams(window.location.search);
@@ -262,6 +296,39 @@ function updateThemeUI(isDark) {
     document.body.classList.remove('dark-theme');
     btn.title = "Toggle Night Mode";
     btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>`;
+  }
+}
+
+// Global mobile drawer actions
+function openToolsDrawer() {
+  const toolsDrawer = document.getElementById('mobile-tools-drawer');
+  if (toolsDrawer) {
+    toolsDrawer.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+}
+
+function closeToolsDrawer() {
+  const toolsDrawer = document.getElementById('mobile-tools-drawer');
+  if (toolsDrawer) {
+    toolsDrawer.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+}
+
+function openAuthDrawer() {
+  const authDrawer = document.getElementById('mobile-auth-drawer');
+  if (authDrawer) {
+    authDrawer.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+}
+
+function closeAuthDrawer() {
+  const authDrawer = document.getElementById('mobile-auth-drawer');
+  if (authDrawer) {
+    authDrawer.classList.remove('active');
+    document.body.style.overflow = '';
   }
 }
 
@@ -353,13 +420,140 @@ function setupEventListeners() {
     navigateToTool('ai-assistant');
   });
 
-  // Header Nav Menu Links
-  document.getElementById('nav-link-all-tools').addEventListener('click', scrollExplore);
-  document.getElementById('nav-link-ai-tools').addEventListener('click', (e) => {
-    e.preventDefault();
-    navigateToDashboard();
-    document.querySelector('.ai-assistant-side-card').scrollIntoView({ behavior: 'smooth' });
+  // Header Nav Menu & Mega Menu Hover Logic
+  // Header Nav Menu & Mega Menu Hover Logic
+  const allToolsBtn = document.getElementById('nav-link-all-tools');
+  const aiToolsBtn = document.getElementById('nav-link-ai-tools');
+  const megaMenu = document.getElementById('desktop-mega-menu');
+  const aiToolsMenu = document.getElementById('desktop-ai-tools-menu');
+  let menuTimeout;
+  
+  const showMenu = (menu) => {
+    clearTimeout(menuTimeout);
+    if (menu === megaMenu) {
+      if (aiToolsMenu) aiToolsMenu.classList.remove('active');
+    } else {
+      if (megaMenu) megaMenu.classList.remove('active');
+    }
+    if (menu) menu.classList.add('active');
+  };
+  
+  const hideMenu = (menu) => {
+    menuTimeout = setTimeout(() => {
+      if (menu) menu.classList.remove('active');
+    }, 150);
+  };
+  
+  if (allToolsBtn && megaMenu) {
+    allToolsBtn.addEventListener('mouseenter', () => showMenu(megaMenu));
+    allToolsBtn.addEventListener('mouseleave', () => hideMenu(megaMenu));
+    allToolsBtn.addEventListener('click', scrollExplore);
+    megaMenu.addEventListener('mouseenter', () => showMenu(megaMenu));
+    megaMenu.addEventListener('mouseleave', () => hideMenu(megaMenu));
+  }
+  
+  if (aiToolsBtn && aiToolsMenu) {
+    aiToolsBtn.addEventListener('mouseenter', () => showMenu(aiToolsMenu));
+    aiToolsBtn.addEventListener('mouseleave', () => hideMenu(aiToolsMenu));
+    aiToolsBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      navigateToDashboard();
+      document.querySelector('.ai-assistant-side-card').scrollIntoView({ behavior: 'smooth' });
+    });
+    aiToolsMenu.addEventListener('mouseenter', () => showMenu(aiToolsMenu));
+    aiToolsMenu.addEventListener('mouseleave', () => hideMenu(aiToolsMenu));
+  }
+  
+  // Mega menu click routing
+  document.querySelectorAll('.mega-menu-item').forEach(item => {
+    item.addEventListener('click', () => {
+      navigateToTool(item.dataset.tool);
+      if (megaMenu) megaMenu.classList.remove('active');
+    });
   });
+
+  // AI Tools menu click routing
+  if (aiToolsMenu) {
+    aiToolsMenu.querySelectorAll('.ai-tool-card-link').forEach(item => {
+      item.addEventListener('click', () => {
+        navigateToTool(item.dataset.tool);
+        aiToolsMenu.classList.remove('active');
+      });
+    });
+  }
+
+  // Mobile tools drawer toggle
+  const toolsDrawer = document.getElementById('mobile-tools-drawer');
+  const openToolsBtn = document.getElementById('btn-open-tools-drawer');
+  const closeToolsBtn = document.getElementById('btn-close-tools-drawer');
+  
+  if (openToolsBtn) openToolsBtn.addEventListener('click', openToolsDrawer);
+  if (closeToolsBtn) closeToolsBtn.addEventListener('click', closeToolsDrawer);
+  if (toolsDrawer) {
+    toolsDrawer.addEventListener('click', (e) => {
+      if (e.target === toolsDrawer) closeToolsDrawer();
+    });
+  }
+  
+  // Mobile tools drawer click routing
+  document.querySelectorAll('.drawer-tool-item').forEach(item => {
+    item.addEventListener('click', () => {
+      navigateToTool(item.dataset.tool);
+      closeToolsDrawer();
+    });
+  });
+
+  // Mobile auth drawer toggle
+  const authDrawer = document.getElementById('mobile-auth-drawer');
+  const openAuthBtn = document.getElementById('btn-open-auth-drawer');
+  const closeAuthBtn = document.getElementById('btn-close-auth-drawer');
+  
+  if (openAuthBtn) openAuthBtn.addEventListener('click', openAuthDrawer);
+  if (closeAuthBtn) closeAuthBtn.addEventListener('click', closeAuthDrawer);
+  if (authDrawer) {
+    authDrawer.addEventListener('click', (e) => {
+      if (e.target === authDrawer) closeAuthDrawer();
+    });
+  }
+  
+  // Mobile auth drawer links click handling
+  const mobLinkFeatures = document.getElementById('mob-link-features');
+  if (mobLinkFeatures) {
+    mobLinkFeatures.addEventListener('click', (e) => {
+      e.preventDefault();
+      closeAuthDrawer();
+      navigateToDashboard();
+      document.querySelector('.premium-stats-grid').scrollIntoView({ behavior: 'smooth' });
+    });
+  }
+  
+  const mobLinkAbout = document.getElementById('mob-link-about');
+  if (mobLinkAbout) {
+    mobLinkAbout.addEventListener('click', (e) => {
+      e.preventDefault();
+      closeAuthDrawer();
+      showToast('PixelPDF - Developed by Advanced Agentic Coding team.', 'info');
+    });
+  }
+  
+  const mobLinkHelp = document.getElementById('mob-link-help');
+  if (mobLinkHelp) {
+    mobLinkHelp.addEventListener('click', (e) => {
+      e.preventDefault();
+      closeAuthDrawer();
+      showToast('Need help? Contact support at support@pixelpdf.com', 'info');
+    });
+  }
+  
+  const mobLinkLanguage = document.getElementById('mob-link-language');
+  if (mobLinkLanguage) {
+    mobLinkLanguage.addEventListener('click', (e) => {
+      e.preventDefault();
+      closeAuthDrawer();
+      showToast('English language selected.', 'info');
+    });
+  }
+
   document.getElementById('nav-link-pricing').addEventListener('click', (e) => {
     e.preventDefault();
     showAuthModal('upgrade');
@@ -499,6 +693,139 @@ function setupEventListeners() {
       filterCategoryColumns(cat);
     });
   });
+
+  // Footer navigation & tool links
+  document.querySelectorAll('.footer-tool-link').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      navigateToTool(link.dataset.tool);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  });
+
+  const footerLogo = document.getElementById('footer-logo-link');
+  if (footerLogo) {
+    footerLogo.addEventListener('click', (e) => {
+      e.preventDefault();
+      navigateToDashboard();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+
+  const footerBlog = document.getElementById('footer-link-blog');
+  if (footerBlog) {
+    footerBlog.addEventListener('click', (e) => {
+      e.preventDefault();
+      navigateToBlog();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+
+  const footerPricing = document.getElementById('footer-link-pricing');
+  if (footerPricing) {
+    footerPricing.addEventListener('click', (e) => {
+      e.preventDefault();
+      showAuthModal('upgrade');
+    });
+  }
+
+  const footerSettings = document.getElementById('footer-link-settings');
+  if (footerSettings) {
+    footerSettings.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (currentUser) {
+        showSettingsModal();
+      } else {
+        showToast('Please login or sign up first to access account settings.', 'info');
+        showAuthModal('login');
+      }
+    });
+  }
+
+  // Role Tabs click switching
+  document.querySelectorAll('.role-tab').forEach(tab => {
+    tab.addEventListener('click', (e) => {
+      e.preventDefault();
+      document.querySelectorAll('.role-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.role-tab-content').forEach(c => c.classList.remove('active'));
+      
+      tab.classList.add('active');
+      const target = document.getElementById(`tab-${tab.dataset.tab}`);
+      if (target) target.classList.add('active');
+    });
+  });
+
+  // Pricing landing buttons action triggers
+  const btnLandingFree = document.getElementById('btn-landing-free');
+  if (btnLandingFree) {
+    btnLandingFree.addEventListener('click', (e) => {
+      e.preventDefault();
+      const allToolsHeader = document.querySelector('.all-tools-header');
+      if (allToolsHeader) {
+        allToolsHeader.scrollIntoView({ behavior: 'smooth' });
+      }
+    });
+  }
+
+  const btnLandingPremium = document.getElementById('btn-landing-premium');
+  if (btnLandingPremium) {
+    btnLandingPremium.addEventListener('click', (e) => {
+      e.preventDefault();
+      showAuthModal('upgrade');
+    });
+  }
+
+  const btnLandingTeam = document.getElementById('btn-landing-team');
+  if (btnLandingTeam) {
+    btnLandingTeam.addEventListener('click', (e) => {
+      e.preventDefault();
+      showAuthModal('upgrade');
+    });
+  }
+
+  const btnLandingBlogAll = document.getElementById('btn-landing-blog-all');
+  if (btnLandingBlogAll) {
+    btnLandingBlogAll.addEventListener('click', (e) => {
+      e.preventDefault();
+      navigateToBlog();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+
+  // FAQ Accordion Triggers
+  document.querySelectorAll('.faq-trigger').forEach(trigger => {
+    trigger.addEventListener('click', (e) => {
+      e.preventDefault();
+      const item = trigger.closest('.faq-item');
+      const panel = item.querySelector('.faq-panel');
+      const isActive = item.classList.contains('active');
+      
+      // Close all other panels
+      document.querySelectorAll('.faq-item').forEach(i => {
+        i.classList.remove('active');
+        const p = i.querySelector('.faq-panel');
+        if (p) p.style.maxHeight = null;
+      });
+      
+      if (!isActive) {
+        item.classList.add('active');
+        panel.style.maxHeight = panel.scrollHeight + 'px';
+      }
+    });
+  });
+
+  const newsletterForm = document.getElementById('newsletter-form');
+  if (newsletterForm) {
+    newsletterForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const emailInput = document.getElementById('newsletter-email');
+      const email = emailInput ? emailInput.value.trim() : '';
+      if (email) {
+        showToast('Thank you for subscribing to our newsletter!', 'success');
+        if (emailInput) emailInput.value = '';
+      }
+    });
+  }
 
   setupCardMouseEffect();
 }
@@ -1753,9 +2080,56 @@ async function checkAuthSession() {
   }
 }
 
+function getAvatarHtml(picUrl, sizeStr = "100%", paddingPercent = "18%") {
+  if (picUrl) {
+    return `<img src="${picUrl}" style="width: ${sizeStr}; height: ${sizeStr}; object-fit: cover; border-radius: 50%; display: block;" />`;
+  }
+  return `
+    <svg width="${sizeStr}" height="${sizeStr}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color: var(--text-secondary); background: var(--bg-secondary); border-radius: 50%; width: ${sizeStr}; height: ${sizeStr}; padding: ${paddingPercent}; box-sizing: border-box; display: block;">
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+      <circle cx="12" cy="7" r="4" />
+    </svg>
+  `;
+}
+
+function initProfileDropdown() {
+  const wrapper = document.getElementById('profile-nav-wrapper');
+  const trigger = document.getElementById('btn-profile-avatar');
+  const dropdown = document.getElementById('profile-dropdown');
+  
+  if (!wrapper || !trigger || !dropdown) return;
+  
+  let hoverTimeout;
+  
+  wrapper.addEventListener('mouseenter', () => {
+    clearTimeout(hoverTimeout);
+    dropdown.style.display = 'flex';
+  });
+  
+  wrapper.addEventListener('mouseleave', () => {
+    hoverTimeout = setTimeout(() => {
+      dropdown.style.display = 'none';
+    }, 150);
+  });
+  
+  trigger.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isVisible = dropdown.style.display === 'flex';
+    dropdown.style.display = isVisible ? 'none' : 'flex';
+  });
+  
+  // Close on click outside
+  document.addEventListener('click', (e) => {
+    if (!wrapper.contains(e.target)) {
+      dropdown.style.display = 'none';
+    }
+  });
+}
+
 function updateAuthNav(user) {
   const authNav = document.getElementById('user-auth-nav');
-  if (!authNav) return;
+  const drawerBody = document.getElementById('mobile-auth-drawer-body');
+  const openAuthBtn = document.getElementById('btn-open-auth-drawer');
   
   if (user) {
     const badgeClass = user.is_premium ? 'auth-badge-premium' : 'auth-badge-free';
@@ -1771,59 +2145,240 @@ function updateAuthNav(user) {
     
     const currentPlan = user.subscription_plan || (user.is_premium ? 'starter' : 'free');
     const badgeText = planNames[currentPlan] || 'Premium';
-    const badgeStyle = user.is_premium ? '' : 'style="cursor: pointer;" title="Upgrade to Premium"';
-    const badgeId = user.is_premium ? '' : 'id="btn-nav-upgrade"';
     
-    const showTeamBtn = ['base', 'pro', 'enterprise'].includes(currentPlan);
-    const teamBtnHtml = showTeamBtn 
-      ? `<button id="btn-nav-team" class="btn-nav-back" style="padding: 0.35rem 0.75rem; font-size: 0.85rem; border-color: var(--accent-primary); color: var(--accent-primary);">Manage Team</button>`
-      : '';
-    
-    authNav.innerHTML = `
-      <span style="font-size: 0.95rem; color: var(--text-secondary); max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500;">
-        ${user.email}
-      </span>
-      <span ${badgeId} class="auth-badge ${badgeClass}" ${badgeStyle}>${badgeText}</span>
-      ${teamBtnHtml}
-      <button id="btn-logout" class="btn-nav-back" style="padding: 0.35rem 0.75rem; font-size: 0.85rem;">Logout</button>
-    `;
-    
-    if (!user.is_premium) {
-      const upgradeBtn = document.getElementById('btn-nav-upgrade');
-      if (upgradeBtn) {
-        upgradeBtn.addEventListener('click', () => {
-          showAuthModal('upgrade');
-        });
-      }
+    const userDisplayName = (user.first_name && user.last_name) 
+      ? `${user.first_name} ${user.last_name}` 
+      : (user.display_name || user.email);
+
+    // Dynamic email truncation for dropdown
+    let truncatedEmail = user.email;
+    if (truncatedEmail.length > 22) {
+      truncatedEmail = truncatedEmail.substring(0, 19) + '...';
     }
     
-    if (showTeamBtn) {
-      const teamBtn = document.getElementById('btn-nav-team');
-      if (teamBtn) {
-        teamBtn.addEventListener('click', () => {
-          showTeamModal();
-        });
-      }
+    // 1. Desktop Profile Menu Rendering
+    if (authNav) {
+      authNav.innerHTML = `
+        <div class="profile-nav-wrapper" id="profile-nav-wrapper">
+          <button id="btn-profile-avatar" class="btn-profile-avatar-trigger" title="Account & Settings">
+            ${getAvatarHtml(user.profile_pic, "100%", "18%")}
+          </button>
+          
+          <div id="profile-dropdown" class="profile-dropdown" style="display: none;">
+            <div class="profile-dropdown-header">
+              <div class="profile-dropdown-avatar-wrapper">
+                ${getAvatarHtml(user.profile_pic, "100%", "18%")}
+              </div>
+              <div class="profile-dropdown-info">
+                <span class="profile-dropdown-name">${escapeHTML(userDisplayName)}</span>
+                <span class="profile-dropdown-email" title="${escapeHTML(user.email)}">${escapeHTML(truncatedEmail)}</span>
+                <span class="profile-dropdown-plan-badge ${user.is_premium ? 'premium' : 'free'}">${badgeText}</span>
+              </div>
+            </div>
+            <div class="profile-dropdown-menu">
+              <button class="profile-dropdown-item" id="btn-profile-settings">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                <span>Account settings</span>
+              </button>
+              <button class="profile-dropdown-item" id="btn-profile-team">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                <span>Team</span>
+              </button>
+              <button class="profile-dropdown-item" id="btn-profile-upgrade">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                <span>Upgrade to Premium</span>
+              </button>
+              <hr class="profile-dropdown-divider" />
+              <button class="profile-dropdown-item profile-dropdown-item-logout" id="btn-profile-logout">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                <span>Log out</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      // Wire dropdown toggle
+      initProfileDropdown();
     }
-    
-    document.getElementById('btn-logout').addEventListener('click', () => {
+
+    // 2. Mobile Profile Trigger & Drawer Rendering
+    if (openAuthBtn) {
+      openAuthBtn.innerHTML = getAvatarHtml(user.profile_pic, "30px", "18%");
+      openAuthBtn.style.padding = "0.2rem";
+      openAuthBtn.title = "Open Account Menu";
+    }
+
+    if (drawerBody) {
+      drawerBody.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 1.5rem; padding: 1.25rem 1rem; height: 100%; justify-content: space-between; box-sizing: border-box;">
+          <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+            <!-- Profile Header -->
+            <div style="display: flex; align-items: center; gap: 1rem; padding-bottom: 1.25rem; border-bottom: 1px solid var(--border-color);">
+              <div style="width: 54px; height: 54px; border-radius: 50%; overflow: hidden; border: 1.5px solid var(--border-color); display: flex; align-items: center; justify-content: center; background: var(--bg-secondary); flex-shrink: 0;">
+                ${getAvatarHtml(user.profile_pic, "100%", "18%")}
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; text-align: left;">
+                <span style="font-weight: 700; font-size: 1.05rem; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHTML(userDisplayName)}</span>
+                <span style="font-size: 0.8rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; word-break: break-all;" title="${escapeHTML(user.email)}">${escapeHTML(user.email)}</span>
+                <span class="auth-badge ${badgeClass}" style="margin-top: 0.25rem; align-self: flex-start;">Plan: ${badgeText}</span>
+              </div>
+            </div>
+            
+            <!-- Menu Options -->
+            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+              <a href="#" class="drawer-menu-link" id="mob-btn-settings" style="display: flex; align-items: center; gap: 0.75rem; text-decoration: none; padding: 0.75rem 0.5rem; border-radius: 0.375rem; color: var(--text-secondary); transition: background 0.15s ease;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                <span>Account settings</span>
+              </a>
+              <a href="#" class="drawer-menu-link" id="mob-btn-team" style="display: flex; align-items: center; gap: 0.75rem; text-decoration: none; padding: 0.75rem 0.5rem; border-radius: 0.375rem; color: var(--text-secondary); transition: background 0.15s ease;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                <span>Team</span>
+              </a>
+              <a href="#" class="drawer-menu-link" id="mob-btn-upgrade" style="display: flex; align-items: center; gap: 0.75rem; text-decoration: none; padding: 0.75rem 0.5rem; border-radius: 0.375rem; color: var(--text-secondary); transition: background 0.15s ease;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                <span>Upgrade to Premium</span>
+              </a>
+            </div>
+          </div>
+          
+          <div style="display: flex; flex-direction: column; gap: 0.5rem; border-top: 1px solid var(--border-color); padding-top: 1rem; width: 100%;">
+            <a href="#" class="drawer-menu-link" id="mob-btn-logout" style="display: flex; align-items: center; gap: 0.75rem; text-decoration: none; padding: 0.75rem 0.5rem; border-radius: 0.375rem; color: var(--accent-danger); transition: background 0.15s ease;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+              <span>Log out</span>
+            </a>
+          </div>
+        </div>
+      `;
+    }
+
+    // 3. Action Listeners
+    const logoutAction = () => {
       safeStorage.removeItem('token');
       token = null;
       currentUser = null;
       updateAuthNav(null);
       showToast('Logged out successfully', 'info');
+      closeAuthDrawer();
       if (document.getElementById('blog-page').style.display === 'block') {
         renderBlogComposeSection();
       }
-    });
-  } else {
-    authNav.innerHTML = `
-      <button id="btn-show-login" class="btn-nav-back" style="border-radius: 2rem;">Login</button>
-      <button id="btn-show-signup" class="btn-nav-back btn-signup-grad" style="border-radius: 2rem;">Sign Up</button>
-    `;
+    };
+
+    const upgradeAction = (e) => {
+      if (e) e.preventDefault();
+      showAuthModal('upgrade');
+      closeAuthDrawer();
+    };
+
+    const teamAction = (e) => {
+      if (e) e.preventDefault();
+      showTeamModal();
+      closeAuthDrawer();
+    };
+
+    const settingsAction = (e) => {
+      if (e) e.preventDefault();
+      showSettingsModal();
+      closeAuthDrawer();
+    };
+
+    // Desktop bindings
+    const btnProfileSettings = document.getElementById('btn-profile-settings');
+    if (btnProfileSettings) btnProfileSettings.addEventListener('click', settingsAction);
     
-    document.getElementById('btn-show-login').addEventListener('click', () => showAuthModal('login'));
-    document.getElementById('btn-show-signup').addEventListener('click', () => showAuthModal('signup'));
+    const btnProfileTeam = document.getElementById('btn-profile-team');
+    if (btnProfileTeam) btnProfileTeam.addEventListener('click', teamAction);
+    
+    const btnProfileUpgrade = document.getElementById('btn-profile-upgrade');
+    if (btnProfileUpgrade) btnProfileUpgrade.addEventListener('click', upgradeAction);
+    
+    const btnProfileLogout = document.getElementById('btn-profile-logout');
+    if (btnProfileLogout) btnProfileLogout.addEventListener('click', logoutAction);
+
+    // Mobile bindings
+    const mobBtnSettings = document.getElementById('mob-btn-settings');
+    if (mobBtnSettings) mobBtnSettings.addEventListener('click', settingsAction);
+
+    const mobBtnTeam = document.getElementById('mob-btn-team');
+    if (mobBtnTeam) mobBtnTeam.addEventListener('click', teamAction);
+
+    const mobBtnUpgrade = document.getElementById('mob-btn-upgrade');
+    if (mobBtnUpgrade) mobBtnUpgrade.addEventListener('click', upgradeAction);
+
+    const mobBtnLogout = document.getElementById('mob-btn-logout');
+    if (mobBtnLogout) mobBtnLogout.addEventListener('click', logoutAction);
+
+  } else {
+    // Logged-out state
+    if (authNav) {
+      authNav.innerHTML = `
+        <button id="btn-show-login" class="btn-nav-back" style="border-radius: 2rem;">Login</button>
+        <button id="btn-show-signup" class="btn-nav-back btn-signup-grad" style="border-radius: 2rem;">Sign Up</button>
+      `;
+      document.getElementById('btn-show-login').addEventListener('click', () => showAuthModal('login'));
+      document.getElementById('btn-show-signup').addEventListener('click', () => showAuthModal('signup'));
+    }
+
+    if (openAuthBtn) {
+      openAuthBtn.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+          <circle cx="5" cy="5" r="2"/>
+          <circle cx="12" cy="5" r="2"/>
+          <circle cx="19" cy="5" r="2"/>
+          <circle cx="5" cy="12" r="2"/>
+          <circle cx="12" cy="12" r="2"/>
+          <circle cx="19" cy="12" r="2"/>
+          <circle cx="5" cy="19" r="2"/>
+          <circle cx="12" cy="19" r="2"/>
+          <circle cx="19" cy="19" r="2"/>
+        </svg>
+      `;
+      openAuthBtn.style.padding = "0.5rem";
+      openAuthBtn.title = "Open Settings Menu";
+    }
+
+    if (drawerBody) {
+      drawerBody.innerHTML = LOGGED_OUT_DRAWER_HTML;
+      
+      // Wire mobile logged out triggers
+      const mobBtnLogin = document.getElementById('mob-btn-login');
+      if (mobBtnLogin) {
+        mobBtnLogin.addEventListener('click', () => {
+          showAuthModal('login');
+          closeAuthDrawer();
+        });
+      }
+      const mobBtnSignup = document.getElementById('mob-btn-signup');
+      if (mobBtnSignup) {
+        mobBtnSignup.addEventListener('click', () => {
+          showAuthModal('signup');
+          closeAuthDrawer();
+        });
+      }
+      
+      // Wire original link items
+      const mobLinkFeatures = document.getElementById('mob-link-features');
+      if (mobLinkFeatures) {
+        mobLinkFeatures.addEventListener('click', (e) => {
+          e.preventDefault();
+          closeAuthDrawer();
+          navigateToDashboard();
+          const stats = document.querySelector('.premium-stats-grid');
+          if (stats) stats.scrollIntoView({ behavior: 'smooth' });
+        });
+      }
+      const mobLinkAbout = document.getElementById('mob-link-about');
+      if (mobLinkAbout) {
+        mobLinkAbout.addEventListener('click', (e) => {
+          e.preventDefault();
+          closeAuthDrawer();
+          navigateToDashboard();
+          const contact = document.querySelector('footer');
+          if (contact) contact.scrollIntoView({ behavior: 'smooth' });
+        });
+      }
+    }
   }
   
   if (document.getElementById('blog-page').style.display === 'block') {
@@ -1837,17 +2392,30 @@ function showAuthModal(type) {
   const signup = document.getElementById('signup-modal');
   const upgrade = document.getElementById('upgrade-modal');
   const team = document.getElementById('team-modal');
+  const forgot = document.getElementById('forgot-password-modal');
   
   overlay.classList.add('active');
   login.style.display = 'none';
   signup.style.display = 'none';
   upgrade.style.display = 'none';
   if (team) team.style.display = 'none';
+  if (forgot) forgot.style.display = 'none';
+  const settings = document.getElementById('settings-modal');
+  if (settings) settings.style.display = 'none';
   
   if (type === 'login') {
     login.style.display = 'flex';
+    renderGoogleButtons();
   } else if (type === 'signup') {
     signup.style.display = 'flex';
+    renderGoogleButtons();
+  } else if (type === 'forgot') {
+    if (forgot) {
+      forgot.style.display = 'flex';
+      document.getElementById('forgot-password-step1-form').style.display = 'flex';
+      document.getElementById('forgot-password-step2-form').style.display = 'none';
+      document.getElementById('forgot-email').value = '';
+    }
   } else if (type === 'upgrade') {
     upgrade.style.display = 'flex';
     const loggedOutActions = document.getElementById('upgrade-logged-out-actions');
@@ -1921,6 +2489,44 @@ function updateActivePricingCard() {
   }
 }
 
+function showSettingsModal() {
+  const overlay = document.getElementById('auth-modal-overlay');
+  const login = document.getElementById('login-modal');
+  const signup = document.getElementById('signup-modal');
+  const upgrade = document.getElementById('upgrade-modal');
+  const team = document.getElementById('team-modal');
+  const forgot = document.getElementById('forgot-password-modal');
+  const googleSelector = document.getElementById('google-selector-modal');
+  const settings = document.getElementById('settings-modal');
+  
+  overlay.classList.add('active');
+  login.style.display = 'none';
+  signup.style.display = 'none';
+  upgrade.style.display = 'none';
+  if (team) team.style.display = 'none';
+  if (forgot) forgot.style.display = 'none';
+  if (googleSelector) googleSelector.style.display = 'none';
+  if (settings) settings.style.display = 'flex';
+  
+  if (currentUser) {
+    document.getElementById('settings-first-name').value = currentUser.first_name || '';
+    document.getElementById('settings-last-name').value = currentUser.last_name || '';
+    document.getElementById('settings-email').value = currentUser.email || '';
+    
+    const settingsAvatarWrapper = document.querySelector('.settings-avatar-wrapper');
+    if (settingsAvatarWrapper) {
+      settingsAvatarWrapper.innerHTML = getAvatarHtml(currentUser.profile_pic, "100%", "18%");
+    }
+  }
+}
+
+function hideSettingsModal() {
+  const overlay = document.getElementById('auth-modal-overlay');
+  overlay.classList.remove('active');
+  const settings = document.getElementById('settings-modal');
+  if (settings) settings.style.display = 'none';
+}
+
 function showTeamModal() {
   const overlay = document.getElementById('auth-modal-overlay');
   const login = document.getElementById('login-modal');
@@ -1954,34 +2560,76 @@ async function fetchTeamMembers() {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Failed to fetch team list');
     
-    document.getElementById('team-seat-usage').textContent = `${data.seatsUsed} / ${data.maxSeats} used`;
-    
+    const inviteForm = document.getElementById('team-invite-form');
+    const seatUsage = document.getElementById('team-seat-usage');
     const listContainer = document.getElementById('team-members-list');
-    listContainer.innerHTML = '';
     
-    if (data.collaborators.length === 0) {
-      listContainer.innerHTML = `<p style="font-size: 0.85rem; color: var(--text-muted); text-align: center; padding: 1rem 0;">No team members invited yet.</p>`;
-      return;
-    }
-    
-    data.collaborators.forEach(c => {
-      const row = document.createElement('div');
-      row.className = 'team-member-row';
-      row.innerHTML = `
-        <span class="team-member-email">${c.email}</span>
-        <button class="btn-remove-member" data-email="${c.email}">Remove</button>
+    // Clear any existing upgrade CTA banner from previous modal opens
+    const existingCta = document.getElementById('team-upgrade-cta-container');
+    if (existingCta) existingCta.remove();
+
+    if (!data.canCollaborate) {
+      if (inviteForm) inviteForm.style.display = 'none';
+      if (seatUsage) seatUsage.textContent = '1 / 1 seat (Only you)';
+      
+      const userEmail = currentUser ? currentUser.email : 'you';
+      const userName = currentUser ? ((currentUser.first_name && currentUser.last_name) ? `${currentUser.first_name} ${currentUser.last_name}` : (currentUser.display_name || '')) : '';
+      const displayLabel = userName ? `${userName} (${userEmail})` : userEmail;
+      
+      listContainer.innerHTML = `
+        <div class="team-member-row" style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0.75rem; background: rgba(0,0,0,0.02); border-radius: 0.375rem; width: 100%;">
+          <span style="font-size: 0.9rem; font-weight: 500;">${escapeHTML(displayLabel)}</span>
+          <span style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); background: rgba(0,0,0,0.05); padding: 0.15rem 0.4rem; border-radius: 4px;">Owner</span>
+        </div>
       `;
-      listContainer.appendChild(row);
-    });
-    
-    listContainer.querySelectorAll('.btn-remove-member').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
-        const email = e.currentTarget.getAttribute('data-email');
-        if (confirm(`Are you sure you want to remove ${email} from your collaboration team?`)) {
-          await removeTeamMember(email);
-        }
+      
+      // Inject Upgrade CTA banner
+      const ctaContainer = document.createElement('div');
+      ctaContainer.id = 'team-upgrade-cta-container';
+      ctaContainer.style.cssText = 'background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 0.75rem; padding: 1rem; text-align: center; margin-top: 1.25rem; width: 100%; box-sizing: border-box;';
+      ctaContainer.innerHTML = `
+        <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0 0 0.75rem 0;">
+          Upgrade to Base plan or higher to add team members and collaborate!
+        </p>
+        <button id="btn-team-upgrade-cta" class="btn-action" style="width: auto; padding: 0.5rem 1.25rem; font-size: 0.85rem; margin: 0 auto; display: block;">
+          Upgrade Now
+        </button>
+      `;
+      listContainer.parentNode.appendChild(ctaContainer);
+      
+      document.getElementById('btn-team-upgrade-cta').addEventListener('click', () => {
+        hideTeamModal();
+        showAuthModal('upgrade');
       });
-    });
+    } else {
+      if (inviteForm) inviteForm.style.display = 'flex';
+      if (seatUsage) seatUsage.textContent = `${data.seatsUsed} / ${data.maxSeats} used`;
+      
+      listContainer.innerHTML = '';
+      if (data.collaborators.length === 0) {
+        listContainer.innerHTML = `<p style="font-size: 0.85rem; color: var(--text-muted); text-align: center; padding: 1rem 0;">No team members invited yet.</p>`;
+        return;
+      }
+      
+      data.collaborators.forEach(c => {
+        const row = document.createElement('div');
+        row.className = 'team-member-row';
+        row.innerHTML = `
+          <span class="team-member-email">${c.email}</span>
+          <button class="btn-remove-member" data-email="${c.email}">Remove</button>
+        `;
+        listContainer.appendChild(row);
+      });
+      
+      listContainer.querySelectorAll('.btn-remove-member').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          const email = e.currentTarget.getAttribute('data-email');
+          if (confirm(`Are you sure you want to remove ${email} from your collaboration team?`)) {
+            await removeTeamMember(email);
+          }
+        });
+      });
+    }
   } catch (err) {
     showToast(err.message, 'error');
   }
@@ -2012,6 +2660,11 @@ function setupAuthEventListeners() {
   document.getElementById('btn-close-signup').addEventListener('click', hideAuthModal);
   document.getElementById('btn-close-upgrade').addEventListener('click', hideAuthModal);
   
+  const btnCloseForgot = document.getElementById('btn-close-forgot');
+  if (btnCloseForgot) btnCloseForgot.addEventListener('click', hideAuthModal);
+  
+
+  
   document.getElementById('link-goto-signup').addEventListener('click', (e) => {
     e.preventDefault();
     showAuthModal('signup');
@@ -2020,6 +2673,23 @@ function setupAuthEventListeners() {
     e.preventDefault();
     showAuthModal('login');
   });
+  
+  const linkForgot = document.getElementById('link-forgot-password');
+  if (linkForgot) {
+    linkForgot.addEventListener('click', (e) => {
+      e.preventDefault();
+      showAuthModal('forgot');
+    });
+  }
+  
+  const linkGotoLoginFromForgot = document.getElementById('link-goto-login-from-forgot');
+  if (linkGotoLoginFromForgot) {
+    linkGotoLoginFromForgot.addEventListener('click', (e) => {
+      e.preventDefault();
+      showAuthModal('login');
+    });
+  }
+  
   document.getElementById('btn-upgrade-login').addEventListener('click', () => {
     showAuthModal('login');
   });
@@ -2027,6 +2697,183 @@ function setupAuthEventListeners() {
     e.preventDefault();
     showAuthModal('signup');
   });
+  
+  // Google Sign-In Actions
+  let googleClientId = null;
+
+  async function checkGoogleConfig() {
+    try {
+      const res = await fetch('/api/config/google-client-id');
+      const data = await res.json();
+      googleClientId = data.clientId;
+    } catch (err) {
+      console.error('Failed to load Google Sign-In config:', err);
+    }
+  }
+
+  window.renderGoogleButtons = async function() {
+    if (googleClientId === null) {
+      await checkGoogleConfig();
+    }
+
+    const loginContainer = document.getElementById('google-login-btn-container');
+    const signupContainer = document.getElementById('google-signup-btn-container');
+
+    if (googleClientId) {
+      // Official Google Sign-In SDK
+      if (window.google) {
+        try {
+          google.accounts.id.initialize({
+            client_id: googleClientId,
+            callback: async (response) => {
+              await handleGoogleAuth(response.credential);
+            }
+          });
+
+          if (loginContainer) {
+            loginContainer.innerHTML = '';
+            google.accounts.id.renderButton(loginContainer, {
+              theme: 'outline',
+              size: 'large',
+              width: loginContainer.offsetWidth || 300,
+              text: 'signin_with'
+            });
+          }
+          
+          if (signupContainer) {
+            signupContainer.innerHTML = '';
+            google.accounts.id.renderButton(signupContainer, {
+              theme: 'outline',
+              size: 'large',
+              width: signupContainer.offsetWidth || 300,
+              text: 'signup_with'
+            });
+          }
+        } catch (gsiErr) {
+          console.error('GSI Button rendering failed:', gsiErr);
+        }
+      } else {
+        console.warn('Google Identity Services SDK script not loaded.');
+      }
+    } else {
+      // Sandbox Fallback Mode
+      const sandboxButtonHtml = `
+        <button type="button" class="btn-google-login" style="display: flex; align-items: center; justify-content: center; gap: 0.75rem; padding: 0.65rem 1rem; border-radius: 2rem; border: 1.5px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: background 0.2s, border-color 0.2s; width: 100%; box-sizing: border-box;">
+          <svg viewBox="0 0 24 24" width="18" height="18" xmlns="http://www.w3.org/2000/svg">
+            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/>
+            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+          </svg>
+          <span>Continue with Google</span>
+        </button>
+      `;
+
+      if (loginContainer) {
+        loginContainer.innerHTML = sandboxButtonHtml;
+        loginContainer.querySelector('button').addEventListener('click', openGoogleAuthPopup);
+      }
+      
+      if (signupContainer) {
+        signupContainer.innerHTML = sandboxButtonHtml;
+        signupContainer.querySelector('button').addEventListener('click', openGoogleAuthPopup);
+      }
+    }
+  };
+
+  const openGoogleAuthPopup = () => {
+    const w = 520;
+    const h = 600;
+    const left = screen.width / 2 - w / 2;
+    const top = screen.height / 2 - h / 2;
+    const popup = window.open(
+      '/api/auth/google/popup',
+      'GoogleLoginPopup',
+      `width=${w},height=${h},top=${top},left=${left},resizable=yes,scrollbars=yes,status=yes`
+    );
+    if (popup) popup.focus();
+  };
+
+  window.addEventListener('message', async (event) => {
+    if (event.origin !== window.location.origin) return;
+    const { type, email, first_name, last_name } = event.data;
+    if (type === 'google-auth-success') {
+      await handleGoogleAuth(null, email, first_name, last_name);
+    }
+  });
+  
+  async function handleGoogleAuth(credential, email, first_name, last_name) {
+    try {
+      const payload = credential 
+        ? { credential } 
+        : { email, first_name, last_name };
+
+      const res = await fetch('/api/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Google Login failed');
+      
+      safeStorage.setItem('token', data.token);
+      token = data.token;
+      currentUser = data.user;
+      updateAuthNav(currentUser);
+      hideAuthModal();
+      showToast(`Welcome, ${currentUser.first_name || currentUser.display_name}!`, 'success');
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  }
+
+  // Forgot Password Forms
+  const forgotStep1 = document.getElementById('forgot-password-step1-form');
+  if (forgotStep1) {
+    forgotStep1.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('forgot-email').value;
+      try {
+        const res = await fetch('/api/auth/forgot-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Password reset request failed');
+        
+        showToast(data.message || 'Verification code sent!', 'success');
+        forgotStep1.style.display = 'none';
+        document.getElementById('forgot-password-step2-form').style.display = 'flex';
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    });
+  }
+  
+  const forgotStep2 = document.getElementById('forgot-password-step2-form');
+  if (forgotStep2) {
+    forgotStep2.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('forgot-email').value;
+      const code = document.getElementById('forgot-code').value;
+      const newPassword = document.getElementById('forgot-new-password').value;
+      try {
+        const res = await fetch('/api/auth/reset-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, code, newPassword })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Password reset failed');
+        
+        showToast(data.message || 'Password reset successful!', 'success');
+        showAuthModal('login');
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    });
+  }
   
   document.getElementById('login-form').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -2061,12 +2908,14 @@ function setupAuthEventListeners() {
     e.preventDefault();
     const email = document.getElementById('signup-email').value;
     const password = document.getElementById('signup-password').value;
+    const first_name = document.getElementById('signup-first-name').value;
+    const last_name = document.getElementById('signup-last-name').value;
     
     try {
       const res = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email, password, first_name, last_name })
       });
       
       const data = await res.json();
@@ -2081,6 +2930,8 @@ function setupAuthEventListeners() {
       
       document.getElementById('signup-email').value = '';
       document.getElementById('signup-password').value = '';
+      document.getElementById('signup-first-name').value = '';
+      document.getElementById('signup-last-name').value = '';
     } catch (err) {
       showToast(err.message, 'error');
     }
@@ -2156,6 +3007,94 @@ function setupAuthEventListeners() {
       }
     });
   }
+
+  // Settings modal listeners
+  const settingsCloseBtn = document.getElementById('btn-close-settings');
+  if (settingsCloseBtn) {
+    settingsCloseBtn.addEventListener('click', hideSettingsModal);
+  }
+
+  const inputProfilePic = document.getElementById('input-profile-pic');
+  if (inputProfilePic) {
+    inputProfilePic.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      const formData = new FormData();
+      formData.append('profile_pic', file);
+      
+      try {
+        const res = await fetch('/api/user/profile-pic', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          body: formData
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to upload profile picture');
+        
+        currentUser.profile_pic = data.profilePicUrl;
+        
+        showToast('Profile picture updated successfully', 'success');
+        updateAuthNav(currentUser);
+        
+        const settingsAvatarWrapper = document.querySelector('.settings-avatar-wrapper');
+        if (settingsAvatarWrapper) {
+          settingsAvatarWrapper.innerHTML = getAvatarHtml(currentUser.profile_pic, "100%", "18%");
+        }
+        
+        if (document.getElementById('blog-page').style.display === 'block') {
+          renderBlogList();
+        }
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    });
+  }
+
+  const settingsForm = document.getElementById('settings-form');
+  if (settingsForm) {
+    settingsForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const firstName = document.getElementById('settings-first-name').value.trim();
+      const lastName = document.getElementById('settings-last-name').value.trim();
+      
+      try {
+        const res = await fetch('/api/user/display-name', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            first_name: firstName,
+            last_name: lastName
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to update settings');
+        
+        currentUser.first_name = data.user.first_name;
+        currentUser.last_name = data.user.last_name;
+        currentUser.display_name = data.user.display_name;
+        
+        showToast('Account settings saved successfully', 'success');
+        updateAuthNav(currentUser);
+        hideSettingsModal();
+        
+        if (document.getElementById('blog-page').style.display === 'block') {
+          renderBlogList();
+        }
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    });
+  }
+
+  // Prefetch Google Client ID configuration
+  checkGoogleConfig();
 }
 
 /* ==========================================
@@ -2329,7 +3268,12 @@ async function loadBlogPosts() {
       return `
         <article class="blog-post-card">
           <div class="blog-post-header">
-            <span class="blog-post-author">By ${escapeHTML(authorName)}</span>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <div class="blog-post-author-avatar-wrapper">
+                ${getAvatarHtml(post.author_pic, "100%", "18%")}
+              </div>
+              <span class="blog-post-author">By ${escapeHTML(authorName)}</span>
+            </div>
             <span>${dateStr}</span>
           </div>
           <h3 style="margin-top: 0.25rem; margin-bottom: 0.5rem;">${escapeHTML(post.title)}</h3>
@@ -2344,6 +3288,99 @@ async function loadBlogPosts() {
       </div>
     `;
   }
+}
+
+async function loadFeaturedLandingBlogs() {
+  const container = document.getElementById('landing-blogs-grid');
+  if (!container) return;
+
+  try {
+    const res = await fetch('/api/blog');
+    const data = await res.json();
+    
+    if (res.ok && data.posts && data.posts.length > 0) {
+      const featured = data.posts.slice(0, 3);
+      container.innerHTML = featured.map(post => {
+        const dateStr = new Date(post.createdAt).toLocaleDateString(undefined, {
+          year: 'numeric', month: 'long', day: 'numeric'
+        });
+        const authorName = post.author_name || post.author_email;
+        const doc = new DOMParser().parseFromString(post.content, 'text/html');
+        const textContent = doc.body.textContent || "";
+        const snippet = textContent.length > 120 ? textContent.substring(0, 120) + "..." : textContent;
+
+        return `
+          <article class="testimonial-card" style="font-style: normal; gap: 1rem; align-items: stretch; justify-content: space-between;">
+            <div>
+              <span style="font-size: 0.75rem; color: var(--accent-secondary); font-weight: 700; text-transform: uppercase;">Community Article</span>
+              <h3 style="margin-top: 0.5rem; margin-bottom: 0.75rem; font-size: 1.15rem; font-weight: 700; color: var(--text-primary); line-height: 1.4;">${escapeHTML(post.title)}</h3>
+              <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6; font-style: normal;">${escapeHTML(snippet)}</p>
+            </div>
+            <div class="testimonial-user" style="margin-top: 1.25rem;">
+              <div class="blog-post-author-avatar-wrapper" style="width: 2.2rem; height: 2.2rem; min-width: 2.2rem;">
+                ${getAvatarHtml(post.author_pic, "100%", "18%")}
+              </div>
+              <div class="user-info-text">
+                <h4 style="font-size: 0.85rem;">${escapeHTML(authorName)}</h4>
+                <p style="font-size: 0.7rem;">${dateStr}</p>
+              </div>
+            </div>
+          </article>
+        `;
+      }).join('');
+      return;
+    }
+  } catch (err) {
+    console.error("Failed to load featured landing blogs:", err);
+  }
+
+  // Fallback default featured articles if empty database or error
+  container.innerHTML = `
+    <article class="testimonial-card" style="font-style: normal; gap: 1rem; align-items: stretch; justify-content: space-between;">
+      <div>
+        <span style="font-size: 0.75rem; color: var(--accent-secondary); font-weight: 700; text-transform: uppercase;">Productivity Guide</span>
+        <h3 style="margin-top: 0.5rem; margin-bottom: 0.75rem; font-size: 1.15rem; font-weight: 700; color: var(--text-primary); line-height: 1.4;">5 Simple Workflows to Automate Your Daily PDF Tasks</h3>
+        <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6; font-style: normal;">From batch signatures to multi-file compressions, discover the best productivity hacks to optimize your business document pipelines.</p>
+      </div>
+      <div class="testimonial-user" style="margin-top: 1.25rem;">
+        <div class="user-avatar-silhouette" style="background: var(--grad-primary); width: 2.2rem; height: 2.2rem; min-width: 2.2rem;">PP</div>
+        <div class="user-info-text">
+          <h4 style="font-size: 0.85rem;">PixelPDF Editorial</h4>
+          <p style="font-size: 0.7rem;">June 25, 2026</p>
+        </div>
+      </div>
+    </article>
+    
+    <article class="testimonial-card" style="font-style: normal; gap: 1rem; align-items: stretch; justify-content: space-between;">
+      <div>
+        <span style="font-size: 0.75rem; color: var(--accent-secondary); font-weight: 700; text-transform: uppercase;">Security Report</span>
+        <h3 style="margin-top: 0.5rem; margin-bottom: 0.75rem; font-size: 1.15rem; font-weight: 700; color: var(--text-primary); line-height: 1.4;">The Future of Document Security in the AI Era</h3>
+        <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6; font-style: normal;">Explore how local WebAssembly processing and client-side cryptography are shifting the balance of power and security back to users.</p>
+      </div>
+      <div class="testimonial-user" style="margin-top: 1.25rem;">
+        <div class="user-avatar-silhouette" style="background: var(--grad-blue-cyan); width: 2.2rem; height: 2.2rem; min-width: 2.2rem;">SE</div>
+        <div class="user-info-text">
+          <h4 style="font-size: 0.85rem;">Security Council</h4>
+          <p style="font-size: 0.7rem;">June 20, 2026</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="testimonial-card" style="font-style: normal; gap: 1rem; align-items: stretch; justify-content: space-between;">
+      <div>
+        <span style="font-size: 0.75rem; color: var(--accent-secondary); font-weight: 700; text-transform: uppercase;">Tech Spotlight</span>
+        <h3 style="margin-top: 0.5rem; margin-bottom: 0.75rem; font-size: 1.15rem; font-weight: 700; color: var(--text-primary); line-height: 1.4;">Unlocking PDF Tables: The Best Way to Export to Excel</h3>
+        <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6; font-style: normal;">A deep technical walkthrough explaining how our browser parser recognizes structural borders and data cells without column misalignment.</p>
+      </div>
+      <div class="testimonial-user" style="margin-top: 1.25rem;">
+        <div class="user-avatar-silhouette" style="background: var(--grad-teal-green); width: 2.2rem; height: 2.2rem; min-width: 2.2rem;">DB</div>
+        <div class="user-info-text">
+          <h4 style="font-size: 0.85rem;">Database Team</h4>
+          <p style="font-size: 0.7rem;">June 18, 2026</p>
+        </div>
+      </div>
+    </article>
+  `;
 }
 
 function renderBlogComposeSection() {
