@@ -209,11 +209,632 @@ const TOOL_META = {
   'upscale-image': { title: 'Image Upscaler', desc: 'Enhance resolution and quality of images.', uploadHeadline: 'Upload an image to upscale', uploadSubline: 'or drag and drop it here', accepts: 'image/png, image/jpeg, image/jpg', multiple: false }
 };
 
+// Success download cache
+let lastProcessedFile = null;
+
+// Tool extra content dictionary (metafields)
+const TOOL_EXTRA_CONTENT = {
+  merge: {
+    category: 'Organizer',
+    icon: '🥞',
+    badges: ['FAST WORKFLOW', 'PRIVATE PROCESSING', 'SERVER-OPTIMIZED'],
+    input: 'PDF files',
+    engine: 'Server-optimized',
+    output: 'Merged PDF',
+    flow: ['Upload two or more PDFs', 'Arrange file order / rotate pages', 'Download combined result'],
+    about: 'Merge PDF lets you combine multiple PDF documents, reports, invoices, or invoices into a single, organized file. Perfect for collating documents for submissions or sharing.',
+    features: [
+      'Combine unlimited PDF documents into one',
+      'Drag and drop rows to reorder documents',
+      'Rotate individual pages before compiling',
+      'Encrypted transit with zero data monetization'
+    ],
+    whoUses: [
+      'Students combining assignment sheets',
+      'HR managers compiling candidate resumes',
+      'Businesses organizing monthly financial statements'
+    ],
+    steps: [
+      { title: 'Upload Files', desc: 'Select or drag and drop multiple PDF documents into the upload zone.' },
+      { title: 'Reorder & Rotate', desc: 'Drag rows to rearrange page order. Rotate pages if needed.' },
+      { title: 'Merge & Save', desc: 'Click "Process Files" to merge and download your single combined PDF.' }
+    ],
+    faqs: [
+      { q: 'Is there a limit to how many files I can merge?', a: 'Free accounts can merge up to 5 files at a time. Premium accounts have no limits.' },
+      { q: 'Will the formatting of my original PDFs change?', a: 'No, all layout, fonts, margins, and contents are preserved exactly as they are.' },
+      { q: 'Is merging secure?', a: 'Yes, your files are processed securely and deleted automatically within 1 hour.' }
+    ],
+    related: ['split', 'organize-pdf', 'rotate']
+  },
+  split: {
+    category: 'Organizer',
+    icon: '✂️',
+    badges: ['EXACT PAGE EXTRACTION', 'HIGH SPEED', 'SANDBOXED'],
+    input: 'Single PDF',
+    engine: 'Client-side Splitter',
+    output: 'Split PDFs / Zip',
+    flow: ['Upload your PDF', 'Select page ranges or individual pages', 'Download split documents'],
+    about: 'Split PDF allows you to extract specific pages or page ranges from a document, or save every page as a standalone PDF file. Excellent for separating chapters, sections, or slides.',
+    features: [
+      'Extract custom page ranges (e.g. 1-5, 8, 12)',
+      'Split every page into its own individual PDF',
+      'Interactive visual thumbnail selection grid',
+      'Fast client-side rendering with no quality loss'
+    ],
+    whoUses: [
+      'Teachers separating lesson plans',
+      'Real estate agents isolating signature pages',
+      'Contractors extracting invoice receipts'
+    ],
+    steps: [
+      { title: 'Upload PDF', desc: 'Select a PDF document to split from your computer.' },
+      { title: 'Choose Pages', desc: 'Select individual page thumbnails or choose to split every page.' },
+      { title: 'Download Split', desc: 'Finalize processing and download your isolated PDF pages instantly.' }
+    ],
+    faqs: [
+      { q: 'Can I split password-protected PDFs?', a: 'Yes, but you will need to input the password first to unlock the pages before splitting.' },
+      { q: 'What is "Split every page"?', a: 'This mode saves each page of your PDF as a separate single-page document packaged inside a ZIP file.' }
+    ],
+    related: ['merge', 'organize-pdf', 'extract-pages']
+  },
+  compress: {
+    category: 'Optimization',
+    icon: '📉',
+    badges: ['SMART COMPRESSION', 'MAX REDUCTION', 'QUALITY PRESERVED'],
+    input: 'PDF files',
+    engine: 'Preset Compressor',
+    output: 'Compressed PDF',
+    flow: ['Upload your PDF', 'Choose compression quality level', 'Download shrunken PDF'],
+    about: 'Compress PDF optimizes and shrinks the file size of your documents while maintaining readable text and image quality. Ideal for reducing attachment sizes for email submissions.',
+    features: [
+      'Three compression levels: Balanced, Extreme, Low',
+      'Significant file size reduction up to 90%',
+      'Maintains sharp text and acceptable image resolution',
+      'Private sandboxed environment processing'
+    ],
+    whoUses: [
+      'Job applicants matching job portal limits (often < 2MB)',
+      'Government submissions with rigid size caps',
+      'Archivists saving disk space on large documents'
+    ],
+    steps: [
+      { title: 'Upload Document', desc: 'Select or drag your PDF file into the upload dropzone.' },
+      { title: 'Select Level', desc: 'Choose Balanced (recommended), Extreme (lowest size), or Low.' },
+      { title: 'Optimize & Save', desc: 'Process the document and download the shrunken PDF file.' }
+    ],
+    faqs: [
+      { q: 'Will my images look blurry?', a: 'Balanced mode maintains excellent visibility. Extreme mode may degrade high-res images to maximize storage saving.' },
+      { q: 'Can I compress scanned PDFs?', a: 'Yes, our compressor works exceptionally well on heavy scanned documents.' }
+    ],
+    related: ['merge', 'ocr', 'protect']
+  },
+  ocr: {
+    category: 'Text Recognition',
+    icon: '🔍',
+    badges: ['SEARCHABLE PDF', 'ACCURATE TEXT', 'MULTI-LANGUAGE'],
+    input: 'Scanned PDF',
+    engine: 'Tesseract OCR Engine',
+    output: 'Searchable PDF',
+    flow: ['Upload scanned PDF document', 'Wait for text recognition to complete', 'Download searchable PDF'],
+    about: 'OCR PDF processes scanned documents and images to recognize written text, embedding an invisible searchable text layer. This lets you search, copy, and select text in the PDF.',
+    features: [
+      'Extract searchable text from image-only PDFs',
+      'Preserve original page formatting and layouts',
+      'Allows copy-pasting of text from scanned books/records',
+      'Runs securely on server with automated cleanup'
+    ],
+    whoUses: [
+      'Lawyers processing scanned court filings',
+      'Researchers search-enabling digital archive books',
+      'Data entry specialists copy-pasting scanned receipts'
+    ],
+    steps: [
+      { title: 'Upload Scanned File', desc: 'Select your scanned, non-searchable PDF file.' },
+      { title: 'Apply OCR', desc: 'Process the document to run character recognition.' },
+      { title: 'Save & Copy', desc: 'Download your searchable PDF and select text directly.' }
+    ],
+    faqs: [
+      { q: 'What is OCR?', a: 'OCR stands for Optical Character Recognition. It translates image pixels of characters into editable machine text.' },
+      { q: 'Will OCR make my file size larger?', a: 'Only slightly, as it only adds a text layer underneath the existing images.' }
+    ],
+    related: ['compress', 'pdf-to-word', 'edit-pdf']
+  },
+  'img-to-pdf': {
+    category: 'Converter',
+    icon: '🖼️',
+    badges: ['IMAGE CONVERTER', 'GRID SORT', 'CUSTOM MARGINS'],
+    input: 'JPG / PNG / GIF',
+    engine: 'Layout Engine',
+    output: 'PDF Document',
+    flow: ['Upload one or more images', 'Set page layout and dimensions', 'Download compiled PDF'],
+    about: 'JPG to PDF compiles your photos, screenshots, or drawings into a neat, single PDF document. You can sort images, configure page sizing (A4/Letter), and set margins.',
+    features: [
+      'Convert JPG, JPEG, PNG, and GIF to PDF',
+      'Rearrange images visually in a grid',
+      'Customize page size (A4, Letter, Fit)',
+      'Adjust orientation (Portrait, Landscape)'
+    ],
+    whoUses: [
+      'Students scanning hand-written notes via photos',
+      'Developers creating PDF mockups from screenshots',
+      'Receipt-collectors organizing monthly expenditures'
+    ],
+    steps: [
+      { title: 'Upload Images', desc: 'Select one or multiple photos to convert.' },
+      { title: 'Configure Pages', desc: 'Choose page size and orientation on the right sidebar.' },
+      { title: 'Compile & Save', desc: 'Build and download your unified PDF document.' }
+    ],
+    faqs: [
+      { q: 'Does it compress the images?', a: 'No, it embeds images in their full original resolution unless compressed subsequently.' }
+    ],
+    related: ['pdf-to-img', 'merge', 'edit-pdf']
+  },
+  'edit-pdf': {
+    category: 'Editor',
+    icon: '✍️',
+    badges: ['TEXT STAMP', 'ANNOTATIONS', 'FREE-FORM'],
+    input: 'PDF files',
+    engine: 'Vector Overlay Engine',
+    output: 'Annotated PDF',
+    flow: ['Upload your PDF document', 'Type text and click to stamp it on pages', 'Download updated PDF'],
+    about: 'Edit PDF lets you stamp text overlays, insert dates, or annotate pages visually. Perfect for adding notes, comments, or headers onto pre-existing documents.',
+    features: [
+      'Stamp text overlays anywhere on document pages',
+      'Configure font sizes dynamically',
+      'Remove stamps with a simple click',
+      'Fast client-side vector placement'
+    ],
+    whoUses: [
+      'Editors giving feedback on PDF drafts',
+      'Accountants writing check numbers on receipts',
+      'Managers stamping "APPROVED" signatures'
+    ],
+    steps: [
+      { title: 'Upload PDF', desc: 'Select the PDF document you want to write on.' },
+      { title: 'Stamp Text', desc: 'Type your overlay text, select size, and click on page to place.' },
+      { title: 'Save File', desc: 'Click process to bake stamps into the PDF and download.' }
+    ],
+    faqs: [
+      { q: 'Can I edit the existing text in the PDF?', a: 'Currently, this tool overlays new text and annotations. To replace original text, use an OCR to Word converter first.' }
+    ],
+    related: ['watermark', 'sign', 'redact']
+  },
+  'ai-assistant': {
+    category: 'AI Tool',
+    icon: '🔮',
+    badges: ['AI SUMMARIZER', 'AI CHATBOT', 'STUDY GUIDES'],
+    input: 'PDF files',
+    engine: 'Grok / Groq Serverless AI',
+    output: 'AI Insights Text',
+    flow: ['Upload a text-based PDF', 'Select AI Mode (Chat, Summarize, Notes)', 'Read and copy generated answers'],
+    about: 'AI PDF Assistant harnesses state-of-the-art Large Language Models to chat with, summarize, translate, or generate study notes from your PDF documents. Save hours of reading.',
+    features: [
+      'Detailed, structured executive summaries',
+      'Interactive chat to ask specific document questions',
+      'Instant translation to 10+ languages',
+      'Automatic generation of revision notes and study quizzes'
+    ],
+    whoUses: [
+      'Students analyzing long research papers and textbooks',
+      'Professionals reviewing complex corporate reports',
+      'Researchers translation-checking international papers'
+    ],
+    steps: [
+      { title: 'Upload Document', desc: 'Select a text-rich PDF document.' },
+      { title: 'Select AI Feature', desc: 'Choose summarize, chat, translate, or study notes.' },
+      { title: 'Get Insights', desc: 'Submit and read the generated response on screen.' }
+    ],
+    faqs: [
+      { q: 'What is the file size limit for AI tools?', a: 'Free accounts can upload PDFs up to 10MB. Text content is extracted securely.' },
+      { q: 'Is my data secure with the AI?', a: 'Yes, we do not store your documents permanently or use them to train AI models.' }
+    ],
+    related: ['ocr', 'pdf-to-word', 'compress']
+  },
+  'remove-background': {
+    category: 'AI Image',
+    icon: '🎨',
+    badges: ['BACKGROUND REMOVER', 'PNG EXPORT', 'AUTOMATIC SUBJECT ISOLATION'],
+    input: 'JPG / PNG Image',
+    engine: 'Serverless Segmentation API',
+    output: 'Transparent PNG',
+    flow: ['Upload your subject image', 'Wait for AI to process background removal', 'Download transparent PNG'],
+    about: 'Background Remover automatically isolates the primary subject (person, product, animal) in your photo and removes the background, returning a transparent PNG file.',
+    features: [
+      'Fully automatic background isolation',
+      'Clean edge detection around hair and clothing',
+      'Export directly to high-quality transparent PNG',
+      'No manual drawing or masking required'
+    ],
+    whoUses: [
+      'E-commerce merchants isolating product photos',
+      'Graphic designers preparing subject cutouts',
+      'Social media creators making profile avatars'
+    ],
+    steps: [
+      { title: 'Upload Image', desc: 'Select a clear JPEG/PNG image to cut out.' },
+      { title: 'AI Isolates', desc: 'Wait a few seconds while our AI calculates the subject mask.' },
+      { title: 'Download PNG', desc: 'Download your clean cutout image with transparent backing.' }
+    ],
+    faqs: [
+      { q: 'Does this work on complex backgrounds?', a: 'Yes, our serverless segmentation models handle diverse backgrounds extremely well.' }
+    ],
+    related: ['upscale-image', 'img-to-pdf', 'pdf-to-img']
+  },
+  'upscale-image': {
+    category: 'AI Image',
+    icon: '🔎',
+    badges: ['RESOLUTION BOOSTER', 'QUALITY ENHANCER', 'DETAILED RESCALING'],
+    input: 'Image files',
+    engine: 'Super-Resolution AI',
+    output: 'Upscaled Image',
+    flow: ['Upload low-res image', 'Select upscale factor (2x or 4x)', 'Download enhanced image'],
+    about: 'Image Upscaler uses advanced AI Super-Resolution models to enlarge and boost the details of low-resolution images, generating crisp, sharp details without simple pixelation.',
+    features: [
+      'Upscale images by 2x or 4x resolution',
+      'Synthesize crisp details rather than blurring pixels',
+      'Perfect for enlarging vintage photos or small graphics',
+      'Supports standard PNG and JPEG formats'
+    ],
+    whoUses: [
+      'Print-on-demand creators upscaling design assets',
+      'Family historians restoring old digital images',
+      'Designers upscaling small logos and icons'
+    ],
+    steps: [
+      { title: 'Upload Graphic', desc: 'Select the low-resolution photo to enhance.' },
+      { title: 'Select Factor', desc: 'Choose 2x (double size) or 4x (ultra HD) on the sidebar.' },
+      { title: 'Upscale & Download', desc: 'Process the image and download the enhanced file.' }
+    ],
+    faqs: [
+      { q: 'Will it look fake?', a: 'Our models are trained on real details, offering highly natural enhancements.' }
+    ],
+    related: ['remove-background', 'img-to-pdf', 'pdf-to-img']
+  }
+};
+
+function getExtraContentForTool(toolId) {
+  if (TOOL_EXTRA_CONTENT[toolId]) {
+    return TOOL_EXTRA_CONTENT[toolId];
+  }
+  
+  const meta = TOOL_META[toolId] || { title: 'Document Tool', desc: 'Manage your documents easily.' };
+  
+  let category = 'Utility';
+  let icon = '🛠️';
+  if (toolId.includes('pdf-to-') || toolId.includes('-to-pdf')) {
+    category = 'Converter';
+    icon = '🔄';
+  } else if (toolId === 'sign' || toolId === 'protect' || toolId === 'unlock' || toolId === 'redact') {
+    category = 'Security';
+    icon = '🔒';
+  } else if (toolId === 'rotate' || toolId === 'crop' || toolId === 'page-numbers') {
+    category = 'Editor';
+    icon = '📏';
+  }
+
+  return {
+    category: category,
+    icon: icon,
+    badges: ['SECURE PROCESSING', 'HIGH SPEED', 'ZERO TRUST'],
+    input: 'Document files',
+    engine: 'Local Compiler',
+    output: 'Processed PDF',
+    flow: ['Upload your file', 'Apply tool modifications', 'Download output document'],
+    about: `${meta.title} provides a fast, secure online utility to ${meta.desc.toLowerCase()}`,
+    features: [
+      `Easily ${meta.desc.toLowerCase()}`,
+      'Private client-side processing with strict encryption',
+      'No registration or signup required to download',
+      'Maintains original document styling and fonts'
+    ],
+    whoUses: [
+      'Business professionals managing digital invoices',
+      'Students editing academic submissions',
+      'Remote teams organizing sharing workflows'
+    ],
+    steps: [
+      { title: 'Upload File', desc: 'Select a file to process from your computer.' },
+      { title: 'Process Options', desc: 'Configure processing choices in the settings sidebar.' },
+      { title: 'Download Result', desc: 'Bake options into the file and download the output.' }
+    ],
+    faqs: [
+      { q: 'Is my data secure?', a: 'Yes, your files are processed securely and deleted automatically within 1 hour.' },
+      { q: 'Do I need an account to use this?', a: 'No, using this utility is completely free and account-free.' }
+    ],
+    related: ['merge', 'split', 'compress']
+  };
+}
+
+function setWorkspaceState(state) {
+  const widget = document.getElementById('tool-education-widget');
+  const dropzone = document.getElementById('dropzone');
+  const opsArea = document.getElementById('operations-area');
+  const successPanel = document.getElementById('success-panel');
+  const details = document.getElementById('tool-details-container');
+
+  if (state === 'upload') {
+    if (widget) widget.style.display = 'block';
+    if (dropzone) dropzone.style.display = 'flex';
+    if (opsArea) opsArea.style.display = 'none';
+    if (successPanel) successPanel.style.display = 'none';
+    if (details) details.style.display = 'block';
+  } else if (state === 'operations') {
+    if (widget) widget.style.display = 'block';
+    if (dropzone) dropzone.style.display = 'flex';
+    if (opsArea) opsArea.style.display = 'grid';
+    if (successPanel) successPanel.style.display = 'none';
+    if (details) details.style.display = 'none';
+  } else if (state === 'success') {
+    if (widget) widget.style.display = 'none';
+    if (dropzone) dropzone.style.display = 'none';
+    if (opsArea) opsArea.style.display = 'none';
+    if (successPanel) successPanel.style.display = 'block';
+    if (details) details.style.display = 'block';
+  }
+}
+
+function showSuccessView(filename) {
+  document.getElementById('success-message').textContent = `Your file "${filename}" has been processed securely and is ready for download.`;
+  setWorkspaceState('success');
+}
+
+window.toggleToolFaq = function(index) {
+  const panel = document.getElementById(`tool-faq-panel-${index}`);
+  const icon = document.getElementById(`tool-faq-icon-${index}`);
+  if (!panel || !icon) return;
+  const isExpanded = panel.style.maxHeight !== '0px';
+  if (isExpanded) {
+    panel.style.maxHeight = '0px';
+    icon.textContent = '+';
+    icon.style.transform = 'rotate(0deg)';
+  } else {
+    panel.style.maxHeight = panel.scrollHeight + 'px';
+    icon.textContent = '−';
+    icon.style.transform = 'rotate(180deg)';
+  }
+};
+
+async function loadToolLandingBlogs() {
+  const container = document.getElementById('tool-blogs-grid');
+  if (!container) return;
+  
+  const toolId = currentTool;
+  if (!toolId) return;
+  const meta = TOOL_META[toolId] || { title: 'Document Tool', desc: 'Manage your documents easily.' };
+  
+  try {
+    const res = await fetch('/api/blog');
+    const data = await res.json();
+    let postsToShow = [];
+    
+    // Define tool keywords for filtering real articles
+    const TOOL_KEYWORDS = {
+      'merge': ['merge', 'combine', 'join', 'concatenate', 'unify'],
+      'split': ['split', 'extract', 'separate', 'cut', 'pages'],
+      'compress': ['compress', 'shrink', 'size', 'reduce', 'smaller', 'optimize'],
+      'protect': ['protect', 'encrypt', 'password', 'lock', 'secure', 'security'],
+      'unlock': ['unlock', 'decrypt', 'password', 'remove lock', 'remove protection'],
+      'rotate': ['rotate', 'turn', 'orientation', 'spin', 'degree'],
+      'crop': ['crop', 'trim', 'margins', 'border', 'resize'],
+      'page-numbers': ['page numbers', 'paginate', 'numbering', 'header', 'footer'],
+      'watermark': ['watermark', 'stamp', 'logo', 'text overlay', 'copyright'],
+      'edit-pdf': ['edit', 'write', 'modify', 'annotate', 'signature'],
+      'sign': ['sign', 'signature', 'e-sign', 'electronic signature', 'pen'],
+      'redact': ['redact', 'blackout', 'hide', 'sensitive', 'mask', 'censor'],
+      'ocr': ['ocr', 'optical character', 'text recognition', 'scanned', 'image to text'],
+      'repair': ['repair', 'fix', 'corrupted', 'broken', 'recover', 'restore'],
+      'organize-pdf': ['organize', 'reorder', 'move pages', 'delete pages', 'arrange'],
+      'remove-pages': ['remove pages', 'delete pages', 'extract pages', 'cut'],
+      'pdf-to-img': ['convert', 'pdf to image', 'pdf to jpg', 'pdf to png', 'extract image'],
+      'img-to-pdf': ['convert', 'image to pdf', 'jpg to pdf', 'png to pdf', 'convert images'],
+      'office-to-pdf': ['convert', 'word to pdf', 'excel to pdf', 'powerpoint to pdf', 'doc to pdf'],
+      'pdf-to-office': ['convert', 'pdf to word', 'pdf to excel', 'pdf to ppt', 'pdf to doc'],
+      'html-to-pdf': ['convert', 'html to pdf', 'webpage to pdf', 'url to pdf', 'website to pdf'],
+      'url-to-pdf': ['convert', 'url to pdf', 'link to pdf', 'webpage to pdf'],
+      'scan-to-pdf': ['scan', 'scanner', 'camera', 'photo to pdf', 'mobile scan'],
+      'remove-background': ['remove background', 'background removal', 'nobg', 'cutout', 'transparent'],
+      'img-upscale': ['upscale', 'super-resolution', 'enhance', 'sharpen', 'enlarge', 'image quality'],
+      'ai-assistant': ['ai assistant', 'chat', 'ask', 'summarize', 'translate', 'explain', 'artificial intelligence'],
+      'ai-summarize': ['summarize', 'summary', 'abstract', 'condense', 'ai', 'key points'],
+      'ai-translate': ['translate', 'translation', 'language', 'multilingual', 'ai', 'interpret']
+    };
+    
+    if (res.ok && data.posts && data.posts.length > 0) {
+      const keywords = TOOL_KEYWORDS[toolId] || [toolId.replace('-', ' ')];
+      // Filter real posts by keyword matches in title or content
+      const matchedPosts = data.posts.filter(post => {
+        const titleLower = (post.title || '').toLowerCase();
+        const contentLower = (post.content || '').toLowerCase();
+        return keywords.some(keyword => titleLower.includes(keyword) || contentLower.includes(keyword));
+      });
+      postsToShow = matchedPosts.slice(0, 3);
+    }
+    
+    // If we have fewer than 3 real posts, generate high-quality fallback articles specific to this tool
+    if (postsToShow.length < 3) {
+      const fallbacks = [
+        {
+          id: `fallback-1-${toolId}`,
+          title: `How to Use ${meta.title} to Speed Up Your Workflows`,
+          content: `<p>In this comprehensive guide, we examine how to use the online ${meta.title.toLowerCase()} tool to ${meta.desc.toLowerCase()} in seconds. Client-side browser execution ensures your workflows remain fast, robust, and completely secure without installing any local applications.</p>`,
+          category: 'Guide',
+          createdAt: new Date().toISOString(),
+          author_name: 'Document Expert',
+          isFallback: true
+        },
+        {
+          id: `fallback-2-${toolId}`,
+          title: `Top 5 Best Practices for Secure ${meta.title}`,
+          content: `<p>Learn how to securely ${meta.desc.toLowerCase()} while keeping your data and info completely private under a zero-trust model. By utilizing local WebAssembly execution and automated 1-hour secure server cleanups, you guarantee compliance and privacy.</p>`,
+          category: 'Security',
+          createdAt: new Date(Date.now() - 86400000 * 2).toISOString(),
+          author_name: 'Privacy Team',
+          isFallback: true
+        },
+        {
+          id: `fallback-3-${toolId}`,
+          title: `Streamlining Document Pipelines via ${meta.title}`,
+          content: `<p>Discover how browser-first tools enable teams to perform ${meta.title.toLowerCase()} on-the-fly. We discuss cloud architectures, batch uploading limits, and how our utility helps remote workers complete tasks securely.</p>`,
+          category: 'Enterprise',
+          createdAt: new Date(Date.now() - 86400000 * 5).toISOString(),
+          author_name: 'Product Arch',
+          isFallback: true
+        }
+      ];
+      
+      while (postsToShow.length < 3) {
+        const fbIndex = postsToShow.length;
+        postsToShow.push(fallbacks[fbIndex]);
+      }
+    }
+    
+    // Render posts
+    container.innerHTML = postsToShow.map(post => {
+      const dateStr = new Date(post.createdAt).toLocaleDateString(undefined, {
+        year: 'numeric', month: 'long', day: 'numeric'
+      });
+      const authorName = post.author_name || post.author_email || 'Author';
+      const doc = new DOMParser().parseFromString(post.content, 'text/html');
+      const textContent = doc.body.textContent || "";
+      const snippet = textContent.length > 120 ? textContent.substring(0, 120) + "..." : textContent;
+      
+      const badgeText = post.category || (post.isFallback ? 'Guide' : 'Community Article');
+      
+      return `
+        <article class="testimonial-card" style="font-style: normal; gap: 1rem; align-items: stretch; justify-content: space-between; border-radius: 0.75rem; border: 1px solid var(--border-color); background: var(--bg-card); padding: 1.25rem;">
+          <div>
+            <span style="font-size: 0.75rem; color: var(--accent-secondary); font-weight: 700; text-transform: uppercase;">${escapeHTML(badgeText)}</span>
+            <h3 style="margin-top: 0.5rem; margin-bottom: 0.75rem; font-size: 1.15rem; font-weight: 700; color: var(--text-primary); line-height: 1.4;">${escapeHTML(post.title)}</h3>
+            <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6; font-style: normal; margin-bottom: 0;">${escapeHTML(snippet)}</p>
+          </div>
+          <div class="testimonial-user" style="margin-top: 1.25rem; display: flex; align-items: center; gap: 0.75rem;">
+            <div class="blog-post-author-avatar-wrapper" style="width: 2.2rem; height: 2.2rem; min-width: 2.2rem; border-radius: 50%; overflow: hidden; background: var(--bg-secondary); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center;">
+              ${post.isFallback ? `<div style="font-weight: 700; color: var(--accent-primary); font-size: 0.85rem;">${escapeHTML(authorName.substring(0, 2).toUpperCase())}</div>` : getAvatarHtml(post.author_pic, "100%", "18%")}
+            </div>
+            <div class="user-info-text">
+              <h4 style="font-size: 0.85rem; margin: 0; font-weight: 600; color: var(--text-primary);">${escapeHTML(authorName)}</h4>
+              <p style="font-size: 0.7rem; margin: 0; color: var(--text-muted);">${dateStr}</p>
+            </div>
+          </div>
+        </article>
+      `;
+    }).join('');
+    
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+function populateToolLandingDetails(tool, meta) {
+  const extra = getExtraContentForTool(tool);
+  
+  document.getElementById('edu-tool-category').textContent = extra.category;
+  
+  const iconWrapper = document.getElementById('edu-tool-icon');
+  if (iconWrapper) {
+    iconWrapper.textContent = extra.icon;
+  }
+  
+  document.getElementById('edu-tool-title').textContent = meta.title;
+  document.getElementById('edu-tool-desc').textContent = meta.desc;
+  
+  const badgesContainer = document.getElementById('edu-badges-container');
+  if (badgesContainer) {
+    badgesContainer.innerHTML = extra.badges.map(b => `<span class="edu-badge">${escapeHTML(b)}</span>`).join('');
+  }
+  
+  document.getElementById('edu-info-input').textContent = extra.input;
+  document.getElementById('edu-info-engine').textContent = extra.engine;
+  document.getElementById('edu-info-output').textContent = extra.output;
+  
+  const flowContainer = document.getElementById('edu-flow-container');
+  if (flowContainer) {
+    flowContainer.innerHTML = extra.flow.map((step, idx) => `
+      <div class="edu-flow-step">
+        <span class="edu-flow-step-num">${idx + 1}</span>
+        <span>${escapeHTML(step)}</span>
+      </div>
+    `).join('');
+  }
+  
+  let relatedList = extra.related || ['merge', 'split', 'compress'];
+  relatedList = relatedList.filter(id => id !== tool).slice(0, 3);
+  const relatedGrid = document.getElementById('related-tools-grid');
+  if (relatedGrid) {
+    relatedGrid.innerHTML = relatedList.map(id => {
+      const tMeta = TOOL_META[id];
+      if (!tMeta) return '';
+      const tExtra = getExtraContentForTool(id);
+      const tIcon = tExtra.icon || '🛠️';
+      return `
+        <div class="related-tool-card" onclick="navigateToTool('${id}')">
+          <div class="related-tool-icon">${tIcon}</div>
+          <div class="related-tool-info">
+            <span class="related-tool-title">${tMeta.title}</span>
+            <span class="related-tool-desc">${tMeta.desc.substring(0, 55)}...</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+  
+  document.getElementById('detail-about-title').textContent = `About ${meta.title}`;
+  document.getElementById('detail-about-text').textContent = extra.about;
+  
+  const featuresList = document.getElementById('detail-features-list');
+  if (featuresList) {
+    featuresList.innerHTML = extra.features.map(f => `<li>${escapeHTML(f)}</li>`).join('');
+  }
+  
+  const usersList = document.getElementById('detail-users-list');
+  if (usersList) {
+    usersList.innerHTML = extra.whoUses.map(u => `<li>${escapeHTML(u)}</li>`).join('');
+  }
+  
+  document.getElementById('detail-steps-title').textContent = `How to Use ${meta.title}`;
+  const stepsTimeline = document.getElementById('detail-steps-timeline');
+  if (stepsTimeline) {
+    stepsTimeline.innerHTML = extra.steps.map(s => `
+      <div class="stepper-node">
+        <span class="stepper-node-title">${escapeHTML(s.title)}</span>
+        <span class="stepper-node-desc">${escapeHTML(s.desc)}</span>
+      </div>
+    `).join('');
+  }
+  
+  const faqAccordion = document.getElementById('tool-faq-accordion');
+  if (faqAccordion) {
+    faqAccordion.innerHTML = extra.faqs.map((f, index) => {
+      return `
+        <div class="faq-item">
+          <button class="faq-trigger" type="button" onclick="toggleToolFaq(${index})">
+            <span>${escapeHTML(f.q)}</span>
+            <span class="faq-icon" id="tool-faq-icon-${index}">+</span>
+          </button>
+          <div class="faq-panel" id="tool-faq-panel-${index}" style="max-height: 0px; overflow: hidden; transition: max-height 0.3s ease-out;">
+            <p style="padding: 1.25rem; margin: 0; font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6; border-top: 1px solid var(--border-color);">${escapeHTML(f.a)}</p>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+  
+  loadToolLandingBlogs();
+  
+  if (meta.noUpload) {
+    setWorkspaceState('operations');
+  } else {
+    setWorkspaceState('upload');
+  }
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   // Retrieve persisted theme and update UI
   const savedTheme = safeStorage.getItem('pixelpdf_theme') || 'light';
   updateThemeUI(savedTheme === 'dark');
 
+  window.navigateToTool = navigateToTool;
+  window.navigateToBlog = navigateToBlog;
   setupEventListeners();
   setupSignaturePad();
   await checkAuthSession();
@@ -849,6 +1470,30 @@ function setupEventListeners() {
     });
   }
 
+  const eduBackBtn = document.getElementById('edu-back-btn');
+  if (eduBackBtn) {
+    eduBackBtn.addEventListener('click', navigateToDashboard);
+  }
+
+  const btnDownloadResult = document.getElementById('btn-download-result');
+  if (btnDownloadResult) {
+    btnDownloadResult.addEventListener('click', () => {
+      if (lastProcessedFile) {
+        triggerFileDownload(lastProcessedFile.bytes, lastProcessedFile.filename, lastProcessedFile.mimeType);
+        showToast('Download started!', 'success');
+      } else {
+        showToast('No processed file found.', 'error');
+      }
+    });
+  }
+
+  const btnStartAnother = document.getElementById('btn-start-another');
+  if (btnStartAnother) {
+    btnStartAnother.addEventListener('click', () => {
+      clearWorkspace();
+    });
+  }
+
   setupCardMouseEffect();
 }
 
@@ -950,6 +1595,9 @@ function navigateToTool(tool) {
   document.getElementById('btn-back-to-dashboard').style.display = 'flex';
   
   toggleSettingsPanels(tool);
+  
+  // Populate landing page details (breadcrumbs, content grids, FAQs, blogs)
+  populateToolLandingDetails(tool, meta);
   
   // Custom camera initialization
   if (tool === 'scan-to-pdf') {
@@ -1681,7 +2329,7 @@ function renderFilesList() {
 function showOperationsArea() {
   const dropzone = document.getElementById('dropzone');
   if (dropzone) dropzone.style.padding = '1.5rem 1rem';
-  document.getElementById('operations-area').style.display = 'grid';
+  setWorkspaceState('operations');
 }
 
 function hideOperationsArea() {
@@ -1700,6 +2348,7 @@ function clearWorkspace() {
   signaturePlacement = null;
   redactionBoxes = [];
   editTextBoxes = [];
+  lastProcessedFile = null;
   
   const fileInput = document.getElementById('file-input-element');
   if (fileInput) fileInput.value = '';
@@ -1722,7 +2371,7 @@ function clearWorkspace() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
   }
   signatureDataUrl = null;
-
+ 
   const aiResults = document.getElementById('ai-results-panel');
   if (aiResults) {
     aiResults.style.display = 'none';
@@ -1731,6 +2380,7 @@ function clearWorkspace() {
   
   hideOperationsArea();
   updateProcessButtonState();
+  setWorkspaceState('upload');
 }
 
 function updateProcessButtonState() {
@@ -1809,6 +2459,8 @@ async function processFiles() {
             await new Promise(r => setTimeout(r, 200));
           }
           addCumulativeUploadSize(uploadedFiles[0].size);
+          lastProcessedFile = null;
+          showSuccessView('Individual split page files');
           showToast(`Split ${pages.length} pages successfully!`, 'success');
           overlay.classList.remove('active');
           return;
@@ -2007,7 +2659,16 @@ async function processFiles() {
     }
     
     if (outputBytes) {
+      lastProcessedFile = {
+        bytes: outputBytes,
+        filename: filename,
+        mimeType: mimeType
+      };
+      
       triggerFileDownload(outputBytes, filename, mimeType);
+      
+      showSuccessView(filename);
+      
       showToast('Operation completed successfully!', 'success');
       if (uploadedFiles && uploadedFiles.length > 0) {
         const batchSize = uploadedFiles.reduce((sum, f) => sum + f.size, 0);
