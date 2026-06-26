@@ -1,4 +1,5 @@
 import './style.css';
+import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import { 
   mergePDFs, 
   splitPDF, 
@@ -939,6 +940,26 @@ function closeToolsDrawer() {
   }
 }
 
+function openCRMDrawer() {
+  const crmDrawer = document.querySelector('.account-sidebar');
+  const overlay = document.getElementById('crm-drawer-overlay');
+  if (crmDrawer) {
+    crmDrawer.classList.add('active');
+    if (overlay) overlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+}
+
+function closeCRMDrawer() {
+  const crmDrawer = document.querySelector('.account-sidebar');
+  const overlay = document.getElementById('crm-drawer-overlay');
+  if (crmDrawer) {
+    crmDrawer.classList.remove('active');
+    if (overlay) overlay.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+}
+
 function openAuthDrawer() {
   const authDrawer = document.getElementById('mobile-auth-drawer');
   if (authDrawer) {
@@ -1110,7 +1131,38 @@ function setupEventListeners() {
   const openToolsBtn = document.getElementById('btn-open-tools-drawer');
   const closeToolsBtn = document.getElementById('btn-close-tools-drawer');
   
-  if (openToolsBtn) openToolsBtn.addEventListener('click', openToolsDrawer);
+  if (openToolsBtn) {
+    openToolsBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      openToolsDrawer();
+    });
+  }
+
+  const crmTriggerBtn = document.getElementById('btn-trigger-crm');
+  if (crmTriggerBtn) {
+    crmTriggerBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      openCRMDrawer();
+    });
+  }
+
+  const floatingCrmHandle = document.getElementById('btn-floating-crm-handle');
+  if (floatingCrmHandle) {
+    floatingCrmHandle.addEventListener('click', (e) => {
+      e.preventDefault();
+      const accDash = document.getElementById('account-dashboard-page');
+      if (accDash && accDash.style.display === 'block') {
+        openCRMDrawer();
+      } else {
+        if (currentUser) {
+          navigateToAccountDashboard('profile');
+          setTimeout(() => openCRMDrawer(), 100);
+        } else {
+          showAuthModal('login');
+        }
+      }
+    });
+  }
   if (closeToolsBtn) closeToolsBtn.addEventListener('click', closeToolsDrawer);
   if (toolsDrawer) {
     toolsDrawer.addEventListener('click', (e) => {
@@ -1131,7 +1183,29 @@ function setupEventListeners() {
   const openAuthBtn = document.getElementById('btn-open-auth-drawer');
   const closeAuthBtn = document.getElementById('btn-close-auth-drawer');
   
-  if (openAuthBtn) openAuthBtn.addEventListener('click', openAuthDrawer);
+  if (openAuthBtn) {
+    openAuthBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation(); // Stop immediate click-outside closing
+      
+      if (currentUser) {
+        if (window.innerWidth > 768) {
+          // Desktop: Toggle profile dropdown
+          const dropdown = document.getElementById('profile-dropdown');
+          if (dropdown) {
+            const isVisible = dropdown.style.display === 'flex';
+            dropdown.style.display = isVisible ? 'none' : 'flex';
+          }
+        } else {
+          // Mobile: Open settings drawer
+          openAuthDrawer();
+        }
+      } else {
+        // Logged out: Open login/signup drawer
+        openAuthDrawer();
+      }
+    });
+  }
   if (closeAuthBtn) closeAuthBtn.addEventListener('click', closeAuthDrawer);
   if (authDrawer) {
     authDrawer.addEventListener('click', (e) => {
@@ -1348,7 +1422,12 @@ function setupEventListeners() {
   if (footerPricing) {
     footerPricing.addEventListener('click', (e) => {
       e.preventDefault();
-      showAuthModal('upgrade');
+      if (currentUser) {
+        navigateToAccountDashboard('billing');
+      } else {
+        showToast('Please login or sign up first to view subscription packages.', 'info');
+        showAuthModal('login');
+      }
     });
   }
 
@@ -1357,7 +1436,7 @@ function setupEventListeners() {
     footerSettings.addEventListener('click', (e) => {
       e.preventDefault();
       if (currentUser) {
-        showSettingsModal();
+        navigateToAccountDashboard('profile');
       } else {
         showToast('Please login or sign up first to access account settings.', 'info');
         showAuthModal('login');
@@ -1494,6 +1573,7 @@ function setupEventListeners() {
     });
   }
 
+  setupCRMDashboardEventListeners();
   setupCardMouseEffect();
 }
 
@@ -1591,6 +1671,10 @@ function navigateToTool(tool) {
   
   document.getElementById('dashboard-page').style.display = 'none';
   document.getElementById('blog-page').style.display = 'none';
+  
+  const accDash = document.getElementById('account-dashboard-page');
+  if (accDash) accDash.style.display = 'none';
+
   document.getElementById('workspace-page').style.display = 'block';
   document.getElementById('btn-back-to-dashboard').style.display = 'flex';
   
@@ -1603,6 +1687,7 @@ function navigateToTool(tool) {
   if (tool === 'scan-to-pdf') {
     startWebcamStream();
   }
+  updateHeaderTriggers();
 }
 
 function navigateToDashboard() {
@@ -1611,6 +1696,10 @@ function navigateToDashboard() {
   clearWorkspace();
   document.getElementById('workspace-page').style.display = 'none';
   document.getElementById('blog-page').style.display = 'none';
+  
+  const accDash = document.getElementById('account-dashboard-page');
+  if (accDash) accDash.style.display = 'none';
+
   document.getElementById('btn-back-to-dashboard').style.display = 'none';
   document.getElementById('dashboard-page').style.display = 'block';
 
@@ -1619,6 +1708,459 @@ function navigateToDashboard() {
   const allTab = document.querySelector('.category-tab[data-category="all"]');
   if (allTab) allTab.classList.add('active');
   filterCategoryColumns('all');
+  updateHeaderTriggers();
+}
+
+/* ==========================================
+   CRM ACCOUNTS DASHBOARD NAVIGATION LOGIC
+   ========================================== */
+function navigateToAccountDashboard(tabName = 'profile') {
+  if (!currentUser) {
+    showToast('Please log in to access your accounts dashboard.', 'info');
+    showAuthModal('login');
+    return;
+  }
+  
+  currentTool = null;
+  stopWebcamStream();
+  clearWorkspace();
+  
+  document.getElementById('workspace-page').style.display = 'none';
+  document.getElementById('dashboard-page').style.display = 'none';
+  document.getElementById('blog-page').style.display = 'none';
+  
+  const accDash = document.getElementById('account-dashboard-page');
+  if (accDash) accDash.style.display = 'block';
+  
+  document.getElementById('btn-back-to-dashboard').style.display = 'flex';
+  
+  // Populate sidebar profile info
+  const nameLabel = document.getElementById('account-sidebar-name');
+  if (nameLabel) {
+    const userDisplayName = currentUser.display_name || `${currentUser.first_name || ''} ${currentUser.last_name || ''}`.trim() || currentUser.email;
+    nameLabel.textContent = userDisplayName;
+  }
+  const badgeLabel = document.getElementById('account-sidebar-badge');
+  if (badgeLabel) {
+    const isPremium = currentUser.is_premium || currentUser.subscription_plan && currentUser.subscription_plan !== 'free';
+    const planName = isPremium ? (currentUser.subscription_plan || 'Premium') : 'Free';
+    badgeLabel.textContent = `${planName.charAt(0).toUpperCase() + planName.slice(1)} Plan`;
+    badgeLabel.className = `profile-dropdown-plan-badge ${isPremium ? 'premium' : 'free'}`;
+  }
+  
+  // Populate profile form inputs
+  const settingsFirstName = document.getElementById('settings-first-name');
+  if (settingsFirstName) settingsFirstName.value = currentUser.first_name || '';
+  const settingsLastName = document.getElementById('settings-last-name');
+  if (settingsLastName) settingsLastName.value = currentUser.last_name || '';
+  const settingsEmail = document.getElementById('settings-email');
+  if (settingsEmail) settingsEmail.value = currentUser.email || '';
+  
+  // Load and populate country and timezone from storage if available
+  const countrySelect = document.getElementById('settings-country');
+  const timezoneInput = document.getElementById('settings-timezone');
+  if (countrySelect || timezoneInput) {
+    const localProfile = safeStorage.getItem(`pixelpdf_profile_${currentUser.email}`);
+    if (localProfile) {
+      try {
+        const parsed = JSON.parse(localProfile);
+        if (countrySelect && parsed.country) countrySelect.value = parsed.country;
+        if (timezoneInput && parsed.timezone) timezoneInput.value = parsed.timezone;
+      } catch (e) {
+        console.error(e);
+      }
+    } else {
+      // Set defaults
+      if (countrySelect) countrySelect.value = 'Pakistan';
+      if (timezoneInput) timezoneInput.value = 'Asia/Karachi';
+    }
+  }
+
+  // Populate connected social link email
+  const crmSocialEmail = document.getElementById('crm-social-email');
+  if (crmSocialEmail) {
+    crmSocialEmail.textContent = currentUser.email;
+  }
+  
+  // Refresh settings avatar wrapper
+  document.querySelectorAll('.settings-avatar-wrapper').forEach(w => {
+    w.innerHTML = getAvatarHtml(currentUser.profile_pic, "100%", "18%");
+  });
+
+  // Load business details from storage
+  loadCRMBusinessDetails();
+
+  // Set the active tab
+  switchAccountTab(tabName);
+  updateHeaderTriggers();
+}
+window.navigateToAccountDashboard = navigateToAccountDashboard;
+
+function switchAccountTab(tabName) {
+  // Update sidebar links active class
+  document.querySelectorAll('.account-sidebar-link').forEach(link => {
+    if (link.getAttribute('data-tab') === tabName) {
+      link.classList.add('active');
+    } else {
+      link.classList.remove('active');
+    }
+  });
+
+  // Update pane active class
+  document.querySelectorAll('.account-tab-pane').forEach(pane => {
+    if (pane.id === `pane-${tabName}`) {
+      pane.classList.add('active');
+      pane.style.display = 'block';
+    } else {
+      pane.classList.remove('active');
+      pane.style.display = 'none';
+    }
+  });
+  
+  // Custom integrations when switching tab
+  if (tabName === 'teams') {
+    loadCRMTeamData();
+  } else if (tabName === 'billing') {
+    syncCRMBillingData();
+  }
+}
+window.switchAccountTab = switchAccountTab;
+
+async function loadCRMTeamData() {
+  if (!token) return;
+  
+  try {
+    const res = await fetch('/api/collaboration/list', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to fetch team list');
+    
+    const inviteForm = document.getElementById('crm-team-invite-form');
+    const seatUsage = document.getElementById('crm-team-seat-usage');
+    const seatBar = document.getElementById('crm-team-seat-bar');
+    const listContainer = document.getElementById('crm-team-members-list');
+    
+    if (!listContainer) return;
+
+    if (!data.canCollaborate) {
+      if (inviteForm) inviteForm.style.display = 'none';
+      if (seatUsage) seatUsage.textContent = '1 / 1 seat (Only you)';
+      if (seatBar) seatBar.style.width = '100%';
+      
+      const userEmail = currentUser ? currentUser.email : 'you';
+      const userName = currentUser ? ((currentUser.first_name && currentUser.last_name) ? `${currentUser.first_name} ${currentUser.last_name}` : (currentUser.display_name || '')) : '';
+      const displayLabel = userName ? `${userName} (${userEmail})` : userEmail;
+      
+      listContainer.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; background: rgba(0,0,0,0.02); border: 1px solid var(--border-color); border-radius: 0.5rem; width: 100%;">
+          <span style="font-size: 0.85rem; font-weight: 500; color: var(--text-primary);">${escapeHTML(displayLabel)}</span>
+          <span style="font-size: 0.7rem; font-weight: 600; color: var(--text-secondary); background: rgba(0,0,0,0.05); padding: 0.15rem 0.4rem; border-radius: 4px;">Owner</span>
+        </div>
+        <div style="background: rgba(99, 102, 241, 0.06); border: 1px solid rgba(99, 102, 241, 0.15); border-radius: 0.75rem; padding: 1rem; text-align: center; margin-top: 0.5rem; width: 100%; box-sizing: border-box;">
+          <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0 0 0.75rem 0;">
+            Upgrade to a Base plan or higher to add team members and collaborate!
+          </p>
+          <button type="button" onclick="switchAccountTab('billing')" class="btn-action" style="padding: 0.5rem 1.25rem; font-size: 0.85rem; margin: 0 auto; display: block; border-radius: 0.5rem; width: auto;">
+            Upgrade Now
+          </button>
+        </div>
+      `;
+    } else {
+      if (inviteForm) inviteForm.style.display = 'flex';
+      
+      const percent = Math.min(100, Math.round((data.seatsUsed / data.maxSeats) * 100));
+      if (seatUsage) seatUsage.textContent = `${data.seatsUsed} / ${data.maxSeats} used`;
+      if (seatBar) seatBar.style.width = `${percent}%`;
+      
+      listContainer.innerHTML = '';
+      if (data.collaborators.length === 0) {
+        listContainer.innerHTML = `<p style="font-size: 0.85rem; color: var(--text-muted); text-align: center; padding: 2rem 0;">No team members invited yet.</p>`;
+        return;
+      }
+      
+      data.collaborators.forEach(c => {
+        const row = document.createElement('div');
+        row.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 0.5rem; width: 100%; box-sizing: border-box;';
+        row.innerHTML = `
+          <span style="font-size: 0.85rem; font-weight: 500; color: var(--text-primary); text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 70%;">${escapeHTML(c.email)}</span>
+          <button class="btn-remove-member-crm btn-nav-back" data-email="${c.email}" style="padding: 0.3rem 0.75rem; font-size: 0.75rem; color: var(--accent-danger); border-color: rgba(239, 68, 68, 0.2); background: rgba(239, 68, 68, 0.05); margin: 0;">Remove</button>
+        `;
+        listContainer.appendChild(row);
+      });
+      
+      listContainer.querySelectorAll('.btn-remove-member-crm').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          const email = e.currentTarget.getAttribute('data-email');
+          if (confirm(`Are you sure you want to remove ${email} from your collaboration team?`)) {
+            await removeTeamMemberCRM(email);
+          }
+        });
+      });
+    }
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+async function removeTeamMemberCRM(email) {
+  try {
+    const res = await fetch('/api/collaboration/remove', {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ email })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to remove member');
+    showToast(data.message || 'Collaborator removed', 'success');
+    loadCRMTeamData();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+function syncCRMBillingData() {
+  if (!currentUser) return;
+  
+  const isPremium = currentUser.is_premium || currentUser.subscription_plan && currentUser.subscription_plan !== 'free';
+  const plan = currentUser.subscription_plan || 'free';
+  
+  const titleEl = document.getElementById('crm-billing-plan-title');
+  const descEl = document.getElementById('crm-billing-plan-desc');
+  const priceEl = document.getElementById('crm-billing-plan-price');
+  const durationEl = document.getElementById('crm-billing-plan-duration');
+  
+  if (titleEl) {
+    titleEl.textContent = `${plan.charAt(0).toUpperCase() + plan.slice(1)} Plan`;
+  }
+  
+  if (priceEl) {
+    if (plan === 'starter') {
+      priceEl.textContent = '$9';
+      if (durationEl) durationEl.textContent = 'per month';
+    } else if (plan === 'base') {
+      priceEl.textContent = '$29';
+      if (durationEl) durationEl.textContent = 'per month';
+    } else if (plan === 'pro') {
+      priceEl.textContent = '$79';
+      if (durationEl) durationEl.textContent = 'per month';
+    } else if (plan === 'enterprise') {
+      priceEl.textContent = '$199';
+      if (durationEl) durationEl.textContent = 'per month';
+    } else {
+      priceEl.textContent = '$0';
+      if (durationEl) durationEl.textContent = 'Forever Free';
+    }
+  }
+  
+  // Disable button for current plan
+  document.querySelectorAll('.crm-btn-plan-choose').forEach(btn => {
+    const btnPlan = btn.getAttribute('data-plan');
+    if (btnPlan === plan) {
+      btn.textContent = 'Current Plan';
+      btn.disabled = true;
+      btn.style.opacity = '0.5';
+    } else {
+      btn.textContent = `Choose ${btnPlan.charAt(0).toUpperCase() + btnPlan.slice(1)}`;
+      btn.disabled = false;
+      btn.style.opacity = '1';
+    }
+  });
+}
+
+function updateCRMActivePricingCard() {
+  const slider = document.getElementById('crm-pricing-seats-slider');
+  if (!slider) return;
+  const seats = parseInt(slider.value, 10);
+  const seatsCount = document.getElementById('crm-pricing-seats-count');
+  
+  if (seatsCount) {
+    if (seats >= 30) {
+      seatsCount.textContent = '30+ users (Enterprise)';
+    } else {
+      seatsCount.textContent = `${seats} user${seats > 1 ? 's' : ''}`;
+    }
+  }
+  
+  const cards = document.querySelectorAll('.pricing-card-crm');
+  cards.forEach(c => c.classList.remove('active-plan'));
+  
+  let targetPlan = 'starter';
+  if (seats === 1) {
+    targetPlan = 'starter';
+  } else if (seats >= 2 && seats <= 5) {
+    targetPlan = 'base';
+  } else if (seats >= 6 && seats <= 15) {
+    targetPlan = 'pro';
+  } else {
+    targetPlan = 'enterprise';
+  }
+  
+  const targetCard = document.getElementById(`crm-card-plan-${targetPlan}`);
+  if (targetCard) {
+    targetCard.classList.add('active-plan');
+  }
+}
+
+function saveCRMBusinessDetails() {
+  const companyName = document.getElementById('business-company-name').value;
+  const taxId = document.getElementById('business-tax-id').value;
+  const billingEmail = document.getElementById('business-billing-email').value;
+  
+  const address1 = document.getElementById('business-address-line1').value;
+  const city = document.getElementById('business-city').value;
+  const zip = document.getElementById('business-zip').value;
+  const state = document.getElementById('business-state').value;
+  const country = document.getElementById('business-country').value;
+  
+  const bizProfile = { companyName, taxId, billingEmail, address1, city, zip, state, country };
+  safeStorage.setItem('pixelpdf_business_profile', JSON.stringify(bizProfile));
+  showToast('Business profile and billing address saved successfully.', 'success');
+}
+
+function loadCRMBusinessDetails() {
+  const data = safeStorage.getItem('pixelpdf_business_profile');
+  if (!data) return;
+  try {
+    const biz = JSON.parse(data);
+    if (document.getElementById('business-company-name')) {
+      document.getElementById('business-company-name').value = biz.companyName || '';
+      document.getElementById('business-tax-id').value = biz.taxId || '';
+      document.getElementById('business-billing-email').value = biz.billingEmail || '';
+      
+      document.getElementById('business-address-line1').value = biz.address1 || '';
+      document.getElementById('business-city').value = biz.city || '';
+      document.getElementById('business-zip').value = biz.zip || '';
+      document.getElementById('business-state').value = biz.state || '';
+      document.getElementById('business-country').value = biz.country || '';
+    }
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+function setupCRMDashboardEventListeners() {
+  // Bind sidebar tabs
+  document.querySelectorAll('.account-sidebar-link').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const tab = e.currentTarget.getAttribute('data-tab');
+      switchAccountTab(tab);
+    });
+  });
+
+  // Bind seats range slider inside Billing tab
+  const crmPricingSlider = document.getElementById('crm-pricing-seats-slider');
+  if (crmPricingSlider) {
+    crmPricingSlider.addEventListener('input', updateCRMActivePricingCard);
+  }
+
+  // Bind password change form
+  const crmSecurityForm = document.getElementById('crm-security-password-form');
+  if (crmSecurityForm) {
+    crmSecurityForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const currentPassword = document.getElementById('security-current-password').value;
+      const newPassword = document.getElementById('security-new-password').value;
+      const confirmPassword = document.getElementById('security-confirm-password').value;
+      
+      if (newPassword !== confirmPassword) {
+        showToast('New passwords do not match.', 'error');
+        return;
+      }
+      
+      try {
+        const res = await fetch('/api/user/change-password', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ currentPassword, newPassword })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to update password');
+        
+        showToast('Password updated successfully', 'success');
+        crmSecurityForm.reset();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    });
+  }
+
+  // Bind team invite form
+  const crmTeamInviteForm = document.getElementById('crm-team-invite-form');
+  if (crmTeamInviteForm) {
+    crmTeamInviteForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const emailInput = document.getElementById('crm-team-invite-email');
+      const email = emailInput.value.trim();
+      if (!email) return;
+      
+      try {
+        const res = await fetch('/api/collaboration/add', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ email })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to invite team member');
+        
+        showToast(data.message || 'Invitation sent successfully!', 'success');
+        emailInput.value = '';
+        loadCRMTeamData();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    });
+  }
+
+  // Bind corporate billing profile forms
+  const crmBizForm = document.getElementById('crm-business-details-form');
+  if (crmBizForm) {
+    crmBizForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      saveCRMBusinessDetails();
+    });
+  }
+  const crmAddrForm = document.getElementById('crm-business-address-form');
+  if (crmAddrForm) {
+    crmAddrForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      saveCRMBusinessDetails();
+    });
+  }
+
+  // Close CRM drawer when close button or overlay is clicked
+  const btnCloseCRM = document.getElementById('btn-close-crm-drawer');
+  if (btnCloseCRM) {
+    btnCloseCRM.addEventListener('click', closeCRMDrawer);
+  }
+  const crmOverlay = document.getElementById('crm-drawer-overlay');
+  if (crmOverlay) {
+    crmOverlay.addEventListener('click', closeCRMDrawer);
+  }
+
+  // Auto-close CRM drawer when links inside it are clicked
+  document.querySelectorAll('.account-sidebar-link').forEach(link => {
+    link.addEventListener('click', () => {
+      closeCRMDrawer();
+    });
+  });
+
+  // Handle header triggers for mobile accounts dashboard
+  window.addEventListener('resize', updateHeaderTriggers);
+  updateHeaderTriggers();
 }
 
 function filterCategoryColumns(category) {
@@ -2803,6 +3345,8 @@ function initProfileDropdown() {
   
   // Close on click outside
   document.addEventListener('click', (e) => {
+    const bentoBtn = document.getElementById('btn-open-auth-drawer');
+    if (bentoBtn && bentoBtn.contains(e.target)) return;
     if (!wrapper.contains(e.target)) {
       dropdown.style.display = 'none';
     }
@@ -2883,13 +3427,36 @@ function updateAuthNav(user) {
       
       // Wire dropdown toggle
       initProfileDropdown();
+
+      // Click header to navigate to profile dashboard
+      const crmDropdownHeader = document.querySelector('.profile-dropdown-header');
+      if (crmDropdownHeader) {
+        crmDropdownHeader.style.cursor = 'pointer';
+        crmDropdownHeader.addEventListener('click', (e) => {
+          navigateToAccountDashboard('profile');
+          const dropdown = document.getElementById('profile-dropdown');
+          if (dropdown) dropdown.style.display = 'none';
+        });
+      }
     }
 
     // 2. Mobile Profile Trigger & Drawer Rendering
     if (openAuthBtn) {
-      openAuthBtn.innerHTML = getAvatarHtml(user.profile_pic, "30px", "18%");
-      openAuthBtn.style.padding = "0.2rem";
-      openAuthBtn.title = "Open Account Menu";
+      openAuthBtn.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+          <circle cx="5" cy="5" r="2"/>
+          <circle cx="12" cy="5" r="2"/>
+          <circle cx="19" cy="5" r="2"/>
+          <circle cx="5" cy="12" r="2"/>
+          <circle cx="12" cy="12" r="2"/>
+          <circle cx="19" cy="12" r="2"/>
+          <circle cx="5" cy="19" r="2"/>
+          <circle cx="12" cy="19" r="2"/>
+          <circle cx="19" cy="19" r="2"/>
+        </svg>
+      `;
+      openAuthBtn.style.padding = "0.5rem";
+      openAuthBtn.title = "Open Settings Menu";
     }
 
     if (drawerBody) {
@@ -2897,7 +3464,7 @@ function updateAuthNav(user) {
         <div style="display: flex; flex-direction: column; gap: 1.5rem; padding: 1.25rem 1rem; height: 100%; justify-content: space-between; box-sizing: border-box;">
           <div style="display: flex; flex-direction: column; gap: 1.25rem;">
             <!-- Profile Header -->
-            <div style="display: flex; align-items: center; gap: 1rem; padding-bottom: 1.25rem; border-bottom: 1px solid var(--border-color);">
+            <div id="mob-drawer-profile-header" style="display: flex; align-items: center; gap: 1rem; padding-bottom: 1.25rem; border-bottom: 1px solid var(--border-color); cursor: pointer;">
               <div style="width: 54px; height: 54px; border-radius: 50%; overflow: hidden; border: 1.5px solid var(--border-color); display: flex; align-items: center; justify-content: center; background: var(--bg-secondary); flex-shrink: 0;">
                 ${getAvatarHtml(user.profile_pic, "100%", "18%")}
               </div>
@@ -2950,19 +3517,19 @@ function updateAuthNav(user) {
 
     const upgradeAction = (e) => {
       if (e) e.preventDefault();
-      showAuthModal('upgrade');
+      navigateToAccountDashboard('billing');
       closeAuthDrawer();
     };
 
     const teamAction = (e) => {
       if (e) e.preventDefault();
-      showTeamModal();
+      navigateToAccountDashboard('teams');
       closeAuthDrawer();
     };
 
     const settingsAction = (e) => {
       if (e) e.preventDefault();
-      showSettingsModal();
+      navigateToAccountDashboard('profile');
       closeAuthDrawer();
     };
 
@@ -2991,6 +3558,14 @@ function updateAuthNav(user) {
 
     const mobBtnLogout = document.getElementById('mob-btn-logout');
     if (mobBtnLogout) mobBtnLogout.addEventListener('click', logoutAction);
+
+    const mobDrawerHeader = document.getElementById('mob-drawer-profile-header');
+    if (mobDrawerHeader) {
+      mobDrawerHeader.addEventListener('click', (e) => {
+        navigateToAccountDashboard('profile');
+        closeAuthDrawer();
+      });
+    }
 
   } else {
     // Logged-out state
@@ -3704,10 +4279,9 @@ function setupAuthEventListeners() {
         showToast('Profile picture updated successfully', 'success');
         updateAuthNav(currentUser);
         
-        const settingsAvatarWrapper = document.querySelector('.settings-avatar-wrapper');
-        if (settingsAvatarWrapper) {
-          settingsAvatarWrapper.innerHTML = getAvatarHtml(currentUser.profile_pic, "100%", "18%");
-        }
+        document.querySelectorAll('.settings-avatar-wrapper').forEach(w => {
+          w.innerHTML = getAvatarHtml(currentUser.profile_pic, "100%", "18%");
+        });
         
         if (document.getElementById('blog-page').style.display === 'block') {
           renderBlogList();
@@ -3725,6 +4299,11 @@ function setupAuthEventListeners() {
       
       const firstName = document.getElementById('settings-first-name').value.trim();
       const lastName = document.getElementById('settings-last-name').value.trim();
+      
+      const countrySelect = document.getElementById('settings-country');
+      const timezoneInput = document.getElementById('settings-timezone');
+      const country = countrySelect ? countrySelect.value : 'Pakistan';
+      const timezone = timezoneInput ? timezoneInput.value : 'Asia/Karachi';
       
       try {
         const res = await fetch('/api/user/display-name', {
@@ -3745,9 +4324,25 @@ function setupAuthEventListeners() {
         currentUser.last_name = data.user.last_name;
         currentUser.display_name = data.user.display_name;
         
+        // Save local country & timezone
+        const profileData = { country, timezone };
+        safeStorage.setItem(`pixelpdf_profile_${currentUser.email}`, JSON.stringify(profileData));
+        
         showToast('Account settings saved successfully', 'success');
         updateAuthNav(currentUser);
-        hideSettingsModal();
+        
+        // Conditional hide for old modal only
+        const overlay = document.getElementById('auth-modal-overlay');
+        const settingsModal = document.getElementById('settings-modal');
+        if (overlay && overlay.classList.contains('active') && settingsModal && settingsModal.style.display === 'flex') {
+          hideSettingsModal();
+        }
+        
+        // Refresh sidebar name
+        const nameLabel = document.getElementById('account-sidebar-name');
+        if (nameLabel) {
+          nameLabel.textContent = currentUser.display_name || `${currentUser.first_name || ''} ${currentUser.last_name || ''}`.trim() || currentUser.email;
+        }
         
         if (document.getElementById('blog-page').style.display === 'block') {
           renderBlogList();
@@ -3892,11 +4487,16 @@ function navigateToBlog() {
   
   document.getElementById('workspace-page').style.display = 'none';
   document.getElementById('dashboard-page').style.display = 'none';
+  
+  const accDash = document.getElementById('account-dashboard-page');
+  if (accDash) accDash.style.display = 'none';
+
   document.getElementById('blog-page').style.display = 'block';
   document.getElementById('btn-back-to-dashboard').style.display = 'flex';
   
   loadBlogPosts();
   renderBlogComposeSection();
+  updateHeaderTriggers();
 }
 
 async function loadBlogPosts() {
@@ -4183,3 +4783,223 @@ function escapeHTML(str) {
     }[tag] || tag)
   );
 }
+
+// Client-Side Dynamic A4 Invoice PDF Generator
+async function downloadInvoicePDF(invoiceId, date, period, amount) {
+  try {
+    showToast('Generating invoice PDF...', 'info');
+
+    // Create a new PDF document
+    const pdfDoc = await PDFDocument.create();
+    const page = pdfDoc.addPage([595.28, 841.89]); // A4 dimensions (Points)
+
+    // Embed default Helvetica fonts
+    const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+    // Retrieve saved corporate details
+    let bizProfile = {};
+    const localBizProfile = safeStorage.getItem('pixelpdf_business_profile');
+    if (localBizProfile) {
+      try {
+        bizProfile = JSON.parse(localBizProfile);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    const companyName = bizProfile.companyName || 'PixelPDF Customer';
+    const taxId = bizProfile.taxId || 'N/A';
+    const billingEmail = bizProfile.billingEmail || (currentUser ? currentUser.email : 'customer@pixelpdf.com');
+    const address1 = bizProfile.address1 || '123 Main Street';
+    const city = bizProfile.city || 'New York';
+    const zip = bizProfile.zip || '10001';
+    const state = bizProfile.state || 'NY';
+    const country = bizProfile.country || 'United States';
+
+    const cityStateZip = `${city}, ${state} ${zip}`;
+
+    // Draw header background band (violet/indigo theme)
+    page.drawRectangle({
+      x: 0,
+      y: 730,
+      width: 595.28,
+      height: 112,
+      color: rgb(0.12, 0.11, 0.29) // Theme Dark Violet/Indigo
+    });
+
+    // Draw Header Text
+    page.drawText('PIXELPDF', { x: 50, y: 785, size: 24, font: fontBold, color: rgb(1, 1, 1) });
+    page.drawText('The Complete PDF Tools Platform', { x: 50, y: 765, size: 10, font: fontRegular, color: rgb(0.7, 0.7, 0.8) });
+
+    page.drawText('INVOICE', { x: 450, y: 785, size: 24, font: fontBold, color: rgb(1, 1, 1) });
+    page.drawText(invoiceId, { x: 450, y: 765, size: 12, font: fontBold, color: rgb(0.39, 0.4, 0.95) });
+
+    // Customer / Billed To details
+    let yPos = 690;
+    page.drawText('BILLED TO:', { x: 50, y: yPos, size: 10, font: fontBold, color: rgb(0.5, 0.5, 0.5) });
+    
+    yPos -= 20;
+    const userName = currentUser ? `${currentUser.first_name || ''} ${currentUser.last_name || ''}`.trim() : 'Customer';
+    const clientHeaderName = companyName !== 'PixelPDF Customer' ? companyName : (userName || 'Customer');
+    page.drawText(clientHeaderName, { x: 50, y: yPos, size: 11, font: fontBold, color: rgb(0.1, 0.1, 0.1) });
+
+    yPos -= 15;
+    page.drawText(billingEmail, { x: 50, y: yPos, size: 9, font: fontRegular, color: rgb(0.3, 0.3, 0.3) });
+
+    yPos -= 15;
+    page.drawText(address1, { x: 50, y: yPos, size: 9, font: fontRegular, color: rgb(0.3, 0.3, 0.3) });
+
+    yPos -= 15;
+    page.drawText(cityStateZip, { x: 50, y: yPos, size: 9, font: fontRegular, color: rgb(0.3, 0.3, 0.3) });
+
+    yPos -= 15;
+    page.drawText(country, { x: 50, y: yPos, size: 9, font: fontRegular, color: rgb(0.3, 0.3, 0.3) });
+
+    if (taxId && taxId !== 'N/A') {
+      yPos -= 15;
+      page.drawText(`VAT / Tax ID: ${taxId}`, { x: 50, y: yPos, size: 9, font: fontRegular, color: rgb(0.3, 0.3, 0.3) });
+    }
+
+    // Provider / Billed From details
+    let yPosFrom = 690;
+    page.drawText('BILLED FROM:', { x: 350, y: yPosFrom, size: 10, font: fontBold, color: rgb(0.5, 0.5, 0.5) });
+    
+    yPosFrom -= 20;
+    page.drawText('PixelPDF Technologies LLC', { x: 350, y: yPosFrom, size: 11, font: fontBold, color: rgb(0.1, 0.1, 0.1) });
+
+    yPosFrom -= 15;
+    page.drawText('100 Pine Street, Suite 1200', { x: 350, y: yPosFrom, size: 9, font: fontRegular, color: rgb(0.3, 0.3, 0.3) });
+
+    yPosFrom -= 15;
+    page.drawText('San Francisco, CA 94111', { x: 350, y: yPosFrom, size: 9, font: fontRegular, color: rgb(0.3, 0.3, 0.3) });
+
+    yPosFrom -= 15;
+    page.drawText('United States', { x: 350, y: yPosFrom, size: 9, font: fontRegular, color: rgb(0.3, 0.3, 0.3) });
+
+    yPosFrom -= 15;
+    page.drawText('finance@pixelpdf.com', { x: 350, y: yPosFrom, size: 9, font: fontRegular, color: rgb(0.3, 0.3, 0.3) });
+
+    // Invoice Metadata Block
+    let midY = Math.min(yPos, yPosFrom) - 30;
+    page.drawRectangle({
+      x: 50,
+      y: midY - 35,
+      width: 495.28,
+      height: 30,
+      color: rgb(0.97, 0.97, 0.99)
+    });
+    page.drawText(`Date of Issue: ${date}`, { x: 60, y: midY - 23, size: 9, font: fontRegular, color: rgb(0.3, 0.3, 0.3) });
+    page.drawText(`Billing Period: ${period}`, { x: 220, y: midY - 23, size: 9, font: fontRegular, color: rgb(0.3, 0.3, 0.3) });
+    page.drawText(`Payment Method: Credit Card`, { x: 400, y: midY - 23, size: 9, font: fontRegular, color: rgb(0.3, 0.3, 0.3) });
+
+    midY -= 55;
+
+    // Items table header
+    page.drawRectangle({
+      x: 50,
+      y: midY,
+      width: 495.28,
+      height: 25,
+      color: rgb(0.94, 0.94, 0.96)
+    });
+
+    page.drawText('Description', { x: 60, y: midY + 8, size: 9, font: fontBold, color: rgb(0.12, 0.11, 0.29) });
+    page.drawText('Period', { x: 260, y: midY + 8, size: 9, font: fontBold, color: rgb(0.12, 0.11, 0.29) });
+    page.drawText('Qty', { x: 390, y: midY + 8, size: 9, font: fontBold, color: rgb(0.12, 0.11, 0.29) });
+    page.drawText('Unit Price', { x: 430, y: midY + 8, size: 9, font: fontBold, color: rgb(0.12, 0.11, 0.29) });
+    page.drawText('Total', { x: 500, y: midY + 8, size: 9, font: fontBold, color: rgb(0.12, 0.11, 0.29) });
+
+    // Item line
+    midY -= 30;
+    const planName = amount === '$9.00' ? 'Starter' : 'Premium';
+    page.drawText(`PixelPDF ${planName} Plan Subscription`, { x: 60, y: midY + 8, size: 9, font: fontRegular, color: rgb(0.1, 0.1, 0.1) });
+    page.drawText(period, { x: 260, y: midY + 8, size: 8, font: fontRegular, color: rgb(0.3, 0.3, 0.3) });
+    page.drawText('1', { x: 395, y: midY + 8, size: 9, font: fontRegular, color: rgb(0.1, 0.1, 0.1) });
+    page.drawText(amount, { x: 430, y: midY + 8, size: 9, font: fontRegular, color: rgb(0.1, 0.1, 0.1) });
+    page.drawText(amount, { x: 500, y: midY + 8, size: 9, font: fontBold, color: rgb(0.1, 0.1, 0.1) });
+
+    // Divider line
+    midY -= 15;
+    page.drawLine({
+      start: { x: 50, y: midY },
+      end: { x: 545.28, y: midY },
+      thickness: 1,
+      color: rgb(0.9, 0.9, 0.9)
+    });
+
+    // Summary calculation blocks
+    midY -= 30;
+    page.drawText('Subtotal:', { x: 390, y: midY, size: 9, font: fontRegular, color: rgb(0.4, 0.4, 0.4) });
+    page.drawText(amount, { x: 500, y: midY, size: 9, font: fontRegular, color: rgb(0.1, 0.1, 0.1) });
+
+    midY -= 15;
+    page.drawText('Tax (0.0%):', { x: 390, y: midY, size: 9, font: fontRegular, color: rgb(0.4, 0.4, 0.4) });
+    page.drawText('$0.00', { x: 500, y: midY, size: 9, font: fontRegular, color: rgb(0.1, 0.1, 0.1) });
+
+    midY -= 20;
+    page.drawText('Total Paid:', { x: 390, y: midY, size: 11, font: fontBold, color: rgb(0.12, 0.11, 0.29) });
+    page.drawText(amount, { x: 500, y: midY, size: 11, font: fontBold, color: rgb(0.12, 0.11, 0.29) });
+
+    // Paid status badge
+    let badgeY = midY + 10;
+    page.drawRectangle({
+      x: 50,
+      y: badgeY - 15,
+      width: 70,
+      height: 22,
+      color: rgb(0.88, 0.96, 0.91),
+      borderColor: rgb(0.3, 0.7, 0.4),
+      borderWidth: 1
+    });
+    page.drawText('PAID', { x: 74, y: badgeY - 8, size: 9, font: fontBold, color: rgb(0.1, 0.5, 0.2) });
+    page.drawText('This invoice is fully paid and settled.', { x: 50, y: badgeY - 30, size: 8, font: fontRegular, color: rgb(0.5, 0.5, 0.5) });
+
+    // Footer lines
+    page.drawLine({
+      start: { x: 50, y: 120 },
+      end: { x: 545.28, y: 120 },
+      thickness: 1,
+      color: rgb(0.95, 0.95, 0.95)
+    });
+    page.drawText('Terms & Conditions: Service is active for the duration of the billing period. All fees are in USD.', { x: 50, y: 100, size: 8, font: fontRegular, color: rgb(0.6, 0.6, 0.6) });
+    page.drawText('PixelPDF - Thank you for your subscription. For support, contact support@pixelpdf.com.', { x: 50, y: 85, size: 8, font: fontRegular, color: rgb(0.6, 0.6, 0.6) });
+
+    // Compile & Download
+    const pdfBytes = await pdfDoc.save();
+    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `PixelPDF_Invoice_${invoiceId}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    showToast('Invoice downloaded successfully!', 'success');
+  } catch (err) {
+    console.error(err);
+    showToast('Failed to generate and download invoice.', 'error');
+  }
+}
+window.downloadInvoicePDF = downloadInvoicePDF;
+
+// Update visible header buttons (hamburger for tools, chevron button for CRM navigation) on mobile
+function updateHeaderTriggers() {
+  const crmBtn = document.getElementById('btn-trigger-crm');
+  const hamBtn = document.getElementById('btn-open-tools-drawer');
+  const accDash = document.getElementById('account-dashboard-page');
+  
+  if (!crmBtn || !hamBtn) return;
+  
+  const isMobile = window.innerWidth <= 768;
+  const isAccDashActive = accDash && accDash.style.display === 'block';
+  
+  if (isMobile && isAccDashActive) {
+    crmBtn.style.display = 'flex';
+  } else {
+    crmBtn.style.display = 'none';
+  }
+}
+window.updateHeaderTriggers = updateHeaderTriggers;

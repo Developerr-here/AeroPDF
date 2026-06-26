@@ -20,6 +20,9 @@
           <button id="btn-open-tools-drawer" class="btn-hamburger" title="Open Tools Menu">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>
           </button>
+          <button id="btn-trigger-crm" class="btn-crm-toggle" style="display: none; background: transparent; border: none; color: var(--text-primary); cursor: pointer; padding: 0.5rem; border-radius: 0.375rem; align-items: center; justify-content: center;" title="Open Dashboard Menu">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </button>
           <a href="/" class="logo" id="logo-link">
             <div class="logo-icon">P</div>
             <span>PixelPDF</span>
@@ -451,6 +454,14 @@
         </div>
       </div>
     </div>
+
+    <!-- CRM Sidebar Drawer Overlay (Left Side Backdrop) -->
+    <div id="crm-drawer-overlay" class="drawer-overlay"></div>
+
+    <!-- Floating Mobile CRM Drawer Handle -->
+    <button id="btn-floating-crm-handle" class="floating-crm-handle" title="Open Dashboard Menu">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg>
+    </button>
 
     <!-- Main Content Area -->
     <main>
@@ -1968,6 +1979,582 @@
           </aside>
         </div>
       </section>
+
+      <!-- ACCOUNTS DASHBOARD PAGE -->
+      <section id="account-dashboard-page" style="display: none; animation: fadeIn 0.4s ease-out; margin-top: 1rem;">
+        <div class="hero" style="margin-bottom: 2rem;">
+          <h1>Accounts Dashboard</h1>
+          <p>Manage your profile, security settings, team members, tools configurations, plans, packages, and invoices.</p>
+        </div>
+
+        <div class="account-dashboard-wrapper">
+          <!-- Left sidebar (becomes slider links on mobile) -->
+          <aside class="account-sidebar">
+            <!-- CRM Drawer Header (visible on mobile only) -->
+            <div class="crm-drawer-header" style="display: none; justify-content: space-between; align-items: center; padding-bottom: 1rem; border-bottom: 1.5px solid var(--border-color); margin-bottom: 1rem;">
+              <span style="font-weight: 800; font-size: 1.15rem; color: var(--text-primary);">Dashboard Menu</span>
+              <button id="btn-close-crm-drawer" style="background: transparent; border: none; font-size: 1.75rem; cursor: pointer; color: var(--text-primary); padding: 0.25rem 0.5rem; line-height: 1;">&times;</button>
+            </div>
+            
+            <!-- Sidebar Profile Summary (hidden on mobile, visible on desktop) -->
+            <div class="account-sidebar-profile">
+              <div class="account-sidebar-avatar-wrapper settings-avatar-wrapper">
+                <!-- Populated dynamically -->
+              </div>
+              <div class="account-sidebar-info">
+                <h4 id="account-sidebar-name">User Name</h4>
+                <span id="account-sidebar-badge" class="profile-dropdown-plan-badge free">Free Plan</span>
+              </div>
+            </div>
+
+            <!-- Dashboard links navigation list -->
+            <nav class="account-sidebar-links" id="account-dashboard-nav">
+              <div class="nav-section-title">Account Management</div>
+              <a href="#" class="account-sidebar-link active" data-tab="profile">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <span>Profile</span>
+              </a>
+              <a href="#" class="account-sidebar-link" data-tab="security">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                <span>Security</span>
+              </a>
+              <a href="#" class="account-sidebar-link" data-tab="teams">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                <span>Teams</span>
+              </a>
+
+              <div class="nav-section-title">Configuration</div>
+              <a href="#" class="account-sidebar-link" data-tab="tools">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                <span>Tools Settings</span>
+              </a>
+
+              <div class="nav-section-title">Billing & Finance</div>
+              <a href="#" class="account-sidebar-link" data-tab="billing">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2" ry="2"/><line x1="12" y1="4" x2="12" y2="20"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
+                <span>Plans & Packages</span>
+              </a>
+              <a href="#" class="account-sidebar-link" data-tab="business">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                <span>Business Details</span>
+              </a>
+              <a href="#" class="account-sidebar-link" data-tab="invoices">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                <span>Invoices</span>
+              </a>
+            </nav>
+          </aside>
+
+          <!-- Right Content Pane -->
+          <div class="account-content-pane">
+            
+            <!-- Pane 1: Profile -->
+            <div id="pane-profile" class="account-tab-pane active">
+              <div class="crm-card-header">
+                <h3>My account / Profile</h3>
+                <!-- Upgrade Button -->
+                <button onclick="switchAccountTab('billing')" class="btn-signup-grad" style="font-size: 0.85rem; padding: 0.5rem 1.25rem; border-radius: 2rem; border: none; font-weight: 600; display: inline-flex; align-items: center; gap: 0.35rem; cursor: pointer;">
+                  <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                  Upgrade to Premium
+                </button>
+              </div>
+
+              <div class="crm-grid-2col">
+                <!-- Profile Information Card -->
+                <div class="crm-card">
+                  <div class="crm-card-title">Profile Info</div>
+                  
+                  <div style="display: flex; flex-direction: column; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem; text-align: center;">
+                    <div class="settings-avatar-wrapper" style="position: relative; width: 90px; height: 90px; border-radius: 50%; overflow: hidden; border: 2.5px solid var(--accent-primary); background: var(--bg-primary); box-shadow: 0 4px 16px rgba(168, 85, 247, 0.15);">
+                      <!-- User Avatar Injected -->
+                    </div>
+                    <label class="btn-nav-back" style="font-size: 0.8rem; padding: 0.4rem 0.9rem; border-radius: 2rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.25rem; margin: 0;">
+                      <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"/></svg>
+                      Change Photo
+                      <input type="file" id="input-profile-pic" accept="image/*" style="display: none;" />
+                    </label>
+                  </div>
+
+                  <form id="settings-form" style="display: flex; flex-direction: column; gap: 1.25rem;">
+                    <div style="display: flex; gap: 1rem; width: 100%;">
+                      <div class="input-group" style="flex: 1; margin: 0;">
+                        <label class="input-label" for="settings-first-name">First Name</label>
+                        <input type="text" id="settings-first-name" class="text-input" placeholder="First Name" required />
+                      </div>
+                      <div class="input-group" style="flex: 1; margin: 0;">
+                        <label class="input-label" for="settings-last-name">Last Name</label>
+                        <input type="text" id="settings-last-name" class="text-input" placeholder="Last Name" required />
+                      </div>
+                    </div>
+                    
+                    <div style="display: flex; gap: 1rem; width: 100%;">
+                      <div class="input-group" style="flex: 1; margin: 0;">
+                        <label class="input-label" for="settings-country">Country</label>
+                        <select id="settings-country" class="text-input" style="background: var(--bg-secondary); color: var(--text-primary); cursor: pointer; width: 100%;">
+                          <option value="Pakistan">Pakistan 🇵🇰</option>
+                          <option value="United States">United States 🇺🇸</option>
+                          <option value="United Kingdom">United Kingdom 🇬🇧</option>
+                          <option value="Germany">Germany 🇩🇪</option>
+                          <option value="Canada">Canada 🇨🇦</option>
+                          <option value="Australia">Australia 🇦🇺</option>
+                          <option value="Other">Other</option>
+                        </select>
+                      </div>
+                      <div class="input-group" style="flex: 1; margin: 0;">
+                        <label class="input-label" for="settings-timezone">Timezone</label>
+                        <input type="text" id="settings-timezone" class="text-input" value="Asia/Karachi" placeholder="e.g. UTC, EST, Asia/Karachi" />
+                      </div>
+                    </div>
+
+                    <button type="submit" class="btn-action" style="align-self: flex-start; padding: 0.65rem 1.5rem; font-size: 0.9rem; margin: 0;">Save Profile Changes</button>
+                  </form>
+                </div>
+
+                <!-- Right Side: Social Links -->
+                <div class="crm-card" style="display: flex; flex-direction: column; justify-content: space-between;">
+                  <div>
+                    <div class="crm-card-title">Social Links</div>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 1.25rem;">
+                      Connect your social accounts to log in securely through third party providers.
+                    </p>
+
+                    <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 0.5rem; margin-bottom: 1.5rem;">
+                      <div style="width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; background: white; border-radius: 50%; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                        <svg width="14" height="14" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.56-2.77c-.98.66-2.23 1.06-3.72 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+                      </div>
+                      <div style="display: flex; flex-direction: column; min-width: 0;">
+                        <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-primary);" id="crm-social-email">Not connected</span>
+                        <span style="font-size: 0.7rem; color: var(--text-muted);">Google authentication account</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.75rem;">Link more accounts</h4>
+                    <div style="display: flex; gap: 0.75rem;">
+                      <button type="button" onclick="showToast('Linking Facebook is not configured.', 'info')" class="btn-nav-back" style="padding: 0.5rem 1rem; border-radius: 0.5rem; display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; font-weight: 600; margin: 0;">
+                        <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M9 8H7v3h2v9h3v-9h3.6L16 8h-4V6c0-.9.7-1 1-1h3V2h-4c-3.3 0-5 1.7-5 5v1z"/></svg>
+                        <span>Facebook</span>
+                      </button>
+                      <button type="button" onclick="showToast('Linking GitHub is not configured.', 'info')" class="btn-nav-back" style="padding: 0.5rem 1rem; border-radius: 0.5rem; display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; font-weight: 600; margin: 0;">
+                        <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.464-1.11-1.464-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.579.688.481C19.137 20.162 22 16.418 22 12c0-5.523-4.477-10-10-10z"/></svg>
+                        <span>GitHub</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Bottom block: Email card -->
+                <div class="crm-card crm-col-span-2">
+                  <div class="crm-card-title">Email Settings</div>
+                  <div class="input-group" style="margin: 0; max-width: 500px;">
+                    <label class="input-label">Current email address (Read-only)</label>
+                    <div style="display: flex; gap: 0.5rem; width: 100%;">
+                      <input type="email" id="settings-email" class="text-input" style="flex: 1; background: rgba(0,0,0,0.03); cursor: not-allowed;" readonly disabled />
+                      <button type="button" onclick="showToast('To change your email, please contact customer support.', 'info')" class="btn-nav-back" style="white-space: nowrap; margin: 0;">Change Request</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Pane 2: Security -->
+            <div id="pane-security" class="account-tab-pane">
+              <div class="crm-card-header">
+                <h3>My account / Security</h3>
+              </div>
+
+              <div class="crm-grid-2col">
+                <!-- Change Password -->
+                <div class="crm-card">
+                  <div class="crm-card-title">Update Password</div>
+                  <form id="crm-security-password-form" style="display: flex; flex-direction: column; gap: 1.25rem;">
+                    <div class="input-group" style="margin: 0;">
+                      <label class="input-label" for="security-current-password">Current Password</label>
+                      <input type="password" id="security-current-password" class="text-input" placeholder="••••••••" required />
+                    </div>
+                    <div class="input-group" style="margin: 0;">
+                      <label class="input-label" for="security-new-password">New Password</label>
+                      <input type="password" id="security-new-password" class="text-input" placeholder="Minimum 6 characters" minlength="6" required />
+                    </div>
+                    <div class="input-group" style="margin: 0;">
+                      <label class="input-label" for="security-confirm-password">Confirm New Password</label>
+                      <input type="password" id="security-confirm-password" class="text-input" placeholder="••••••••" minlength="6" required />
+                    </div>
+                    <button type="submit" class="btn-action" style="align-self: flex-start; padding: 0.65rem 1.5rem; font-size: 0.9rem; margin: 0;">Change Password</button>
+                  </form>
+                </div>
+
+                <!-- Two-Factor Authentication & Sessions -->
+                <div class="crm-card" style="display: flex; flex-direction: column; gap: 1.5rem;">
+                  <div>
+                    <div class="crm-card-title">Two-Factor Authentication</div>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 1.25rem;">
+                      Add an extra layer of security by requiring a verification code in addition to your password.
+                    </p>
+                    <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer;">
+                      <input type="checkbox" id="crm-security-2fa-toggle" style="width: 18px; height: 18px; accent-color: var(--accent-primary);" />
+                      <span style="font-size: 0.9rem; font-weight: 600; color: var(--text-primary);">Enable Two-Factor Authentication (2FA)</span>
+                    </label>
+                  </div>
+
+                  <div style="border-top: 1px solid var(--border-color); padding-top: 1.25rem;">
+                    <div class="crm-card-title" style="margin-bottom: 0.5rem; font-size: 0.95rem;">Active Login Sessions</div>
+                    <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                      <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0.75rem; background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.15); border-radius: 0.5rem;">
+                        <div style="font-size: 0.8rem; text-align: left;">
+                          <div style="font-weight: 600; color: var(--text-primary);">Chrome on Windows (Current session)</div>
+                          <div style="color: var(--text-muted); font-size: 0.7rem;">IP: 192.168.1.45 | Active now</div>
+                        </div>
+                        <span style="font-size: 0.7rem; background: var(--accent-success); color: white; padding: 0.15rem 0.4rem; border-radius: 0.25rem; font-weight: 600; text-transform: uppercase;">Active</span>
+                      </div>
+                      <button type="button" onclick="showToast('All other session tokens have been revoked.', 'success')" class="btn-nav-back" style="font-size: 0.8rem; padding: 0.4rem 1rem; align-self: flex-start; margin: 0;">Logout All Other Sessions</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Pane 3: Teams -->
+            <div id="pane-teams" class="account-tab-pane">
+              <div class="crm-card-header">
+                <h3>My account / Teams</h3>
+              </div>
+
+              <div class="crm-grid-2col">
+                <!-- Manage Seats and Invitations -->
+                <div class="crm-card">
+                  <div class="crm-card-title">Invite Team Members</div>
+                  
+                  <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 0.75rem; padding: 0.85rem 1rem; margin-bottom: 1.25rem; width: 100%;">
+                    <div style="display: flex; justify-content: space-between; font-weight: 600; font-size: 0.9rem;">
+                      <span>Plan Seat Occupancy:</span>
+                      <span id="crm-team-seat-usage" style="color: var(--accent-primary);">0 / 0 used</span>
+                    </div>
+                    <div style="width: 100%; height: 6px; background: var(--border-color); border-radius: 3px; margin-top: 0.5rem; overflow: hidden;">
+                      <div id="crm-team-seat-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary)); border-radius: 3px; transition: width 0.3s ease;"></div>
+                    </div>
+                  </div>
+
+                  <form id="crm-team-invite-form" style="display: flex; flex-direction: column; gap: 1rem;">
+                    <div class="input-group" style="margin: 0;">
+                      <label class="input-label" for="crm-team-invite-email">Member Email Address</label>
+                      <input type="email" id="crm-team-invite-email" class="text-input" placeholder="collaborator@example.com" required />
+                    </div>
+                    <button type="submit" class="btn-action" style="align-self: flex-start; padding: 0.65rem 1.5rem; font-size: 0.9rem; margin: 0;">Send Team Invitation</button>
+                  </form>
+                </div>
+
+                <!-- Team Members List -->
+                <div class="crm-card">
+                  <div class="crm-card-title">Active Team Members & Pending Invites</div>
+                  <div id="crm-team-members-list" style="display: flex; flex-direction: column; gap: 0.75rem; min-height: 150px; text-align: left;">
+                    <!-- Populated dynamically -->
+                    <p style="font-size: 0.85rem; color: var(--text-muted); text-align: center; padding: 2rem 0;">No team members found.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Pane 4: Tools Settings -->
+            <div id="pane-tools" class="account-tab-pane">
+              <div class="crm-card-header">
+                <h3>Settings / Tools Settings</h3>
+              </div>
+
+              <div class="crm-grid-2col">
+                <!-- PDF Output configurations -->
+                <div class="crm-card">
+                  <div class="crm-card-title">Default Document Formats</div>
+                  <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+                    <div class="input-group" style="margin: 0;">
+                      <label class="input-label" for="toolsetting-compression">Default Compress Quality</label>
+                      <select id="toolsetting-compression" class="text-input" style="background: var(--bg-secondary); color: var(--text-primary); cursor: pointer; width: 100%;">
+                        <option value="medium">Medium (Balanced Speed & Quality) - Default</option>
+                        <option value="high">High (Maximum compression / Low resolution)</option>
+                        <option value="low">Low (Minimum compression / High quality)</option>
+                      </select>
+                    </div>
+
+                    <div class="input-group" style="margin: 0;">
+                      <label class="input-label" for="toolsetting-ocr-lang">Default OCR Text Language</label>
+                      <select id="toolsetting-ocr-lang" class="text-input" style="background: var(--bg-secondary); color: var(--text-primary); cursor: pointer; width: 100%;">
+                        <option value="eng">English (eng)</option>
+                        <option value="spa">Spanish (spa)</option>
+                        <option value="fra">French (fra)</option>
+                        <option value="deu">German (deu)</option>
+                      </select>
+                    </div>
+
+                    <div class="input-group" style="margin: 0;">
+                      <label class="input-label" for="toolsetting-paper-size">Default Image-to-PDF Paper Size</label>
+                      <select id="toolsetting-paper-size" class="text-input" style="background: var(--bg-secondary); color: var(--text-primary); cursor: pointer; width: 100%;">
+                        <option value="a4">A4 (210 x 297 mm)</option>
+                        <option value="letter">US Letter (8.5 x 11 in)</option>
+                        <option value="fit">Fit (Same size as source image)</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Automations settings -->
+                <div class="crm-card" style="display: flex; flex-direction: column; justify-content: space-between;">
+                  <div>
+                    <div class="crm-card-title">Automations & Cleanups</div>
+                    <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+                      <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer;">
+                        <input type="checkbox" id="toolsetting-autodownload" checked style="width: 18px; height: 18px; accent-color: var(--accent-primary);" />
+                        <span style="font-size: 0.9rem; color: var(--text-primary);">Auto-download results upon completion</span>
+                      </label>
+
+                      <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer;">
+                        <input type="checkbox" id="toolsetting-savehistory" checked style="width: 18px; height: 18px; accent-color: var(--accent-primary);" />
+                        <span style="font-size: 0.9rem; color: var(--text-primary);">Save parameters and tools history locally</span>
+                      </label>
+
+                      <div class="input-group" style="margin: 0;">
+                        <label class="input-label" for="toolsetting-autodelete">Auto-delete temporary files after</label>
+                        <select id="toolsetting-autodelete" class="text-input" style="background: var(--bg-secondary); color: var(--text-primary); cursor: pointer; width: 100%;">
+                          <option value="60">60 Minutes (Recommended)</option>
+                          <option value="30">30 Minutes</option>
+                          <option value="15">15 Minutes</option>
+                          <option value="120">120 Minutes</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button type="button" onclick="showToast('Tools settings saved successfully', 'success')" class="btn-action" style="align-self: flex-start; padding: 0.65rem 1.5rem; font-size: 0.9rem; margin-top: 1.5rem; margin-bottom: 0;">Save Settings</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Pane 5: Billing: Plans & Packages -->
+            <div id="pane-billing" class="account-tab-pane">
+              <div class="crm-card-header">
+                <h3>Billing / Plans & Packages</h3>
+              </div>
+
+              <!-- Current Plan Card -->
+              <div class="crm-card" style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.08) 0%, rgba(99, 102, 241, 0.08) 100%); border: 1.5px solid rgba(168, 85, 247, 0.25); margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.5rem; padding: 1.5rem 2rem;">
+                <div>
+                  <div style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; color: var(--accent-primary); text-align: left;">Current Subscription</div>
+                  <h2 style="margin: 0.25rem 0 0.5rem 0; font-size: 1.75rem; font-weight: 800; color: var(--text-primary); text-align: left;" id="crm-billing-plan-title">Free Plan</h2>
+                  <p style="margin: 0; font-size: 0.9rem; color: var(--text-secondary); text-align: left;" id="crm-billing-plan-desc">Upgrade below to add team members, expand file size limits, and access AI OCR tools.</p>
+                </div>
+                <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.35rem;">
+                  <div style="font-size: 1.75rem; font-weight: 800; color: var(--text-primary);" id="crm-billing-plan-price">$0</div>
+                  <span style="font-size: 0.75rem; color: var(--text-muted);" id="crm-billing-plan-duration">Forever Free</span>
+                </div>
+              </div>
+
+              <!-- Custom Seat slider -->
+              <div class="crm-card" style="margin-bottom: 2rem; padding: 2rem;">
+                <div style="text-align: center; margin-bottom: 1.5rem;">
+                  <h4 style="margin: 0 0 0.25rem 0; font-size: 1.15rem; font-weight: 700;">Calculate Enterprise & Team Package</h4>
+                  <p style="margin: 0; font-size: 0.85rem; color: var(--text-secondary);">Select the number of seats needed to calculate dynamic volume pricing</p>
+                </div>
+                
+                <div class="seats-slider-container" style="max-width: 500px; margin: 0 auto; text-align: center;">
+                  <div style="font-size: 1.25rem; font-weight: 700; color: var(--accent-primary); margin-bottom: 0.5rem;" id="crm-pricing-seats-count">1 user</div>
+                  <input type="range" id="crm-pricing-seats-slider" min="1" max="50" value="1" style="width: 100%; accent-color: var(--accent-primary); cursor: pointer; margin-bottom: 1rem;" />
+                  <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); padding: 0 0.25rem;">
+                    <span>1 User</span>
+                    <span>5 Seats (Base)</span>
+                    <span>15 Seats (Pro)</span>
+                    <span>50+ (Enterprise)</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Pricing grid -->
+              <div class="pricing-grid-crm">
+                <!-- Card 1: Starter -->
+                <div class="pricing-card-crm" id="crm-card-plan-starter">
+                  <div class="pricing-badge-crm">Individual</div>
+                  <h3>Starter Plan</h3>
+                  <div class="price-crm"><span style="font-size: 1.85rem; font-weight: 800; color: var(--text-primary);">$9</span>/mo</div>
+                  <p class="plan-desc-crm">Great for individuals and freelancers needing larger conversion thresholds.</p>
+                  <ul class="features-crm-list">
+                    <li>Single user account</li>
+                    <li>Up to 100MB file uploads</li>
+                    <li>Basic conversion engines</li>
+                    <li>Email support support</li>
+                  </ul>
+                  <button class="btn-action crm-btn-plan-choose btn-plan-choose" data-plan="starter" style="width: 100%; margin-top: 1.5rem; margin-bottom: 0;">Choose Starter</button>
+                </div>
+
+                <!-- Card 2: Base -->
+                <div class="pricing-card-crm" id="crm-card-plan-base">
+                  <div class="pricing-badge-crm">Small Teams</div>
+                  <h3>Base Plan</h3>
+                  <div class="price-crm"><span style="font-size: 1.85rem; font-weight: 800; color: var(--text-primary);">$29</span>/mo</div>
+                  <p class="plan-desc-crm">Perfect for small agencies and groups looking to collaborate together.</p>
+                  <ul class="features-crm-list">
+                    <li>Up to 5 team members</li>
+                    <li>Up to 250MB file uploads</li>
+                    <li>AI OCR PDF recognition</li>
+                    <li>Standard support response</li>
+                  </ul>
+                  <button class="btn-action crm-btn-plan-choose btn-plan-choose" data-plan="base" style="width: 100%; margin-top: 1.5rem; margin-bottom: 0;">Choose Base</button>
+                </div>
+
+                <!-- Card 3: Pro -->
+                <div class="pricing-card-crm" id="crm-card-plan-pro">
+                  <div class="pricing-badge-crm" style="background: rgba(168, 85, 247, 0.15); color: var(--accent-primary);">Most Popular</div>
+                  <h3>Pro Plan</h3>
+                  <div class="price-crm"><span style="font-size: 1.85rem; font-weight: 800; color: var(--text-primary);">$79</span>/mo</div>
+                  <p class="plan-desc-crm">High-performance package for businesses with complex document requirements.</p>
+                  <ul class="features-crm-list">
+                    <li>Up to 15 team members</li>
+                    <li>Up to 1GB file size limit</li>
+                    <li>Full AI Document Assistant</li>
+                    <li>24/7 priority customer support</li>
+                  </ul>
+                  <button class="btn-action crm-btn-plan-choose btn-plan-choose" data-plan="pro" style="width: 100%; margin-top: 1.5rem; margin-bottom: 0; background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); border: none;">Choose Pro</button>
+                </div>
+
+                <!-- Card 4: Enterprise -->
+                <div class="pricing-card-crm" id="crm-card-plan-enterprise">
+                  <div class="pricing-badge-crm">Custom</div>
+                  <h3>Enterprise</h3>
+                  <div class="price-crm"><span style="font-size: 1.85rem; font-weight: 800; color: var(--text-primary);">$199</span>/mo</div>
+                  <p class="plan-desc-crm">Tailored security settings and dedicated instances for full data privacy.</p>
+                  <ul class="features-crm-list">
+                    <li>Unlimited seat occupancy</li>
+                    <li>Unlimited upload sizing</li>
+                    <li>Custom SLA guarantees</li>
+                    <li>Dedicated account manager</li>
+                  </ul>
+                  <button class="btn-action crm-btn-plan-choose btn-plan-choose" data-plan="enterprise" style="width: 100%; margin-top: 1.5rem; margin-bottom: 0;">Contact Sales</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Pane 6: Business Details -->
+            <div id="pane-business" class="account-tab-pane">
+              <div class="crm-card-header">
+                <h3>Billing / Business Details</h3>
+              </div>
+
+              <div class="crm-grid-2col">
+                <!-- Business Profile Form -->
+                <div class="crm-card">
+                  <div class="crm-card-title">Corporate Billing Profile</div>
+                  <form id="crm-business-details-form" style="display: flex; flex-direction: column; gap: 1.25rem;">
+                    <div class="input-group" style="margin: 0;">
+                      <label class="input-label" for="business-company-name">Registered Company Name</label>
+                      <input type="text" id="business-company-name" class="text-input" placeholder="e.g. PixelPDF Inc." />
+                    </div>
+
+                    <div class="input-group" style="margin: 0;">
+                      <label class="input-label" for="business-tax-id">VAT / Tax Registration Number</label>
+                      <input type="text" id="business-tax-id" class="text-input" placeholder="e.g. EU123456789 or US-9876543" />
+                    </div>
+
+                    <div class="input-group" style="margin: 0;">
+                      <label class="input-label" for="business-billing-email">Billing Email (For invoices)</label>
+                      <input type="email" id="business-billing-email" class="text-input" placeholder="finance@company.com" />
+                    </div>
+
+                    <button type="submit" class="btn-action" style="align-self: flex-start; padding: 0.65rem 1.5rem; font-size: 0.9rem; margin: 0;">Save Details</button>
+                  </form>
+                </div>
+
+                <!-- Business Address Details -->
+                <div class="crm-card">
+                  <div class="crm-card-title">Billing Address</div>
+                  <form id="crm-business-address-form" style="display: flex; flex-direction: column; gap: 1.25rem;">
+                    <div class="input-group" style="margin: 0;">
+                      <label class="input-label" for="business-address-line1">Address Line 1</label>
+                      <input type="text" id="business-address-line1" class="text-input" placeholder="123 Corporate Blvd" />
+                    </div>
+                    
+                    <div style="display: flex; gap: 1rem; width: 100%;">
+                      <div class="input-group" style="flex: 1; margin: 0;">
+                        <label class="input-label" for="business-city">City</label>
+                        <input type="text" id="business-city" class="text-input" placeholder="City" />
+                      </div>
+                      <div class="input-group" style="flex: 1; margin: 0;">
+                        <label class="input-label" for="business-zip">ZIP / Postal Code</label>
+                        <input type="text" id="business-zip" class="text-input" placeholder="10001" />
+                      </div>
+                    </div>
+
+                    <div style="display: flex; gap: 1rem; width: 100%;">
+                      <div class="input-group" style="flex: 1; margin: 0;">
+                        <label class="input-label" for="business-state">State / Province</label>
+                        <input type="text" id="business-state" class="text-input" placeholder="e.g. NY, Ontario" />
+                      </div>
+                      <div class="input-group" style="flex: 1; margin: 0;">
+                        <label class="input-label" for="business-country">Country</label>
+                        <input type="text" id="business-country" class="text-input" placeholder="United States" />
+                      </div>
+                    </div>
+
+                    <button type="submit" class="btn-action" style="align-self: flex-start; padding: 0.65rem 1.5rem; font-size: 0.9rem; margin: 0;">Save Address</button>
+                  </form>
+                </div>
+              </div>
+            </div>
+
+            <!-- Pane 7: Invoices -->
+            <div id="pane-invoices" class="account-tab-pane">
+              <div class="crm-card-header">
+                <h3>Billing / Invoices</h3>
+              </div>
+
+              <!-- Invoices Table card -->
+              <div class="crm-card" style="padding: 1.5rem; width: 100%;">
+                <div class="crm-card-title" style="margin-bottom: 1rem;">Invoice Billing History</div>
+                
+                <div style="width: 100%; overflow-x: auto;">
+                  <table class="crm-invoices-table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+                    <thead>
+                      <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-primary); font-weight: 600;">
+                        <th style="padding: 0.75rem 1rem;">Invoice ID</th>
+                        <th style="padding: 0.75rem 1rem;">Date</th>
+                        <th style="padding: 0.75rem 1rem;">Billing Period</th>
+                        <th style="padding: 0.75rem 1rem;">Amount</th>
+                        <th style="padding: 0.75rem 1rem;">Status</th>
+                        <th style="padding: 0.75rem 1rem; text-align: right;">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody id="crm-invoices-list">
+                      <tr style="border-bottom: 1px solid var(--border-color); color: var(--text-secondary);">
+                        <td style="padding: 0.75rem 1rem; font-weight: 600;">INV-2026-003</td>
+                        <td style="padding: 0.75rem 1rem;">Jun 15, 2026</td>
+                        <td style="padding: 0.75rem 1rem;">Jun 15 - Jul 15, 2026</td>
+                        <td style="padding: 0.75rem 1rem;">$29.00</td>
+                        <td style="padding: 0.75rem 1rem;"><span style="font-size: 0.7rem; background: var(--accent-success); color: white; padding: 0.15rem 0.4rem; border-radius: 0.25rem; font-weight: 600;">Paid</span></td>
+                        <td style="padding: 0.75rem 1rem; text-align: right;"><button type="button" onclick="downloadInvoicePDF('INV-2026-003', 'Jun 15, 2026', 'Jun 15 - Jul 15, 2026', '$29.00')" class="btn-nav-back" style="padding: 0.35rem 0.75rem; font-size: 0.75rem; margin: 0;">Download PDF</button></td>
+                      </tr>
+                      <tr style="border-bottom: 1px solid var(--border-color); color: var(--text-secondary);">
+                        <td style="padding: 0.75rem 1rem; font-weight: 600;">INV-2026-002</td>
+                        <td style="padding: 0.75rem 1rem;">May 15, 2026</td>
+                        <td style="padding: 0.75rem 1rem;">May 15 - Jun 15, 2026</td>
+                        <td style="padding: 0.75rem 1rem;">$29.00</td>
+                        <td style="padding: 0.75rem 1rem;"><span style="font-size: 0.7rem; background: var(--accent-success); color: white; padding: 0.15rem 0.4rem; border-radius: 0.25rem; font-weight: 600;">Paid</span></td>
+                        <td style="padding: 0.75rem 1rem; text-align: right;"><button type="button" onclick="downloadInvoicePDF('INV-2026-002', 'May 15, 2026', 'May 15 - Jun 15, 2026', '$29.00')" class="btn-nav-back" style="padding: 0.35rem 0.75rem; font-size: 0.75rem; margin: 0;">Download PDF</button></td>
+                      </tr>
+                      <tr style="border-bottom: 1px solid var(--border-color); color: var(--text-secondary);">
+                        <td style="padding: 0.75rem 1rem; font-weight: 600;">INV-2026-001</td>
+                        <td style="padding: 0.75rem 1rem;">Apr 15, 2026</td>
+                        <td style="padding: 0.75rem 1rem;">Apr 15 - May 15, 2026</td>
+                        <td style="padding: 0.75rem 1rem;">$9.00</td>
+                        <td style="padding: 0.75rem 1rem;"><span style="font-size: 0.7rem; background: var(--accent-success); color: white; padding: 0.15rem 0.4rem; border-radius: 0.25rem; font-weight: 600;">Paid</span></td>
+                        <td style="padding: 0.75rem 1rem; text-align: right;"><button type="button" onclick="downloadInvoicePDF('INV-2026-001', 'Apr 15, 2026', 'Apr 15 - May 15, 2026', '$9.00')" class="btn-nav-back" style="padding: 0.35rem 0.75rem; font-size: 0.75rem; margin: 0;">Download PDF</button></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
     </main>
 
     <!-- Global Progress Indicator Screen -->

@@ -2740,7 +2740,7 @@ body.dark-theme select {
    ========================================== */
 
 /* Header Triggers */
-.btn-hamburger, .btn-bento {
+.btn-hamburger, .btn-bento, .btn-crm-toggle {
   background: transparent;
   border: none;
   color: var(--text-primary);
@@ -2753,17 +2753,30 @@ body.dark-theme select {
   transition: var(--transition-smooth);
 }
 
-.btn-hamburger:hover, .btn-bento:hover {
+.btn-hamburger {
+  position: relative;
+  z-index: 10;
+}
+
+.btn-crm-toggle {
+  position: relative;
+  z-index: 5;
+  margin-left: -0.45rem; /* Sits tucked behind the hamburger button */
+  padding-left: 0.55rem;
+}
+
+.btn-hamburger:hover, .btn-bento:hover, .btn-crm-toggle:hover {
   background: rgba(0, 0, 0, 0.05);
 }
 
 body.dark-theme .btn-hamburger:hover, 
-body.dark-theme .btn-bento:hover {
+body.dark-theme .btn-bento:hover,
+body.dark-theme .btn-crm-toggle:hover {
   background: rgba(255, 255, 255, 0.08);
 }
 
 /* Hide triggers on desktop by default */
-.btn-hamburger, .btn-bento {
+.btn-hamburger, .btn-crm-toggle {
   display: none;
 }
 
@@ -2833,6 +2846,39 @@ body.dark-theme .btn-bento:hover {
 .mega-menu-item:hover {
   color: var(--accent-primary);
   padding-left: 3px;
+}
+
+/* Floating Mobile CRM Drawer Handle */
+.floating-crm-handle {
+  position: fixed;
+  left: 0;
+  top: 130px;
+  width: 24px;
+  height: 48px;
+  background: var(--accent-secondary);
+  color: #ffffff;
+  border: none;
+  border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
+  box-shadow: 2px 4px 12px rgba(0, 0, 0, 0.15);
+  display: none; /* Desktop hidden */
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.floating-crm-handle:hover {
+  background: var(--accent-primary);
+  transform: scaleX(1.1);
+  transform-origin: left;
+}
+
+.floating-crm-handle svg {
+  width: 14px;
+  height: 14px;
 }
 
 /* Mobile Drawers Overlay */
@@ -3052,6 +3098,10 @@ body.dark-theme .btn-close-drawer:hover {
   
   .user-auth-nav {
     display: none !important;
+  }
+
+  .floating-crm-handle {
+    display: flex;
   }
 }
 
@@ -4743,3 +4793,400 @@ body.dark-theme .role-tab.active {
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 1.5rem;
 }
+
+/* ==========================================
+   CRM ACCOUNTS DASHBOARD STYLES
+   ========================================== */
+.account-dashboard-wrapper {
+  display: flex;
+  gap: 2rem;
+  align-items: start;
+  margin-top: 1.5rem;
+  text-align: left;
+}
+
+.account-sidebar {
+  width: 280px;
+  flex-shrink: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.account-sidebar-profile {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1.5px solid var(--border-color);
+}
+
+.account-sidebar-avatar-wrapper {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid var(--border-color);
+  background: var(--bg-primary);
+}
+
+.account-sidebar-info h4 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 0.15rem 0;
+}
+
+.account-sidebar-links {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.nav-section-title {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin: 0.75rem 0 0.35rem 0;
+  padding-left: 0.75rem;
+}
+
+.nav-section-title:first-child {
+  margin-top: 0;
+}
+
+.account-sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.85rem;
+  border-radius: 0.5rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 550;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.account-sidebar-link svg {
+  color: var(--text-muted);
+  flex-shrink: 0;
+  transition: color 0.2s ease;
+}
+
+.account-sidebar-link:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.account-sidebar-link:hover svg {
+  color: var(--accent-primary);
+}
+
+.account-sidebar-link.active {
+  background: rgba(168, 85, 247, 0.1);
+  color: var(--accent-primary);
+  border-left: 3px solid var(--accent-primary);
+  border-radius: 0 0.5rem 0.5rem 0;
+  padding-left: 0.65rem;
+}
+
+.account-sidebar-link.active svg {
+  color: var(--accent-primary);
+}
+
+.account-content-pane {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.account-tab-pane {
+  display: none;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.account-tab-pane.active {
+  display: block;
+}
+
+.crm-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 1rem;
+}
+
+.crm-card-header h3 {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.crm-grid-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (max-width: 992px) {
+  .crm-grid-2col {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+}
+
+.crm-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.01);
+}
+
+.crm-col-span-2 {
+  grid-column: span 2;
+}
+
+@media (max-width: 992px) {
+  .crm-col-span-2 {
+    grid-column: span 1;
+  }
+}
+
+.crm-card-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.5rem;
+  text-align: left;
+}
+
+/* CRM Invoices Table */
+.crm-invoices-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.crm-invoices-table th {
+  padding: 0.75rem 1rem;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.crm-invoices-table td {
+  padding: 0.75rem 1rem;
+  font-size: 0.85rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.crm-invoices-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* Pricing Grid CRM styling */
+.pricing-grid-crm {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem;
+}
+
+.pricing-card-crm {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transition: all 0.3s ease;
+  text-align: left;
+  box-sizing: border-box;
+}
+
+.pricing-card-crm:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(168, 85, 247, 0.05);
+}
+
+.pricing-card-crm.active-plan {
+  border-color: var(--accent-primary);
+  box-shadow: 0 8px 24px rgba(168, 85, 247, 0.08);
+}
+
+.pricing-badge-crm {
+  align-self: flex-start;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  padding: 0.2rem 0.5rem;
+  border-radius: 0.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.pricing-card-crm h3 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem 0;
+  color: var(--text-primary);
+}
+
+.price-crm {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+}
+
+.price-crm span {
+  font-size: 1.85rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.plan-desc-crm {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  margin: 0 0 1.25rem 0;
+  min-height: 48px;
+}
+
+.features-crm-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 auto 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.features-crm-list li {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-align: left;
+}
+
+.features-crm-list li::before {
+  content: '✓';
+  color: var(--accent-success);
+  font-weight: bold;
+}
+
+/* Mobile Screen Left Slide CRM Sidebar Drawer */
+@media (max-width: 768px) {
+  .account-dashboard-wrapper {
+    flex-direction: column !important;
+    gap: 1.25rem !important;
+  }
+
+  .account-sidebar {
+    position: fixed !important;
+    top: 0 !important;
+    left: -280px !important; /* hidden off-screen to the left */
+    width: 280px !important;
+    height: 100vh !important;
+    background: var(--bg-card) !important;
+    z-index: 10000 !important; /* Abovebackdrop overlay */
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 1.5rem !important;
+    border: none !important;
+    border-radius: 0 !important;
+    gap: 1rem !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+    overflow-y: auto !important;
+  }
+  
+  .account-sidebar.active {
+    transform: translateX(280px) !important; /* slide in */
+  }
+
+  .crm-drawer-header {
+    display: flex !important;
+  }
+  
+  .account-sidebar-profile {
+    display: flex !important; /* Show profile inside drawer */
+    align-items: center !important;
+    gap: 0.85rem !important;
+    padding-bottom: 1.25rem !important;
+    border-bottom: 1.5px solid var(--border-color) !important;
+    margin-bottom: 0.5rem !important;
+    width: 100% !important;
+  }
+  
+  .nav-section-title {
+    display: block !important; /* Show headings inside crm drawer */
+    font-size: 0.7rem !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    color: var(--text-muted) !important;
+    margin: 0.75rem 0 0.35rem 0 !important;
+    padding-left: 0.75rem !important;
+  }
+  
+  .account-sidebar-links {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.35rem !important;
+    width: 100% !important;
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+  
+  .account-sidebar-link {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.75rem !important;
+    padding: 0.6rem 0.85rem !important;
+    border-radius: 0.5rem !important;
+    color: var(--text-secondary) !important;
+    font-size: 0.9rem !important;
+    font-weight: 550 !important;
+    box-sizing: border-box !important;
+    border: none !important;
+    background: transparent !important;
+    flex-shrink: 0 !important;
+  }
+  
+  .account-sidebar-link.active {
+    background: rgba(168, 85, 247, 0.1) !important;
+    color: var(--accent-primary) !important;
+    border-left: 3px solid var(--accent-primary) !important;
+    border-radius: 0 0.5rem 0.5rem 0 !important;
+    padding-left: 0.65rem !important;
+    border-top: none !important;
+    border-right: none !important;
+    border-bottom: none !important;
+  }
+  
+  .account-sidebar-link.active svg {
+    color: var(--accent-primary) !important;
+  }
+}
+

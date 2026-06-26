@@ -1004,6 +1004,34 @@ app.post('/api/user/profile-pic', authenticateToken, blogUpload.single('profile_
   }
 });
 
+// Route: Change user password
+app.post('/api/user/change-password', authenticateToken, async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ error: 'Current password and new password are required.' });
+  }
+
+  try {
+    const user = await User.findByPk(req.user.id);
+    if (!user) return res.status(404).json({ error: 'User not found.' });
+
+    if (user.password) {
+      const match = await bcrypt.compare(currentPassword, user.password);
+      if (!match) return res.status(400).json({ error: 'Incorrect current password.' });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+    await user.save();
+
+    res.json({ success: true, message: 'Password updated successfully.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to update password.' });
+  }
+});
+
+
 /* ==========================================
    PDF AI INTELLIGENCE SYSTEM (UNIFIED)
    ========================================== */
