@@ -171,7 +171,8 @@ async function formatUserResponse(user) {
     display_name: user.display_name,
     first_name: user.first_name,
     last_name: user.last_name,
-    profile_pic: user.profile_pic
+    profile_pic: user.profile_pic,
+    createdAt: user.createdAt
   };
 }
 

@@ -3055,9 +3055,9 @@ body.dark-theme .btn-close-drawer:hover {
   width: 100%;
   padding: 0.75rem 1.5rem;
   border-radius: 0.5rem;
-  border: 1.5px solid var(--border-color);
+  border: 1.5px solid var(--accent-secondary); /* Indigo brand outline */
   background: transparent;
-  color: var(--text-primary);
+  color: var(--accent-secondary); /* Indigo text */
   font-weight: 600;
   font-size: 0.95rem;
   cursor: pointer;
@@ -3065,9 +3065,9 @@ body.dark-theme .btn-close-drawer:hover {
 }
 
 .drawer-btn-login:hover {
-  border-color: var(--accent-primary);
-  color: var(--accent-primary);
-  background: rgba(99, 102, 241, 0.04);
+  border-color: #a855f7; /* Purple on hover */
+  color: #a855f7;
+  background: rgba(168, 85, 247, 0.04);
 }
 
 .drawer-btn-signup {
@@ -3075,7 +3075,7 @@ body.dark-theme .btn-close-drawer:hover {
   padding: 0.75rem 1.5rem;
   border-radius: 0.5rem;
   border: none;
-  background: linear-gradient(135deg, #a855f7, #6366f1);
+  background: linear-gradient(135deg, #a855f7, #6366f1); /* Purple to Indigo brand gradient */
   color: white;
   font-weight: 600;
   font-size: 0.95rem;
@@ -3088,6 +3088,58 @@ body.dark-theme .btn-close-drawer:hover {
   opacity: 0.95;
   transform: translateY(-1px);
   box-shadow: 0 6px 14px rgba(99, 102, 241, 0.3);
+}
+
+/* Drawer Accordion Styles */
+.drawer-submenu {
+  display: none;
+  flex-direction: column;
+  padding-left: 1.25rem;
+  gap: 0.25rem;
+  margin-top: 0.25rem;
+  margin-bottom: 0.5rem;
+  border-left: 1.5px solid var(--border-color);
+  margin-left: 1rem;
+}
+
+.drawer-submenu.active {
+  display: flex;
+}
+
+.drawer-submenu-item, .drawer-submenu-category {
+  display: block;
+  padding: 0.45rem 0.5rem;
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+  border-radius: 0.25rem;
+  transition: var(--transition-smooth);
+  text-align: left;
+}
+
+.drawer-submenu-item:hover, .drawer-submenu-category:hover {
+  background: rgba(99, 102, 241, 0.04);
+  color: var(--accent-secondary);
+}
+
+.drawer-arrow {
+  font-size: 1.2rem;
+  line-height: 1;
+  color: var(--text-muted);
+  transition: transform 0.2s ease;
+}
+
+.drawer-dropdown-trigger.open .drawer-arrow {
+  transform: rotate(90deg);
+}
+
+/* Language Selection Modal Custom Styles */
+.lang-select-btn {
+  transition: var(--transition-smooth);
+}
+.lang-select-btn:hover {
+  background: rgba(99, 102, 241, 0.04);
+  border-color: var(--accent-secondary) !important;
 }
 
 /* Mobile Media Queries Overrides */

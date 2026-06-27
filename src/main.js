@@ -34,6 +34,15 @@ import {
   aiUpscaleImage
 } from './pdf-tools.js';
 
+// Corporate Billing Details for Invoices (Billed From)
+const VENDOR_BILLING_INFO = {
+  companyName: 'PixelPDF Technologies LLC',
+  address: '100 Pine Street, Suite 1200',
+  cityStateZip: 'San Francisco, CA 94111',
+  country: 'United States',
+  email: 'finance@pixelpdf.com'
+};
+
 // Application State
 let currentTool = null;
 let uploadedFiles = [];
@@ -99,30 +108,82 @@ let token = safeStorage.getItem('token') || null;
 let currentUser = null;
 
 const LOGGED_OUT_DRAWER_HTML = `
-  <div class="drawer-menu-links">
+  <div class="drawer-menu-links" style="display: flex; flex-direction: column; gap: 0.25rem; padding: 1rem 0.75rem;">
+    <!-- Other Products Dropdown -->
+    <div>
+      <a href="#" class="drawer-menu-link drawer-dropdown-trigger" id="mob-trigger-products">
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 13.5h3.86a2.25 2.25 0 012.008 1.24l.885 1.77a2.25 2.25 0 002.007 1.24h1.98a2.25 2.25 0 002.007-1.24l.885-1.77a2.25 2.25 0 012.007-1.24h3.86m-18 0h18m-18 0v-7.5A2.25 2.25 0 012.25 6h19.5a2.25 2.25 0 012.25 2.25v7.5m-18 0v-7.5m18 0v7.5" /></svg>
+          <span style="font-weight: 600; font-size: 0.85rem; letter-spacing: 0.05em; text-transform: uppercase;">Other Products</span>
+        </div>
+        <span class="drawer-arrow">›</span>
+      </a>
+      <div class="drawer-submenu" id="mob-submenu-products">
+        <a href="#" class="drawer-submenu-item" data-tool="merge-pdf">Merge PDF</a>
+        <a href="#" class="drawer-submenu-item" data-tool="split-pdf">Split PDF</a>
+        <a href="#" class="drawer-submenu-item" data-tool="compress-pdf">Compress PDF</a>
+        <a href="#" class="drawer-submenu-item" data-tool="ocr-pdf">OCR PDF</a>
+        <a href="#" class="drawer-submenu-item" data-tool="pdf-to-word">PDF to Word</a>
+        <a href="#" class="drawer-submenu-item" data-tool="word-to-pdf">Word to PDF</a>
+      </div>
+    </div>
+
+    <!-- Solutions Dropdown -->
+    <div>
+      <a href="#" class="drawer-menu-link drawer-dropdown-trigger" id="mob-trigger-solutions">
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+          <span style="font-weight: 600; font-size: 0.85rem; letter-spacing: 0.05em; text-transform: uppercase;">Solutions</span>
+        </div>
+        <span class="drawer-arrow">›</span>
+      </a>
+      <div class="drawer-submenu" id="mob-submenu-solutions">
+        <a href="#" class="drawer-submenu-category" data-cat="organize">Organize PDF</a>
+        <a href="#" class="drawer-submenu-category" data-cat="optimize">Optimize PDF</a>
+        <a href="#" class="drawer-submenu-category" data-cat="convert">Convert PDF</a>
+        <a href="#" class="drawer-submenu-category" data-cat="edit">Edit PDF</a>
+        <a href="#" class="drawer-submenu-category" data-cat="security">PDF Security</a>
+      </div>
+    </div>
+
+    <!-- Applications Dropdown -->
+    <div>
+      <a href="#" class="drawer-menu-link drawer-dropdown-trigger" id="mob-trigger-apps">
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25m18 0A2.25 2.25 0 0018.75 3H5.25A2.25 2.25 0 003 5.25m18 0V12a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 12V5.25" /></svg>
+          <span style="font-weight: 600; font-size: 0.85rem; letter-spacing: 0.05em; text-transform: uppercase;">Applications</span>
+        </div>
+        <span class="drawer-arrow">›</span>
+      </a>
+      <div class="drawer-submenu" id="mob-submenu-apps">
+        <a href="#" class="drawer-submenu-item" data-tool="ai-assistant">🤖 AI Assistant</a>
+        <a href="#" class="drawer-submenu-item" data-tool="upscale-image">🖼️ Upscale Image</a>
+        <a href="#" class="drawer-submenu-item" data-tool="remove-background">✂️ Remove BG</a>
+      </div>
+    </div>
+
+    <!-- Pricing Link -->
+    <a href="#" class="drawer-menu-link" id="mob-link-pricing">
+      <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.5 8.5h19M2.5 12h19M2.5 15.5h19" /></svg>
+        <span>Pricing</span>
+      </div>
+    </a>
+
+    <!-- Features Link -->
     <a href="#" class="drawer-menu-link" id="mob-link-features">
-      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-        <rect x="3" y="3" width="7" height="9" rx="1" />
-        <rect x="14" y="3" width="7" height="5" rx="1" />
-        <rect x="14" y="12" width="7" height="9" rx="1" />
-        <rect x="3" y="16" width="7" height="5" rx="1" />
-      </svg>
-      <span>Features</span>
+      <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" /></svg>
+        <span>Features</span>
+      </div>
     </a>
+
+    <!-- About us Link -->
     <a href="#" class="drawer-menu-link" id="mob-link-about">
-      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-        <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
-      </svg>
-      <span>About us</span>
-    </a>
-    <hr style="border: none; border-top: 1px solid var(--border-color); margin: 1rem 0;" />
-    <a href="#" class="drawer-menu-link" id="mob-link-help">
-      <span>Help</span>
-      <span class="drawer-arrow">›</span>
-    </a>
-    <a href="#" class="drawer-menu-link" id="mob-link-language">
-      <span>Language</span>
-      <span class="drawer-arrow">›</span>
+      <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 111.063.852l-.708 2.836a.75.75 0 001.063.852l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" /></svg>
+        <span>About us</span>
+      </div>
     </a>
   </div>
   <div class="drawer-auth-actions" id="drawer-auth-actions">
@@ -1822,6 +1883,8 @@ function switchAccountTab(tabName) {
     loadCRMTeamData();
   } else if (tabName === 'billing') {
     syncCRMBillingData();
+  } else if (tabName === 'invoices') {
+    renderCRMInvoices();
   }
 }
 window.switchAccountTab = switchAccountTab;
@@ -1970,6 +2033,111 @@ function syncCRMBillingData() {
       btn.disabled = false;
       btn.style.opacity = '1';
     }
+  });
+}
+
+function renderCRMInvoices() {
+  const container = document.getElementById('crm-invoices-list');
+  if (!container) return;
+  
+  if (!currentUser || !currentUser.subscription_plan || currentUser.subscription_plan === 'free') {
+    container.innerHTML = `
+      <tr>
+        <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem; font-size: 0.9rem;">
+          No invoices found. Upgrade your subscription to see billing history.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  // User is on a paid plan! Generate invoices based on active plan and account registration date
+  const plan = currentUser.subscription_plan;
+  const planNames = {
+    starter: 'Starter Plan',
+    base: 'Base Plan',
+    pro: 'Pro Plan',
+    enterprise: 'Enterprise Plan'
+  };
+  const planPrices = {
+    starter: '$9.00',
+    base: '$29.00',
+    pro: '$79.00',
+    enterprise: '$199.00'
+  };
+  
+  const planName = planNames[plan] || 'Premium Plan';
+  const priceText = planPrices[plan] || '$9.00';
+  
+  // Calculate historical invoice months since creation
+  const registrationDate = currentUser.createdAt ? new Date(currentUser.createdAt) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000); // 30 days ago fallback
+  const now = new Date();
+  
+  let invoices = [];
+  let tempDate = new Date(registrationDate.getFullYear(), registrationDate.getMonth(), 15);
+  
+  // Generate invoice for each month from registration date to today
+  while (tempDate <= now) {
+    const monthName = tempDate.toLocaleString('default', { month: 'short' });
+    const year = tempDate.getFullYear();
+    const day = tempDate.getDate();
+    
+    // Period is 1 month
+    const nextMonthDate = new Date(tempDate.getFullYear(), tempDate.getMonth() + 1, day);
+    const endMonthName = nextMonthDate.toLocaleString('default', { month: 'short' });
+    const endYear = nextMonthDate.getFullYear();
+    
+    const invoiceId = `INV-${currentUser.id.substring(0, 4).toUpperCase()}-${year}-${(tempDate.getMonth() + 1).toString().padStart(2, '0')}`;
+    const dateText = `${monthName} ${day}, ${year}`;
+    const periodText = `${monthName} ${day} - ${endMonthName} ${day}, ${tempDate.getMonth() + 1 > 11 ? year + 1 : year}`;
+    
+    invoices.push({
+      id: invoiceId,
+      date: dateText,
+      period: periodText,
+      amount: priceText,
+      plan: planName
+    });
+    
+    // Move to next month
+    tempDate.setMonth(tempDate.getMonth() + 1);
+  }
+  
+  // Sort reverse chronological
+  invoices.reverse();
+  
+  container.innerHTML = '';
+  invoices.forEach(inv => {
+    const tr = document.createElement('tr');
+    tr.style.cssText = 'border-bottom: 1px solid var(--border-color); color: var(--text-secondary);';
+    tr.innerHTML = `
+      <td style="padding: 0.75rem 1rem; font-weight: 600; color: var(--text-primary);">${escapeHTML(inv.id)}</td>
+      <td style="padding: 0.75rem 1rem; color: var(--text-secondary);">${escapeHTML(inv.date)}</td>
+      <td style="padding: 0.75rem 1rem; color: var(--text-muted);">${escapeHTML(inv.period)}</td>
+      <td style="padding: 0.75rem 1rem; font-weight: 600; color: var(--text-primary);">${escapeHTML(inv.amount)}</td>
+      <td style="padding: 0.75rem 1rem;"><span style="font-size: 0.7rem; background: var(--accent-success); color: white; padding: 0.15rem 0.4rem; border-radius: 0.25rem; font-weight: 600;">Paid</span></td>
+      <td style="padding: 0.75rem 1rem; text-align: right;">
+        <button type="button" class="btn-download-inv-pdf btn-nav-back" 
+                data-id="${inv.id}" data-date="${inv.date}" 
+                data-period="${inv.period}" data-amount="${inv.amount}"
+                style="padding: 0.35rem 0.75rem; font-size: 0.75rem; margin: 0;">
+          Download PDF
+        </button>
+      </td>
+    `;
+    container.appendChild(tr);
+  });
+  
+  // Attach event listeners for dynamic PDF downloads
+  container.querySelectorAll('.btn-download-inv-pdf').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const id = btn.getAttribute('data-id');
+      const date = btn.getAttribute('data-date');
+      const period = btn.getAttribute('data-period');
+      const amount = btn.getAttribute('data-amount');
+      downloadInvoicePDF(id, date, period, amount);
+    });
   });
 }
 
@@ -2161,6 +2329,91 @@ function setupCRMDashboardEventListeners() {
   // Handle header triggers for mobile accounts dashboard
   window.addEventListener('resize', updateHeaderTriggers);
   updateHeaderTriggers();
+
+  // Wire Help Modal Controls
+  const btnCloseHelp = document.getElementById('btn-close-help');
+  const helpModalOverlay = document.getElementById('help-modal-overlay');
+  if (btnCloseHelp && helpModalOverlay) {
+    btnCloseHelp.addEventListener('click', () => {
+      helpModalOverlay.style.display = 'none';
+    });
+    helpModalOverlay.addEventListener('click', (e) => {
+      if (e.target === helpModalOverlay) {
+        helpModalOverlay.style.display = 'none';
+      }
+    });
+  }
+  const btnHelpFaqScroll = document.getElementById('btn-help-faq-scroll');
+  if (btnHelpFaqScroll) {
+    btnHelpFaqScroll.addEventListener('click', () => {
+      if (helpModalOverlay) helpModalOverlay.style.display = 'none';
+      navigateToDashboard();
+      const faqAccordion = document.getElementById('faq-accordion') || document.querySelector('.tool-details-container');
+      if (faqAccordion) {
+        faqAccordion.scrollIntoView({ behavior: 'smooth' });
+      }
+    });
+  }
+
+  // Wire Language Modal Controls
+  const btnCloseLanguageModal = document.getElementById('btn-close-language-modal');
+  const languageModalOverlay = document.getElementById('language-modal-overlay');
+  if (btnCloseLanguageModal && languageModalOverlay) {
+    btnCloseLanguageModal.addEventListener('click', () => {
+      languageModalOverlay.style.display = 'none';
+    });
+    languageModalOverlay.addEventListener('click', (e) => {
+      if (e.target === languageModalOverlay) {
+        languageModalOverlay.style.display = 'none';
+      }
+    });
+  }
+
+  // Bind Language selector buttons
+  const langNames = {
+    en: '🇬🇧 English',
+    es: '🇪🇸 Español (Spanish)',
+    fr: '🇫🇷 Français (French)',
+    de: '🇩🇪 Deutsch (German)',
+    zh: '🇨🇳 中文 (Chinese)'
+  };
+  document.querySelectorAll('.lang-select-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const selectedLang = btn.getAttribute('data-lang');
+      if (!selectedLang) return;
+      
+      // Update checkmark visibilities
+      document.querySelectorAll('.lang-select-btn').forEach(b => {
+        const check = b.querySelector('.lang-check');
+        if (b === btn) {
+          b.style.border = '1.5px solid var(--accent-secondary)';
+          b.style.background = 'rgba(99, 102, 241, 0.05)';
+          b.style.fontWeight = '600';
+          b.style.color = 'var(--text-primary)';
+          if (check) check.style.display = 'inline';
+        } else {
+          b.style.border = '1.5px solid var(--border-color)';
+          b.style.background = 'transparent';
+          b.style.fontWeight = '500';
+          b.style.color = 'var(--text-secondary)';
+          if (check) check.style.display = 'none';
+        }
+      });
+
+      // Update badge label in drawer
+      const badge = document.getElementById('mob-lang-badge');
+      if (badge) {
+        badge.textContent = selectedLang.toUpperCase();
+      }
+
+      showToast(`Language changed to ${langNames[selectedLang] || selectedLang}`, 'success');
+      
+      if (languageModalOverlay) {
+        languageModalOverlay.style.display = 'none';
+      }
+    });
+  });
 }
 
 function filterCategoryColumns(category) {
@@ -3615,17 +3868,103 @@ function updateAuthNav(user) {
         });
       }
       
-      // Wire original link items
+      // Accordion dropdown toggles
+      const accordionIds = [
+        { trigger: 'mob-trigger-products', submenu: 'mob-submenu-products' },
+        { trigger: 'mob-trigger-solutions', submenu: 'mob-submenu-solutions' },
+        { trigger: 'mob-trigger-apps', submenu: 'mob-submenu-apps' }
+      ];
+      accordionIds.forEach(acc => {
+        const trig = document.getElementById(acc.trigger);
+        const sub = document.getElementById(acc.submenu);
+        if (trig && sub) {
+          trig.addEventListener('click', (e) => {
+            e.preventDefault();
+            trig.classList.toggle('open');
+            sub.classList.toggle('active');
+          });
+        }
+      });
+
+      // Submenu tool selection routing
+      drawerBody.querySelectorAll('.drawer-submenu-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+          e.preventDefault();
+          const tool = item.getAttribute('data-tool');
+          if (tool) {
+            closeAuthDrawer();
+            navigateToTool(tool);
+          }
+        });
+      });
+
+      // Submenu solution category filtering routing
+      drawerBody.querySelectorAll('.drawer-submenu-category').forEach(item => {
+        item.addEventListener('click', (e) => {
+          e.preventDefault();
+          const cat = item.getAttribute('data-cat');
+          if (cat) {
+            closeAuthDrawer();
+            navigateToDashboard();
+            
+            // Set category tab active state
+            document.querySelectorAll('.category-tab').forEach(t => {
+              if (t.getAttribute('data-category') === cat) {
+                t.classList.add('active');
+              } else {
+                t.classList.remove('active');
+              }
+            });
+            filterCategoryColumns(cat);
+          }
+        });
+      });
+
+      // Pricing Link
+      const mobLinkPricing = document.getElementById('mob-link-pricing');
+      if (mobLinkPricing) {
+        mobLinkPricing.addEventListener('click', (e) => {
+          e.preventDefault();
+          closeAuthDrawer();
+          if (currentUser) {
+            navigateToAccountDashboard('billing');
+          } else {
+            navigateToDashboard();
+            const pricing = document.getElementById('pricing-grid') || document.querySelector('.premium-stats-grid');
+            if (pricing) pricing.scrollIntoView({ behavior: 'smooth' });
+          }
+        });
+      }
+
+      // Security Link
+      const mobLinkSecurity = document.getElementById('mob-link-security');
+      if (mobLinkSecurity) {
+        mobLinkSecurity.addEventListener('click', (e) => {
+          e.preventDefault();
+          closeAuthDrawer();
+          if (currentUser) {
+            navigateToAccountDashboard('security');
+          } else {
+            navigateToDashboard();
+            const securityBlock = document.querySelector('.stats-grid') || document.querySelector('footer');
+            if (securityBlock) securityBlock.scrollIntoView({ behavior: 'smooth' });
+          }
+        });
+      }
+
+      // Features Link
       const mobLinkFeatures = document.getElementById('mob-link-features');
       if (mobLinkFeatures) {
         mobLinkFeatures.addEventListener('click', (e) => {
           e.preventDefault();
           closeAuthDrawer();
           navigateToDashboard();
-          const stats = document.querySelector('.premium-stats-grid');
+          const stats = document.querySelector('.premium-stats-grid') || document.querySelector('.tools-grid');
           if (stats) stats.scrollIntoView({ behavior: 'smooth' });
         });
       }
+
+      // About us Link
       const mobLinkAbout = document.getElementById('mob-link-about');
       if (mobLinkAbout) {
         mobLinkAbout.addEventListener('click', (e) => {
@@ -3634,6 +3973,28 @@ function updateAuthNav(user) {
           navigateToDashboard();
           const contact = document.querySelector('footer');
           if (contact) contact.scrollIntoView({ behavior: 'smooth' });
+        });
+      }
+
+      // Help Link
+      const mobLinkHelp = document.getElementById('mob-link-help');
+      if (mobLinkHelp) {
+        mobLinkHelp.addEventListener('click', (e) => {
+          e.preventDefault();
+          // Open help modal overlay
+          document.getElementById('help-modal-overlay').style.display = 'flex';
+          closeAuthDrawer();
+        });
+      }
+
+      // Language Link
+      const mobLinkLanguage = document.getElementById('mob-link-language');
+      if (mobLinkLanguage) {
+        mobLinkLanguage.addEventListener('click', (e) => {
+          e.preventDefault();
+          // Open language modal overlay
+          document.getElementById('language-modal-overlay').style.display = 'flex';
+          closeAuthDrawer();
         });
       }
     }
@@ -4866,19 +5227,19 @@ async function downloadInvoicePDF(invoiceId, date, period, amount) {
     page.drawText('BILLED FROM:', { x: 350, y: yPosFrom, size: 10, font: fontBold, color: rgb(0.5, 0.5, 0.5) });
     
     yPosFrom -= 20;
-    page.drawText('PixelPDF Technologies LLC', { x: 350, y: yPosFrom, size: 11, font: fontBold, color: rgb(0.1, 0.1, 0.1) });
+    page.drawText(VENDOR_BILLING_INFO.companyName, { x: 350, y: yPosFrom, size: 11, font: fontBold, color: rgb(0.1, 0.1, 0.1) });
 
     yPosFrom -= 15;
-    page.drawText('100 Pine Street, Suite 1200', { x: 350, y: yPosFrom, size: 9, font: fontRegular, color: rgb(0.3, 0.3, 0.3) });
+    page.drawText(VENDOR_BILLING_INFO.address, { x: 350, y: yPosFrom, size: 9, font: fontRegular, color: rgb(0.3, 0.3, 0.3) });
 
     yPosFrom -= 15;
-    page.drawText('San Francisco, CA 94111', { x: 350, y: yPosFrom, size: 9, font: fontRegular, color: rgb(0.3, 0.3, 0.3) });
+    page.drawText(VENDOR_BILLING_INFO.cityStateZip, { x: 350, y: yPosFrom, size: 9, font: fontRegular, color: rgb(0.3, 0.3, 0.3) });
 
     yPosFrom -= 15;
-    page.drawText('United States', { x: 350, y: yPosFrom, size: 9, font: fontRegular, color: rgb(0.3, 0.3, 0.3) });
+    page.drawText(VENDOR_BILLING_INFO.country, { x: 350, y: yPosFrom, size: 9, font: fontRegular, color: rgb(0.3, 0.3, 0.3) });
 
     yPosFrom -= 15;
-    page.drawText('finance@pixelpdf.com', { x: 350, y: yPosFrom, size: 9, font: fontRegular, color: rgb(0.3, 0.3, 0.3) });
+    page.drawText(VENDOR_BILLING_INFO.email, { x: 350, y: yPosFrom, size: 9, font: fontRegular, color: rgb(0.3, 0.3, 0.3) });
 
     // Invoice Metadata Block
     let midY = Math.min(yPos, yPosFrom) - 30;
