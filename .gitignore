@@ -23,3 +23,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# AI/Python Local Environment & Weights
+ai-inference/*.onnx
+venv/
+.venv/
+__pycache__/
+*.pyc

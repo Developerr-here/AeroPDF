@@ -7,10 +7,13 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "start": "node server.js"
+    "start": "node server.js",
+    "start:ai": "python -m uvicorn app:app --app-dir ai-inference --host 127.0.0.1 --port 8000",
+    "dev:all": "concurrently -k -n \"Node,Python\" -c \"blue,green\" \"npm run start\" \"npm run start:ai\""
   },
   "devDependencies": {
-    "vite": "^8.0.12"
+    "vite": "^8.0.12",
+    "concurrently": "^8.2.2"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
