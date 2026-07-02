@@ -2521,4 +2521,5 @@ app.get(/.*/, (req, res, next) => {
 
 app.listen(port, () => {
   console.log(`Server listening on port ${port}`);
+  console.log(`AI Service URL configured as: ${process.env.AI_SERVICE_URL || 'http://localhost:8000 (Default Local Fallback)'}`);
 });
