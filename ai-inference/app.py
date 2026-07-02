@@ -162,6 +162,7 @@ def load_model():
         opts.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
         opts.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
         opts.add_session_config_entry("session.use_env_allocators", "1")
+        opts.enable_cpu_mem_arena = False
         
         session = ort.InferenceSession(
             MODEL_PATH,
@@ -230,8 +231,8 @@ def remove_background(file: UploadFile = File(...)):
         orig_img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
         orig_w, orig_h = orig_img.size
         
-        # Max resolution limit of 2048px to prevent container out-of-memory (OOM) crashes
-        MAX_DIM = 2048
+        # Max resolution limit of 1280px to prevent container out-of-memory (OOM) crashes
+        MAX_DIM = 1280
         if max(orig_w, orig_h) > MAX_DIM:
             scale = MAX_DIM / max(orig_w, orig_h)
             new_w = int(orig_w * scale)
