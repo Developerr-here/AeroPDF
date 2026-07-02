@@ -157,10 +157,11 @@ def load_model():
         # Load model with optimized CPU settings
         logger.info("Loading ONNX model...")
         opts = ort.SessionOptions()
-        opts.intra_op_num_threads = 0
-        opts.inter_op_num_threads = 0
+        opts.intra_op_num_threads = 1
+        opts.inter_op_num_threads = 1
         opts.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
         opts.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
+        opts.add_session_config_entry("session.use_env_allocators", "1")
         
         session = ort.InferenceSession(
             MODEL_PATH,
@@ -229,6 +230,15 @@ def remove_background(file: UploadFile = File(...)):
         orig_img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
         orig_w, orig_h = orig_img.size
         
+        # Max resolution limit of 2048px to prevent container out-of-memory (OOM) crashes
+        MAX_DIM = 2048
+        if max(orig_w, orig_h) > MAX_DIM:
+            scale = MAX_DIM / max(orig_w, orig_h)
+            new_w = int(orig_w * scale)
+            new_h = int(orig_h * scale)
+            orig_img = orig_img.resize((new_w, new_h), Image.Resampling.BILINEAR)
+            orig_w, orig_h = orig_img.size
+        
         # 2. Get expected model input dimensions dynamically
         input_shape = session.get_inputs()[0].shape
         input_h = input_shape[2] if len(input_shape) > 2 and isinstance(input_shape[2], int) else 1024
@@ -275,8 +285,18 @@ def remove_background(file: UploadFile = File(...)):
         processing_time = time.time() - start_time
         logger.info(f"Background removed in {processing_time:.2f}s")
         
+        response_bytes = output_io.getvalue()
+        
+        # Free up memory explicitly before sending response
+        try:
+            del orig_img, resized_img, img_array, mask_pil, rgba_img, outputs, logits, mask, mask_2d, mask_uint8, output_io
+            import gc
+            gc.collect()
+        except Exception:
+            pass
+            
         return Response(
-            content=output_io.getvalue(),
+            content=response_bytes,
             media_type="image/png",
             headers={
                 "X-Processing-Time": str(processing_time),
