@@ -27,7 +27,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-app.set('trust proxy', 1);
 const port = process.env.PORT || 3000;
 
 const JWT_SECRET = process.env.JWT_SECRET || 'pixelpdf-enterprise-security-secret-passphrase';
@@ -1329,97 +1328,6 @@ Set your \`GROQ_API_KEY\` in your environment variables to enable live translati
    AI IMAGE INTELLIGENCE SYSTEM
    ========================================== */
 
-// app.post('/api/image/remove-background', upload.single('file'), checkUploadLimit, apiLimiter, async (req, res) => {
-//   let fileBuffer;
-//   try {
-//     const file = req.file;
-//     if (!file) return res.status(400).json({ error: 'Image file is required.' });
-
-//     fileBuffer = fs.readFileSync(file.path);
-
-//     // 1. First choice: Try the local Python AI background removal service (BiRefNet)
-//     try {
-//       console.log('[Background Remover] Attempting local custom AI service (http://localhost:8000/remove-bg)...');
-//       const formData = new FormData();
-//       const fileBlob = new Blob([fileBuffer], { type: file.mimetype });
-//       formData.append('file', fileBlob, file.originalname);
-
-//       // Abort connection if it hangs for more than 60 seconds (safe for CPU inference start)
-//       const controller = new AbortController();
-//       const timeoutId = setTimeout(() => controller.abort(), 60000);
-
-//       const localResponse = await fetch('http://localhost:8000/remove-bg', {
-//         method: 'POST',
-//         body: formData,
-//         signal: controller.signal
-//       });
-
-//       clearTimeout(timeoutId);
-
-//       if (localResponse.ok) {
-//         const arrayBuffer = await localResponse.arrayBuffer();
-//         fs.unlink(file.path, () => {});
-//         res.setHeader('Content-Type', 'image/png');
-//         console.log('[Background Remover] Successfully processed background removal using local custom AI service.');
-//         return res.send(Buffer.from(arrayBuffer));
-//       } else {
-//         const errText = await localResponse.text();
-//         console.warn(`[Background Remover] Local AI service returned error: ${errText}`);
-//       }
-//     } catch (localErr) {
-//       console.log(`[Background Remover] Local AI service unavailable or timed out: ${localErr.message}. Falling back to next method.`);
-//     }
-
-//     // 2. Second choice: Fallback to SaaS Remove.bg API
-//     const isRemoveBgValid = REMOVE_BG_API_KEY && !REMOVE_BG_API_KEY.includes('mock') && !REMOVE_BG_API_KEY.includes('replace-me');
-
-//     if (isRemoveBgValid) {
-//       try {
-//         console.log('[Remove.bg] Sending request to Remove.bg API...');
-//         const formData = new FormData();
-//         const fileBlob = new Blob([fileBuffer], { type: file.mimetype });
-//         formData.append('image_file', fileBlob, file.originalname);
-//         formData.append('size', 'auto');
-
-//         const response = await fetch('https://api.remove.bg/v1.0/removebg', {
-//           method: 'POST',
-//           headers: {
-//             'X-Api-Key': REMOVE_BG_API_KEY
-//           },
-//           body: formData
-//         });
-
-//         if (!response.ok) {
-//           const errText = await response.text();
-//           throw new Error(`Remove.bg API returned status ${response.status}: ${errText}`);
-//         }
-
-//         const arrayBuffer = await response.arrayBuffer();
-//         fs.unlink(file.path, () => {});
-//         res.setHeader('Content-Type', 'image/png');
-//         return res.send(Buffer.from(arrayBuffer));
-//       } catch (err) {
-//         fs.unlink(file.path, () => {});
-//         console.error(`[Remove.bg API Error]: ${err.message}`);
-//         return res.status(500).json({ error: `Background removal failed: ${err.message}` });
-//       }
-//     } else {
-//       // 3. Third choice: Fallback to browser-side chroma-key rendering
-//       console.log('[Background Remover] No active APIs configured/online. Falling back to browser-side chroma-key mode.');
-//       fs.unlink(file.path, () => {});
-//       res.setHeader('x-mock-active', 'true');
-//       res.setHeader('Content-Type', file.mimetype);
-//       return res.send(fileBuffer);
-//     }
-//   } catch (err) {
-//     cleanTempFiles(req);
-//     return res.status(500).json({ error: `Image processing failed: ${err.message}` });
-//   }
-// });
-
-
-
-// Updated background removal endpoint with better error handling
 app.post('/api/image/remove-background', upload.single('file'), checkUploadLimit, apiLimiter, async (req, res) => {
   let fileBuffer;
   try {
@@ -1428,71 +1336,7 @@ app.post('/api/image/remove-background', upload.single('file'), checkUploadLimit
 
     fileBuffer = fs.readFileSync(file.path);
 
-    // 1. First choice: Try the local Python AI background removal service
-    try {
-      const aiServiceUrl = process.env.AI_SERVICE_URL || 'http://localhost:8000';
-      console.log(`[Background Remover] Attempting local AI service (${aiServiceUrl}/remove-bg)...`);
-      
-      // Check if service is available first
-      const healthCheck = await fetch(`${aiServiceUrl}/`, {
-        method: 'GET',
-        signal: AbortSignal.timeout(3000)
-      });
-      
-      if (!healthCheck.ok) {
-        throw new Error('Health check failed');
-      }
-      
-      const healthData = await healthCheck.json();
-      if (!healthData.model_ready) {
-        throw new Error('Model not ready yet');
-      }
-      
-      console.log('[Background Remover] Local AI service is healthy, processing...');
-      
-      const formData = new FormData();
-      const fileBlob = new Blob([fileBuffer], { type: file.mimetype });
-      formData.append('file', fileBlob, file.originalname);
-
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 300000);
-
-      const localResponse = await fetch(`${aiServiceUrl}/remove-bg`, {
-        method: 'POST',
-        body: formData,
-        signal: controller.signal
-      });
-
-      clearTimeout(timeoutId);
-
-      if (localResponse.ok) {
-        const arrayBuffer = await localResponse.arrayBuffer();
-        fs.unlink(file.path, () => {});
-        res.setHeader('Content-Type', 'image/png');
-        // Forward processing time header
-        const procTime = localResponse.headers.get('x-processing-time');
-        if (procTime) {
-          res.setHeader('X-Processing-Time', procTime);
-          res.setHeader('X-Processing-Method', 'Local AI');
-        }
-        console.log('[Background Remover] Successfully processed using local AI service.');
-        return res.send(Buffer.from(arrayBuffer));
-      } else {
-        const errText = await localResponse.text();
-        console.warn(`[Background Remover] Local AI service returned error: ${errText}`);
-      }
-    } catch (localErr) {
-      if (localErr.name === 'AbortError') {
-        console.log('[Background Remover] Local AI service timed out after 300s.');
-      } else {
-        console.log(`[Background Remover] Local AI service unavailable: ${localErr.message}`);
-      }
-    }
-
-    // 2. Second choice: Fallback to SaaS Remove.bg API
-    const isRemoveBgValid = REMOVE_BG_API_KEY && 
-                           !REMOVE_BG_API_KEY.includes('mock') && 
-                           !REMOVE_BG_API_KEY.includes('replace-me');
+    const isRemoveBgValid = REMOVE_BG_API_KEY && !REMOVE_BG_API_KEY.includes('mock') && !REMOVE_BG_API_KEY.includes('replace-me');
 
     if (isRemoveBgValid) {
       try {
@@ -1518,29 +1362,24 @@ app.post('/api/image/remove-background', upload.single('file'), checkUploadLimit
         const arrayBuffer = await response.arrayBuffer();
         fs.unlink(file.path, () => {});
         res.setHeader('Content-Type', 'image/png');
-        res.setHeader('X-Processing-Method', 'Remove.bg API');
         return res.send(Buffer.from(arrayBuffer));
       } catch (err) {
+        fs.unlink(file.path, () => {});
         console.error(`[Remove.bg API Error]: ${err.message}`);
-        // Continue to fallback
+        return res.status(500).json({ error: `Background removal failed: ${err.message}` });
       }
+    } else {
+      // Free fallback mode: send the original file back with x-mock-active header to trigger browser canvas processing
+      console.log('[Background Remover] No active Remove.bg API key configured. Falling back to browser-side chroma-key mode.');
+      fs.unlink(file.path, () => {});
+      res.setHeader('x-mock-active', 'true');
+      res.setHeader('Content-Type', file.mimetype);
+      return res.send(fileBuffer);
     }
-
-    // 3. Third choice: Fallback to browser-side chroma-key rendering
-    console.log('[Background Remover] All AI services unavailable. Falling back to client-side processing.');
-    fs.unlink(file.path, () => {});
-    res.setHeader('x-mock-active', 'true');
-    res.setHeader('Content-Type', file.mimetype);
-    res.setHeader('X-Processing-Method', 'Client-side Fallback');
-    return res.send(fileBuffer);
-    
   } catch (err) {
     cleanTempFiles(req);
-    console.error('[Background Remover] Error:', err);
-    return res.status(500).json({ 
-      error: 'Image processing failed', 
-      detail: err.message 
-    });
+    console.error(err);
+    res.status(500).json({ error: 'Background removal failed: ' + err.message });
   }
 });
 
@@ -2521,5 +2360,4 @@ app.get(/.*/, (req, res, next) => {
 
 app.listen(port, () => {
   console.log(`Server listening on port ${port}`);
-  console.log(`AI Service URL configured as: ${process.env.AI_SERVICE_URL || 'http://localhost:8000 (Default Local Fallback)'}`);
 });
