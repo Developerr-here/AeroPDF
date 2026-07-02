@@ -177,8 +177,16 @@ def load_model():
         model_ready = False
         return False
 
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifespan event handler for FastAPI."""
+    load_model()
+    yield
+
 # Create FastAPI app
-app = FastAPI(title="PixelPDF AI Inference Server")
+app = FastAPI(title="PixelPDF AI Inference Server", lifespan=lifespan)
 
 # Add CORS middleware
 app.add_middleware(
@@ -188,11 +196,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-@app.on_event("startup")
-async def startup_event():
-    """Load model on startup."""
-    load_model()
 
 @app.get("/")
 async def health_check():
