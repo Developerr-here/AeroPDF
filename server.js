@@ -1429,10 +1429,11 @@ app.post('/api/image/remove-background', upload.single('file'), checkUploadLimit
 
     // 1. First choice: Try the local Python AI background removal service
     try {
-      console.log('[Background Remover] Attempting local AI service (http://localhost:8000/remove-bg)...');
+      const aiServiceUrl = process.env.AI_SERVICE_URL || 'http://localhost:8000';
+      console.log(`[Background Remover] Attempting local AI service (${aiServiceUrl}/remove-bg)...`);
       
       // Check if service is available first
-      const healthCheck = await fetch('http://localhost:8000/', {
+      const healthCheck = await fetch(`${aiServiceUrl}/`, {
         method: 'GET',
         signal: AbortSignal.timeout(3000)
       });
@@ -1455,7 +1456,7 @@ app.post('/api/image/remove-background', upload.single('file'), checkUploadLimit
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 300000);
 
-      const localResponse = await fetch('http://localhost:8000/remove-bg', {
+      const localResponse = await fetch(`${aiServiceUrl}/remove-bg`, {
         method: 'POST',
         body: formData,
         signal: controller.signal
