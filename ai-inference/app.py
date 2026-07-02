@@ -19,11 +19,11 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Configuration
-MODEL_PATH = "birefnet-lite.onnx"
+MODEL_PATH = "rmbg-1.4-quantized.onnx"
 # Primary: Fast global CDN mirror. Secondary: Official Hugging Face repo.
 MODEL_URLS = [
-    "https://hf-mirror.com/onnx-community/BiRefNet_lite-ONNX/resolve/main/onnx/model.onnx",
-    "https://huggingface.co/onnx-community/BiRefNet_lite-ONNX/resolve/main/onnx/model.onnx"
+    "https://hf-mirror.com/briaai/RMBG-1.4/resolve/main/onnx/model_quantized.onnx",
+    "https://huggingface.co/briaai/RMBG-1.4/resolve/main/onnx/model_quantized.onnx"
 ]
 
 CHUNK_SIZE = 1024 * 64  # 64KB chunks

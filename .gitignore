@@ -25,6 +25,7 @@ dist-ssr
 *.sw?
 
 # AI/Python Local Environment & Weights
+*.onnx
 ai-inference/*.onnx
 venv/
 .venv/
