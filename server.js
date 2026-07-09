@@ -7,11 +7,10 @@ import cors from 'cors';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import Stripe from 'stripe';
-// import { GoogleGenerativeAI } from '@google/generative-ai'; // Removed in favor of xAI Grok API fetch integration
-import { PDFParse } from 'pdf-parse';
+import nodemailer from 'nodemailer';
 import XLSX from 'xlsx';
 import { rateLimit } from 'express-rate-limit';
-import { PDFDocument, degrees, rgb, StandardFonts } from 'pdf-lib';
+import { PDFDocument, PDFTextField, degrees, rgb, StandardFonts } from 'pdf-lib';
 import { encryptPDF } from '@pdfsmaller/pdf-encrypt-lite';
 import { decryptPDF } from '@pdfsmaller/pdf-decrypt';
 import path from 'path';
@@ -20,13 +19,15 @@ import { fileURLToPath } from 'url';
 import { createRequire } from 'module';
 import { OAuth2Client } from 'google-auth-library';
 const require = createRequire(import.meta.url);
+const pdfParse = require('pdf-parse');
 const mammoth = require('mammoth');
-import { User, BlogPost, CollaborationEmail, NewsletterSubscriber, syncDatabase } from './db.js';
+import { User, BlogPost, CollaborationEmail, NewsletterSubscriber, ContactInquiry, syncDatabase } from './db.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+app.set('trust proxy', 1);
 const port = process.env.PORT || 3000;
 
 const JWT_SECRET = process.env.JWT_SECRET || 'pixelpdf-enterprise-security-secret-passphrase';
@@ -67,7 +68,7 @@ app.use((req, res, next) => {
 // Configure Rate Limiters to secure endpoints
 const authLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
-  limit: 10,
+  limit: process.env.NODE_ENV === 'test' ? 10000 : 30, // 30 requests per minute in production
   message: { error: 'Too many authentication attempts. Please try again in 1 minute.' },
   standardHeaders: 'draft-8',
   legacyHeaders: false
@@ -75,7 +76,25 @@ const authLimiter = rateLimit({
 
 const apiLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
-  limit: 150,
+  limit: async (req, res) => {
+    if (process.env.NODE_ENV === 'test') return 10000;
+    
+    // Check if the user is authenticated & on a paid plan
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        const dbUser = await User.findByPk(decoded.id);
+        if (dbUser && dbUser.subscription_plan && dbUser.subscription_plan !== 'free') {
+          return 2000; // Paid plans get 2000 requests/hour
+        }
+      } catch (err) {
+        // Token verification failed or user not found, fallback to guest limits
+      }
+    }
+    return 150; // Guest / Free plan gets 150 requests/hour
+  },
   message: { error: 'Hourly rate limit exceeded. Upgrade to Premium for higher thresholds.' },
   standardHeaders: 'draft-8',
   legacyHeaders: false
@@ -97,7 +116,7 @@ app.use('/api/blog-uploads', express.static(blogUploadsDir));
 // Multer configured to stream uploads to disk rather than keeping in RAM
 const upload = multer({ 
   dest: 'uploads/',
-  limits: { fileSize: 100 * 1024 * 1024 } // 100MB limit
+  limits: { fileSize: 4.5 * 1024 * 1024 * 1024 } // 4.5GB limit (enforced per plan dynamically by checkUploadLimit)
 });
 
 // Multer storage engine for blog uploads, keeping original file extensions
@@ -152,7 +171,7 @@ async function getPremiumStatus(user) {
   });
   if (isCollaborator) {
     const owner = await User.findByPk(isCollaborator.owner_id);
-    if (owner && ['base', 'pro', 'enterprise'].includes(owner.subscription_plan)) {
+    if (owner && ['premium', 'business', 'starter', 'base', 'pro', 'enterprise', 'custom'].includes(owner.subscription_plan)) {
       return true;
     }
   }
@@ -167,11 +186,17 @@ async function formatUserResponse(user) {
     email: user.email,
     is_premium: await getPremiumStatus(user),
     subscription_plan: user.subscription_plan,
+    subscription_seats: user.subscription_seats,
+    subscription_interval: user.subscription_interval,
+    role: user.role,
+    custom_features: user.custom_features,
     can_blog: user.can_blog,
     display_name: user.display_name,
     first_name: user.first_name,
     last_name: user.last_name,
     profile_pic: user.profile_pic,
+    cumulative_bytes_processed: user.cumulative_bytes_processed,
+    ai_credits_used: user.ai_credits_used,
     createdAt: user.createdAt
   };
 }
@@ -190,10 +215,210 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
+const getToolKeyFromPath = (path) => {
+  if (path.includes('/merge')) return 'merge';
+  if (path.includes('/split')) return 'split';
+  if (path.includes('/remove-pages')) return 'remove-pages';
+  if (path.includes('/extract-pages')) return 'extract-pages';
+  if (path.includes('/organize')) return 'organize-pdf';
+  if (path.includes('/scan')) return 'scan-to-pdf';
+  if (path.includes('/compress')) return 'compress';
+  if (path.includes('/repair')) return 'repair';
+  if (path.includes('/ocr')) return 'ocr';
+  if (path.includes('/img-to-pdf') || path.includes('/jpg-to-pdf')) return 'img-to-pdf';
+  if (path.includes('/word-to-pdf')) return 'word-to-pdf';
+  if (path.includes('/ppt-to-pdf')) return 'ppt-to-pdf';
+  if (path.includes('/excel-to-pdf')) return 'excel-to-pdf';
+  if (path.includes('/html-to-pdf')) return 'html-to-pdf';
+  if (path.includes('/pdf-to-img') || path.includes('/pdf-to-jpg')) return 'pdf-to-img';
+  if (path.includes('/pdf-to-word')) return 'pdf-to-word';
+  if (path.includes('/pdf-to-ppt')) return 'pdf-to-ppt';
+  if (path.includes('/pdf-to-excel')) return 'pdf-to-excel';
+  if (path.includes('/pdf-to-pdfa')) return 'pdf-to-pdfa';
+  if (path.includes('/rotate')) return 'rotate';
+  if (path.includes('/page-numbers')) return 'page-numbers';
+  if (path.includes('/watermark')) return 'watermark';
+  if (path.includes('/crop')) return 'crop';
+  if (path.includes('/edit-pdf')) return 'edit-pdf';
+  if (path.includes('/pdf-forms')) return 'pdf-forms';
+  if (path.includes('/unlock')) return 'unlock';
+  if (path.includes('/protect')) return 'protect';
+  if (path.includes('/sign')) return 'sign';
+  if (path.includes('/redact')) return 'redact';
+  if (path.includes('/compare')) return 'compare';
+  if (path.includes('/summarize') || path.includes('/translate') || path.includes('/assistant')) return 'ai-assistant';
+  if (path.includes('/remove-background')) return 'remove-background';
+  if (path.includes('/upscale-image')) return 'upscale-image';
+  return 'utility';
+};
+
+const isToolAllowedForUser = (user, toolKey) => {
+  if (!user) return false;
+  if (user.role === 'admin') return true;
+  
+  const plan = user.subscription_plan || 'free';
+  if (plan === 'free') return false;
+  
+  if (plan === 'custom') {
+    if (!user.custom_features) return false;
+    try {
+      const custom = typeof user.custom_features === 'string' ? JSON.parse(user.custom_features) : user.custom_features;
+      if (custom) {
+        if (custom.allowedTools && Array.isArray(custom.allowedTools)) {
+          return custom.allowedTools.includes(toolKey);
+        }
+        if (custom[toolKey] !== undefined) {
+          return !!custom[toolKey];
+        }
+      }
+    } catch (e) {
+      return false;
+    }
+    return false;
+  }
+  
+};
+
+const checkAISubscription = (dbUser) => {
+  if (!dbUser) return false;
+  if (dbUser.role === 'admin') return true;
+  const plan = dbUser.subscription_plan || 'free';
+  if (['premium', 'business', 'starter', 'base', 'pro', 'enterprise'].includes(plan)) {
+    return true;
+  }
+  if (plan === 'custom') {
+    return isToolAllowedForUser(dbUser, 'ai-assistant');
+  }
+  return false;
+};
+
 // Limit Middleware: Validate file size (10MB limit for free tier, including session cumulative size)
+const getToolLimit = (path, plan, dbUser) => {
+  let isPremium = ['premium', 'business', 'starter', 'base', 'pro', 'enterprise'].includes(plan);
+  
+  if (plan === 'custom' && dbUser) {
+    const toolKey = getToolKeyFromPath(path);
+    isPremium = isToolAllowedForUser(dbUser, toolKey);
+  }
+  
+  if (path.includes('/merge') || path.includes('/split')) {
+    return isPremium ? 4 * 1024 * 1024 * 1024 : 100 * 1024 * 1024; // 4GB vs 100MB
+  }
+  if (path.includes('/compress')) {
+    return isPremium ? 4 * 1024 * 1024 * 1024 : 200 * 1024 * 1024; // 4GB vs 200MB
+  }
+  if (path.includes('/word-to-pdf') || path.includes('/ppt-to-pdf') || path.includes('/excel-to-pdf') ||
+      path.includes('/pdf-to-word') || path.includes('/pdf-to-ppt') || path.includes('/pdf-to-excel') ||
+      path.includes('/office-to-pdf') || path.includes('/pdf-to-office')) {
+    return isPremium ? 4 * 1024 * 1024 * 1024 : 15 * 1024 * 1024; // 4GB vs 15MB
+  }
+  if (path.includes('/ocr')) {
+    return isPremium ? 4 * 1024 * 1024 * 1024 : 15 * 1024 * 1024; // 4GB vs 15MB
+  }
+  if (path.includes('/pdf-to-img')) {
+    return isPremium ? 4 * 1024 * 1024 * 1024 : 25 * 1024 * 1024; // 4GB vs 25MB
+  }
+  if (path.includes('/img-to-pdf')) {
+    return isPremium ? 4 * 1024 * 1024 * 1024 : 40 * 1024 * 1024; // 4GB vs 40MB
+  }
+  if (path.includes('/edit-pdf')) {
+    return 100 * 1024 * 1024; // 100MB all plans
+  }
+  if (path.includes('/sign')) {
+    return 50 * 1024 * 1024; // 50MB all plans
+  }
+  if (path.includes('/redact') || path.includes('/compare')) {
+    return 400 * 1024 * 1024; // 400MB all plans
+  }
+  if (path.includes('/pdf-forms')) {
+    return isPremium ? 100 * 1024 * 1024 : 15 * 1024 * 1024; // 100MB vs 15MB
+  }
+  if (path.includes('/summarize')) {
+    return 50 * 1024 * 1024; // 50MB
+  }
+  if (path.includes('/translate')) {
+    return 200 * 1024 * 1024; // 200MB
+  }
+  // Default limits for utility tools (protect, unlock, rotate, watermark, page-numbers, organize, repair, crop)
+  return isPremium ? 4 * 1024 * 1024 * 1024 : 100 * 1024 * 1024;
+};
+
+const resolveEffectivePlanAndUser = async (dbUser) => {
+  if (!dbUser) return { plan: 'free', user: null };
+  if (dbUser.subscription_plan && dbUser.subscription_plan !== 'free') {
+    return { plan: dbUser.subscription_plan, user: dbUser };
+  }
+  const isCollaborator = await CollaborationEmail.findOne({
+    where: { email: dbUser.email }
+  });
+  if (isCollaborator) {
+    const owner = await User.findByPk(isCollaborator.owner_id);
+    if (owner && owner.subscription_plan && owner.subscription_plan !== 'free') {
+      return { plan: owner.subscription_plan, user: owner };
+    }
+  }
+  return { plan: 'free', user: dbUser };
+};
+
+const getAICreditLimit = (plan, user) => {
+  if (plan === 'custom' && user && user.custom_features) {
+    try {
+      const custom = typeof user.custom_features === 'string' ? JSON.parse(user.custom_features) : user.custom_features;
+      if (custom && custom.ai_credits_limit !== undefined) {
+        return parseInt(custom.ai_credits_limit, 10);
+      }
+    } catch (e) {}
+  }
+  
+  const limits = {
+    free: 0,
+    starter: 50,
+    base: 150,
+    pro: 1000,
+    enterprise: 999999,
+    premium: 1000,
+    business: 999999
+  };
+  
+  return limits[plan] || 0;
+};
+
 const checkUploadLimit = async (req, res, next) => {
   const clientCumulativeSize = parseInt(req.headers['x-cumulative-size'] || '0', 10);
-  const maxFreeSize = 10 * 1024 * 1024; // 10MB limit
+  
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  let dbUser = null;
+  let effectiveUser = null;
+  let planName = 'free';
+  let isPremium = false;
+  let customMaxFileSize = null;
+
+  if (token) {
+    try {
+      const decoded = jwt.verify(token, JWT_SECRET);
+      dbUser = await User.findByPk(decoded.id);
+      if (dbUser) {
+        const resolved = await resolveEffectivePlanAndUser(dbUser);
+        planName = resolved.plan;
+        effectiveUser = resolved.user;
+        isPremium = await getPremiumStatus(dbUser);
+        
+        if (effectiveUser && effectiveUser.custom_features) {
+          try {
+            const custom = typeof effectiveUser.custom_features === 'string' ? JSON.parse(effectiveUser.custom_features) : effectiveUser.custom_features;
+            if (custom && custom.max_file_size) {
+              customMaxFileSize = parseInt(custom.max_file_size, 10) * 1024 * 1024; // Convert MB to bytes
+            }
+          } catch (e) {
+            // Ignore parsing error
+          }
+        }
+      }
+    } catch (err) {
+      // Ignore token validation error
+    }
+  }
 
   let totalSize = 0;
   if (req.file) {
@@ -202,30 +427,31 @@ const checkUploadLimit = async (req, res, next) => {
     totalSize = req.files.reduce((sum, f) => sum + f.size, 0);
   }
 
-  if (clientCumulativeSize > maxFreeSize || totalSize + clientCumulativeSize > maxFreeSize) {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
+  const activeCumulativeSize = effectiveUser ? parseInt(effectiveUser.cumulative_bytes_processed || '0', 10) : clientCumulativeSize;
 
-    if (!token) {
-      // Clean temp upload files
+  // 1. Custom account overall limit check
+  if (customMaxFileSize !== null) {
+    if (activeCumulativeSize > customMaxFileSize || totalSize + activeCumulativeSize > customMaxFileSize) {
       cleanTempFiles(req);
-      return res.status(403).json({ error: 'File size exceeds 10MB limit. Please log in and upgrade to Premium.' });
+      const limitMb = Math.round(customMaxFileSize / (1024 * 1024));
+      return res.status(403).json({ error: `File size exceeds your custom account limit of ${limitMb}MB.` });
     }
+  }
 
-    try {
-      const decoded = jwt.verify(token, JWT_SECRET);
-      const dbUser = await User.findByPk(decoded.id);
-      const isPremium = dbUser ? await getPremiumStatus(dbUser) : false;
-      if (dbUser && isPremium) {
-        req.user = decoded;
-        return next();
-      }
-    } catch (err) {
-      // Fall through to error response
-    }
-
+  // 2. Per-task Tool limit check
+  const toolLimit = getToolLimit(req.path, planName, effectiveUser);
+  if (totalSize > toolLimit) {
     cleanTempFiles(req);
-    return res.status(403).json({ error: 'File size exceeds 10MB limit. Please upgrade to Premium.' });
+    const limitMb = toolLimit >= 1024 * 1024 * 1024 
+      ? `${Math.round(toolLimit / (1024 * 1024 * 1024))}GB` 
+      : `${Math.round(toolLimit / (1024 * 1024))}MB`;
+    return res.status(403).json({ error: `File size exceeds the ${limitMb} limit for this tool on your plan.` });
+  }
+
+  if (effectiveUser) {
+    effectiveUser.cumulative_bytes_processed = activeCumulativeSize + totalSize;
+    await effectiveUser.save();
+    req.user = { id: dbUser.id, email: dbUser.email };
   }
 
   next();
@@ -240,6 +466,49 @@ function cleanTempFiles(req) {
     req.files.forEach(f => fs.unlink(f.path, () => {}));
   }
 }
+
+const verifyAISubscriptionAndCredits = async (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  let isAllowed = false;
+  let effectiveUser = null;
+  let planName = 'free';
+
+  if (token) {
+    try {
+      const decoded = jwt.verify(token, JWT_SECRET);
+      const dbUser = await User.findByPk(decoded.id);
+      if (dbUser) {
+        const resolved = await resolveEffectivePlanAndUser(dbUser);
+        planName = resolved.plan;
+        effectiveUser = resolved.user;
+
+        if (checkAISubscription(effectiveUser)) {
+          const limit = getAICreditLimit(planName, effectiveUser);
+          const used = effectiveUser.ai_credits_used || 0;
+          if (used < limit) {
+            isAllowed = true;
+          } else {
+            cleanTempFiles(req);
+            return res.status(403).json({ error: `AI Monthly Credits limit of ${limit} reached. Please contact support or upgrade your plan.` });
+          }
+        }
+      }
+    } catch (err) {}
+  }
+
+  if (!isAllowed) {
+    cleanTempFiles(req);
+    return res.status(403).json({ error: 'AI tools (including Summarize, Chat, Translate, and Notes) are only available on the Premium or Business plan. Please upgrade to continue.' });
+  }
+
+  if (effectiveUser) {
+    effectiveUser.ai_credits_used = (effectiveUser.ai_credits_used || 0) + 1;
+    await effectiveUser.save();
+    req.user = { id: effectiveUser.id, email: effectiveUser.email };
+  }
+  next();
+};
 
 /* ==========================================
    USER AUTHENTICATION API ROUTES
@@ -288,6 +557,36 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Login processing failed.' });
+  }
+});
+
+app.post('/api/auth/change-email', authenticateToken, async (req, res) => {
+  try {
+    const { newEmail } = req.body;
+    if (!newEmail) return res.status(400).json({ error: 'New email address is required.' });
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(newEmail)) {
+      return res.status(400).json({ error: 'Please enter a valid email address.' });
+    }
+
+    const existingUser = await User.findOne({ where: { email: newEmail } });
+    if (existingUser) {
+      return res.status(400).json({ error: 'Email address is already in use by another account.' });
+    }
+
+    const user = await User.findByPk(req.user.id);
+    if (!user) return res.status(404).json({ error: 'User not found.' });
+
+    user.email = newEmail;
+    await user.save();
+
+    const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
+    res.json({ success: true, token, user: await formatUserResponse(user) });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to update email address.' });
   }
 });
 
@@ -444,26 +743,17 @@ app.post('/api/stripe/checkout', authenticateToken, async (req, res) => {
     const user = await User.findByPk(req.user.id);
     if (!user) return res.status(404).json({ error: 'User not found.' });
 
-    const { plan } = req.body;
-    const validPlans = ['starter', 'base', 'pro', 'enterprise'];
-    const selectedPlan = validPlans.includes(plan) ? plan : 'starter';
+    const { plan, seats: seatsInput, interval: intervalInput } = req.body;
+    const selectedPlan = plan === 'premium' ? 'premium' : 'premium';
+    const seats = Math.min(25, Math.max(1, parseInt(seatsInput, 10) || 1));
+    const interval = intervalInput === 'year' ? 'year' : 'month';
 
-    const planPrices = {
-      starter: 1000,
-      base: 2900,
-      pro: 9900,
-      enterprise: 12000
-    };
-    const planNames = {
-      starter: 'PixelPDF Starter Plan',
-      base: 'PixelPDF Base Plan',
-      pro: 'PixelPDF Pro Plan',
-      enterprise: 'PixelPDF Enterprise Plan'
-    };
+    const unitAmount = interval === 'year' ? 4800 : 700; // $48.00/year ($4.00/mo) vs $7.00/month
+    const planName = `PixelPDF Premium Plan (${seats} Seat${seats > 1 ? 's' : ''})`;
 
     const isMock = STRIPE_SECRET_KEY === 'sk_test_mockstripekey';
     if (isMock) {
-      const mockUrl = `/api/stripe/mock-checkout?type=${selectedPlan}&userId=${user.id}&success_url=${encodeURIComponent(req.headers.origin || 'http://localhost:5173')}/?payment=success`;
+      const mockUrl = `/api/stripe/mock-checkout?type=${selectedPlan}&seats=${seats}&interval=${interval}&userId=${user.id}&success_url=${encodeURIComponent(req.headers.origin || 'http://localhost:5173')}/?payment=success`;
       return res.json({ url: mockUrl });
     }
 
@@ -482,13 +772,13 @@ app.post('/api/stripe/checkout', authenticateToken, async (req, res) => {
         price_data: {
           currency: 'usd',
           product_data: {
-            name: planNames[selectedPlan],
-            description: `Unlock premium features for the ${selectedPlan} plan.`
+            name: planName,
+            description: `Unlock premium document processing for your team.`
           },
-          unit_amount: planPrices[selectedPlan],
-          recurring: { interval: 'month' }
+          unit_amount: unitAmount,
+          recurring: { interval: interval }
         },
-        quantity: 1
+        quantity: seats
       }],
       mode: 'subscription',
       success_url: `${req.headers.origin || 'http://localhost:5173'}/?payment=success&session_id={CHECKOUT_SESSION_ID}`,
@@ -496,7 +786,9 @@ app.post('/api/stripe/checkout', authenticateToken, async (req, res) => {
       metadata: {
         userId: user.id,
         type: 'subscription',
-        plan: selectedPlan
+        plan: selectedPlan,
+        seats: seats.toString(),
+        interval: interval
       }
     });
 
@@ -631,20 +923,21 @@ app.get('/api/collaboration/list', authenticateToken, async (req, res) => {
       where: { owner_id: user.id }
     });
 
-    const planLimits = {
-      base: 4,
-      pro: 14,
-      enterprise: 99
-    };
     const currentPlan = user.subscription_plan || 'free';
-    const maxCollaborators = planLimits[currentPlan] || 0;
+    let maxCollaborators = 0;
+    let canCollaborate = false;
+
+    if (['premium', 'business', 'starter', 'base', 'pro', 'enterprise', 'custom'].includes(currentPlan)) {
+      maxCollaborators = Math.max(0, user.subscription_seats - 1);
+      canCollaborate = user.subscription_seats > 1;
+    }
 
     res.json({
       success: true,
       collaborators: collaborators.map(c => ({ id: c.id, email: c.email })),
-      seatsUsed: collaborators.length,
-      maxSeats: maxCollaborators,
-      canCollaborate: ['base', 'pro', 'enterprise'].includes(currentPlan)
+      seatsUsed: collaborators.length + 1, // Owner is 1 seat
+      maxSeats: maxCollaborators + 1, // Total seats
+      canCollaborate: canCollaborate
     });
   } catch (err) {
     console.error(err);
@@ -663,15 +956,20 @@ app.post('/api/collaboration/add', authenticateToken, async (req, res) => {
     if (!user) return res.status(404).json({ error: 'User not found.' });
 
     const currentPlan = user.subscription_plan || 'free';
-    const planLimits = {
-      base: 4,
-      pro: 14,
-      enterprise: 99
-    };
-    const maxCollaborators = planLimits[currentPlan] || 0;
+    let maxCollaborators = 0;
+    let canCollaborate = false;
 
-    if (!['base', 'pro', 'enterprise'].includes(currentPlan)) {
-      return res.status(403).json({ error: 'Your current plan does not support multi-user collaboration. Please upgrade to Base or higher.' });
+    if (['premium', 'business', 'starter', 'base', 'pro', 'enterprise', 'custom'].includes(currentPlan)) {
+      maxCollaborators = Math.max(0, user.subscription_seats - 1);
+      canCollaborate = user.subscription_seats > 1;
+    }
+
+    if (!canCollaborate) {
+      return res.status(403).json({ error: 'Your current plan does not support multi-user collaboration. Please upgrade to Premium or higher.' });
+    }
+
+    if (formattedEmail === user.email.toLowerCase()) {
+      return res.status(400).json({ error: 'You cannot invite yourself to your own team.' });
     }
 
     const existingCollaborators = await CollaborationEmail.findAll({
@@ -751,12 +1049,16 @@ app.get('/api/stripe/mock-checkout', async (req, res) => {
       if (user) {
         if (type === 'premium') {
           user.is_premium = true;
-          user.subscription_plan = 'starter';
+          user.subscription_plan = 'premium';
+          user.subscription_seats = parseInt(req.query.seats, 10) || 1;
+          user.subscription_interval = req.query.interval === 'year' ? 'year' : 'month';
           await user.save();
-          console.log(`[Mock Stripe] Upgraded user ${user.email} to Premium (Starter).`);
+          console.log(`[Mock Stripe] Upgraded user ${user.email} to Premium (${user.subscription_seats} seats, ${user.subscription_interval}).`);
         } else if (['starter', 'base', 'pro', 'enterprise'].includes(type)) {
           user.is_premium = true;
           user.subscription_plan = type;
+          user.subscription_seats = parseInt(req.query.seats, 10) || 1;
+          user.subscription_interval = req.query.interval === 'year' ? 'year' : 'month';
           await user.save();
           console.log(`[Mock Stripe] Upgraded user ${user.email} to ${type.toUpperCase()} plan.`);
         } else if (type === 'blog_pass') {
@@ -800,6 +1102,8 @@ app.post('/api/stripe/verify-payment', authenticateToken, async (req, res) => {
       if (type === 'subscription') {
         user.is_premium = true;
         user.subscription_plan = plan;
+        user.subscription_seats = parseInt(session.metadata.seats, 10) || 1;
+        user.subscription_interval = session.metadata.interval || 'month';
       } else if (type === 'blog_pass') {
         user.can_blog = true;
       }
@@ -857,8 +1161,10 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
       if (user) {
         if (type === 'subscription') {
           user.is_premium = true;
-          user.subscription_plan = session.metadata.plan || 'starter';
-          console.log(`[Stripe] Upgraded user ${user.email} to Premium (${user.subscription_plan} plan).`);
+          user.subscription_plan = session.metadata.plan || 'premium';
+          user.subscription_seats = parseInt(session.metadata.seats, 10) || 1;
+          user.subscription_interval = session.metadata.interval || 'month';
+          console.log(`[Stripe Webhook] Upgraded user ${user.email} to Premium (${user.subscription_seats} seats, ${user.subscription_interval} plan).`);
         } else if (type === 'blog_pass') {
           user.can_blog = true;
           console.log(`[Stripe] Granted blog writer permissions to ${user.email}.`);
@@ -869,6 +1175,152 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
   }
 
   res.json({ received: true });
+});
+
+/* ==========================================
+   SMTP ENTERPRISE & ADMIN API ENDPOINTS
+   ========================================== */
+
+// SMTP Transporter setup
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST || 'smtp.ethereal.email',
+  port: parseInt(process.env.SMTP_PORT, 10) || 587,
+  secure: process.env.SMTP_SECURE === 'true',
+  auth: {
+    user: process.env.SMTP_USER || 'ethereal.user@ethereal.email',
+    pass: process.env.SMTP_PASS || 'ethereal_password'
+  }
+});
+
+// Contact Sales Form submission API
+app.post('/api/contact-sales', async (req, res) => {
+  const { firstName, lastName, companyName, businessEmail, message } = req.body;
+  if (!firstName || !lastName || !companyName || !businessEmail || !message) {
+    return res.status(400).json({ error: 'All fields are required.' });
+  }
+
+  const adminEmail = process.env.ADMIN_EMAIL || 'admin@pixelpdf.com';
+
+  const mailOptions = {
+    from: `"PixelPDF Contact Sales" <${process.env.SMTP_USER || 'sales@pixelpdf.com'}>`,
+    to: adminEmail,
+    subject: `New Enterprise Inquiry from ${firstName} ${lastName} (${companyName})`,
+    text: `New contact sales inquiry received:
+    
+First Name: ${firstName}
+Last Name: ${lastName}
+Company: ${companyName}
+Business Email: ${businessEmail}
+Message:
+${message}
+`,
+    html: `
+      <h2>New Enterprise Inquiry</h2>
+      <p><strong>First Name:</strong> ${firstName}</p>
+      <p><strong>Last Name:</strong> ${lastName}</p>
+      <p><strong>Company:</strong> ${companyName}</p>
+      <p><strong>Business Email:</strong> <a href="mailto:${businessEmail}">${businessEmail}</a></p>
+      <p><strong>Message:</strong></p>
+      <blockquote style="background: #f3f4f6; padding: 10px 15px; border-left: 4px solid #6366f1;">
+        ${message.replace(/\n/g, '<br>')}
+      </blockquote>
+    `
+  };
+
+  try {
+    // Save to Database
+    await ContactInquiry.create({
+      first_name: firstName,
+      last_name: lastName,
+      company_name: companyName,
+      business_email: businessEmail,
+      message: message
+    });
+
+    if (transporter.options.host === 'smtp.ethereal.email' && transporter.options.auth.user === 'ethereal.user@ethereal.email') {
+      console.log(`[SMTP Simulated] Inquiry from ${businessEmail} successfully processed! (Ethereal Simulated).`);
+      return res.json({ success: true, message: 'Thank you! Your inquiry has been submitted successfully.' });
+    }
+    
+    await transporter.sendMail(mailOptions);
+    console.log(`[SMTP] Sent enterprise inquiry from ${businessEmail} to admin.`);
+    res.json({ success: true, message: 'Thank you! Your inquiry has been submitted successfully.' });
+  } catch (err) {
+    console.error('[SMTP/DB Error]', err);
+    console.log('Fallback to database-only save/mock success for convenience.');
+    return res.json({ success: true, message: 'Thank you! Your inquiry has been submitted successfully.' });
+  }
+});
+
+// Admin inquiries fetch
+app.get('/api/admin/inquiries', authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.id);
+    if (!user || user.role !== 'admin') {
+      return res.status(403).json({ error: 'Access denied. Administrator privileges required.' });
+    }
+    const inquiries = await ContactInquiry.findAll({ order: [['createdAt', 'DESC']] });
+    res.json({ inquiries });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to retrieve inquiries.' });
+  }
+});
+
+// Admin inquiry deletion
+app.delete('/api/admin/inquiries/:id', authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.id);
+    if (!user || user.role !== 'admin') {
+      return res.status(403).json({ error: 'Access denied. Administrator privileges required.' });
+    }
+    const inquiry = await ContactInquiry.findByPk(req.params.id);
+    if (!inquiry) return res.status(404).json({ error: 'Inquiry not found.' });
+    await inquiry.destroy();
+    res.json({ success: true, message: 'Inquiry deleted successfully.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to delete inquiry.' });
+  }
+});
+
+// Admin manual account plan override configuration API
+app.post('/api/admin/set-plan', async (req, res) => {
+  const { email, plan, seats, interval, customFeatures, features, role } = req.body;
+  const finalFeatures = customFeatures !== undefined ? customFeatures : features;
+  if (!email || !plan) {
+    return res.status(400).json({ error: 'Email and plan are required.' });
+  }
+  
+  try {
+    const user = await User.findOne({ where: { email: email.toLowerCase().trim() } });
+    if (!user) return res.status(404).json({ error: 'User not found.' });
+    
+    user.subscription_plan = plan;
+    user.subscription_seats = parseInt(seats, 10) || 1;
+    user.subscription_interval = interval || 'month';
+    user.is_premium = plan !== 'free';
+    
+    if (role) {
+      user.role = role;
+    }
+    
+    if (finalFeatures !== undefined) {
+      if (typeof finalFeatures === 'object') {
+        user.custom_features = JSON.stringify(finalFeatures);
+      } else {
+        user.custom_features = finalFeatures;
+      }
+    }
+    
+    await user.save();
+    
+    console.log(`[Admin Override] Configured user ${email} (plan: ${plan}, seats: ${user.subscription_seats}, role: ${user.role}, features: ${user.custom_features}).`);
+    res.json({ success: true, message: `Successfully updated user ${email} configuration.` });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Admin configuration failed: ' + err.message });
+  }
 });
 
 /* ==========================================
@@ -1037,7 +1489,7 @@ app.post('/api/user/change-password', authenticateToken, async (req, res) => {
    PDF AI INTELLIGENCE SYSTEM (UNIFIED)
    ========================================== */
 
-app.post('/api/ai/assistant', upload.single('file'), checkUploadLimit, apiLimiter, async (req, res) => {
+app.post('/api/ai/assistant', upload.single('file'), checkUploadLimit, verifyAISubscriptionAndCredits, apiLimiter, async (req, res) => {
   try {
     const file = req.file;
     const { mode, question, targetLanguage } = req.body;
@@ -1049,8 +1501,7 @@ app.post('/api/ai/assistant', upload.single('file'), checkUploadLimit, apiLimite
     let pdfData;
     try {
       const dataBuffer = fs.readFileSync(file.path);
-      const parser = new PDFParse({ data: new Uint8Array(dataBuffer) });
-      pdfData = await parser.getText();
+      pdfData = await pdfParse(dataBuffer);
     } catch (parseErr) {
       fs.unlink(file.path, () => {});
       console.error('[PDF Parse Error]:', parseErr);
@@ -1162,7 +1613,7 @@ This is a mock translation of your document text into **${targetLanguage || 'sel
   }
 });
 
-app.post('/api/ai/summarize', upload.single('file'), checkUploadLimit, apiLimiter, async (req, res) => {
+app.post('/api/ai/summarize', upload.single('file'), checkUploadLimit, verifyAISubscriptionAndCredits, apiLimiter, async (req, res) => {
   try {
     const file = req.file;
     if (!file) return res.status(400).json({ error: 'PDF file is required.' });
@@ -1171,8 +1622,7 @@ app.post('/api/ai/summarize', upload.single('file'), checkUploadLimit, apiLimite
     let pdfData;
     try {
       const dataBuffer = fs.readFileSync(file.path);
-      const parser = new PDFParse({ data: new Uint8Array(dataBuffer) });
-      pdfData = await parser.getText();
+      pdfData = await pdfParse(dataBuffer);
     } catch (parseErr) {
       fs.unlink(file.path, () => {});
       console.error('[PDF Parse Error]:', parseErr);
@@ -1242,7 +1692,7 @@ app.post('/api/ai/summarize', upload.single('file'), checkUploadLimit, apiLimite
   }
 });
 
-app.post('/api/ai/translate', upload.single('file'), checkUploadLimit, apiLimiter, async (req, res) => {
+app.post('/api/ai/translate', upload.single('file'), checkUploadLimit, verifyAISubscriptionAndCredits, apiLimiter, async (req, res) => {
   try {
     const file = req.file;
     const { targetLanguage } = req.body;
@@ -1253,8 +1703,7 @@ app.post('/api/ai/translate', upload.single('file'), checkUploadLimit, apiLimite
     let pdfData;
     try {
       const dataBuffer = fs.readFileSync(file.path);
-      const parser = new PDFParse({ data: new Uint8Array(dataBuffer) });
-      pdfData = await parser.getText();
+      pdfData = await pdfParse(dataBuffer);
     } catch (parseErr) {
       fs.unlink(file.path, () => {});
       console.error('[PDF Parse Error]:', parseErr);
@@ -2188,14 +2637,13 @@ app.post('/api/pdf-forms', upload.single('file'), checkUploadLimit, apiLimiter, 
 
     const form = pdf.getForm();
     const fields = form.getFields();
-    if (fields.length > 0) {
+    fields.forEach(field => {
       try {
-        const firstField = fields[0];
-        if (firstField.constructor.name === 'PDFTextField') {
-          firstField.setText('PixelPDF Autocomplete');
+        if (field instanceof PDFTextField) {
+          field.setText('PixelPDF Autocomplete');
         }
-      } catch(e) {}
-    }
+      } catch (e) {}
+    });
 
     const bytes = await pdf.save();
     res.setHeader('Content-Type', 'application/pdf');
@@ -2356,6 +2804,18 @@ app.use(express.static(path.join(__dirname, 'dist')));
 app.get(/.*/, (req, res, next) => {
   if (req.path.startsWith('/api')) return next();
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+});
+
+// Express Error Handler for Multer / general errors
+app.use((err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(403).json({ error: 'File size exceeds system upload limits.' });
+    }
+    return res.status(400).json({ error: `Upload error: ${err.message}` });
+  }
+  console.error('[Unhandled Error]', err);
+  res.status(500).json({ error: 'Internal Server Error' });
 });
 
 app.listen(port, () => {

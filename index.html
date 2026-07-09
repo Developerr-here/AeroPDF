@@ -4,8 +4,8 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="PixelPDF - The ultimate client-server PDF toolkit. Merge, split, compress, convert, edit, and secure PDFs with 24 complete tools. 100% private, clean, and commercial ready." />
-    <title>PixelPDF - Complete Client-Server PDF Tools Platform</title>
+    <meta name="description" content="PixelPDF | Online PDF tools for PDF lovers. Merge, split, compress, convert, edit, and secure PDFs with 24 complete tools. 100% private, clean, and commercial ready." />
+    <title>PixelPDF | Online PDF Tools</title>
     <!-- Quill.js Rich Text Editor Integration -->
     <link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
@@ -58,7 +58,7 @@
                 </div>
               </div>
             </div>
-            <a class="nav-menu-link" id="nav-link-pricing">Pricing</a>
+            <a href="#" id="nav-link-pricing" class="nav-menu-link">Pricing</a>
             <a class="nav-menu-link" id="nav-link-blog">Blog</a>
           </div>
         </div>
@@ -1183,57 +1183,107 @@
             <p>Start free instantly, or unlock advanced AI tools and bulk processing</p>
           </div>
           
+          <!-- Billing Cycle Toggle -->
+          <div class="pricing-switch-container">
+            <span class="toggle-label active" id="landing-toggle-label-monthly" style="font-size: 0.95rem; font-weight: 600; cursor: pointer; color: var(--text-primary);">Monthly Billing</span>
+            <label class="pricing-switch">
+              <input type="checkbox" id="landing-pricing-toggle" />
+              <span class="pricing-slider-toggle"></span>
+            </label>
+            <div style="display: flex; align-items: center; gap: 0.4rem;">
+              <span class="toggle-label" id="landing-toggle-label-yearly" style="font-size: 0.95rem; font-weight: 600; cursor: pointer; color: var(--text-muted);">Yearly Billing</span>
+              <span style="font-size: 0.7rem; font-weight: 700; background: var(--accent-success); color: white; padding: 0.15rem 0.45rem; border-radius: 100px; text-transform: uppercase; letter-spacing: 0.02em;">-42%</span>
+            </div>
+          </div>
+
           <div class="plans-landing-grid">
             <!-- Free Plan Card -->
             <div class="plan-landing-card">
-              <h3 class="landing-plan-name">Free Plan</h3>
+              <div style="display: flex; align-items: center; gap: 0.5rem; justify-content: center; margin-bottom: 0.5rem;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: var(--accent-primary);"><path d="M20 12v10H4V12m16-4H4m16 0a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2m16 0h-4M4 8h4m4-6v6"/></svg>
+                <h3 class="landing-plan-name" style="margin: 0;">Basic</h3>
+              </div>
+              <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.25rem; justify-content: center;">
+                <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>
+                1 User
+              </div>
               <div class="landing-plan-price">
                 <span class="price-amount">$0</span>
                 <span class="price-period">/ permanently free</span>
               </div>
-              <p class="landing-plan-desc">For quick, everyday tasks.</p>
-              <ul class="landing-plan-features">
-                <li>Access to all 24+ basic tools</li>
-                <li>Standard file sizes (up to 20MB)</li>
-                <li>3 AI credits per day</li>
-                <li>Browser-local processing</li>
+              <p class="landing-plan-desc">For quick, everyday PDF conversions and edits.</p>
+              
+              <ul class="landing-plan-features" style="text-align: left; margin: 1.5rem 0;">
+                <li class="feature-included">Access to essential PDF tools</li>
+                <li class="feature-included">Limited document processing</li>
+                <li class="feature-included">Browser-local storage & options</li>
               </ul>
-              <button class="btn-landing-plan" id="btn-landing-free">Start Free Now</button>
+              
+              <button class="btn-landing-plan" id="btn-landing-free" style="margin-top: auto;">Start Free Now</button>
             </div>
             
             <!-- Premium Plan Card -->
-            <div class="plan-landing-card highlighted-landing-card">
-              <div class="landing-popular-badge">Popular</div>
-              <h3 class="landing-plan-name">Premium</h3>
-              <div class="landing-plan-price">
-                <span class="price-amount">$10</span>
-                <span class="price-period">/ month</span>
+            <div class="plan-landing-card highlighted-landing-card" style="background: rgba(255, 255, 255, 0.015); border: 2px solid var(--accent-primary);">
+              <div class="landing-popular-badge" style="background: var(--accent-primary); color: white;">Popular</div>
+              <div style="display: flex; align-items: center; gap: 0.5rem; justify-content: center; margin-bottom: 0.5rem;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: #f59e0b;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                <h3 class="landing-plan-name" style="margin: 0;">Premium</h3>
               </div>
-              <p class="landing-plan-desc">For power users and professionals.</p>
-              <ul class="landing-plan-features">
-                <li>Unlimited file sizes & uploads</li>
-                <li>Unlimited PDF tools & tools access</li>
-                <li>AI upscaling & AI assistant access</li>
-                <li>Faster cloud processing speeds</li>
+              <div style="font-size: 0.8rem; color: #f59e0b; font-weight: 700; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.25rem; justify-content: center;">
+                <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.109A11.386 11.386 0 0110.089 18H10c-1.613 0-3.136-.314-4.533-.88M15 18.966a11.325 11.325 0 01-9.533-.88m12.162-4.004A4.125 4.125 0 0013.5 11a4.122 4.122 0 00-2.338-.757M10.089 18H10a5 5 0 01-5-5v-.09A3.37 3.37 0 009 9.07l.089-.007A3.37 3.37 0 0013.5 12v.11a5 5 0 01-3.411 4.857z"/></svg>
+                1 - 25 Users
+              </div>
+              <div class="landing-plan-price">
+                <span class="price-amount" id="landing-premium-price">$7</span>
+                <span class="price-period" id="landing-premium-period">/ user / month</span>
+              </div>
+              
+              <!-- Seats Counter Numeric Input -->
+              <div style="margin: 0.75rem 0 0.5rem 0;">
+                <div style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.25rem;">How many users do you need?</div>
+                <div class="seats-selector">
+                  <button type="button" class="seats-btn" id="btn-landing-seats-minus">-</button>
+                  <input type="number" class="seats-input" id="input-landing-seats" min="1" max="25" value="1" readonly />
+                  <button type="button" class="seats-btn" id="btn-landing-seats-plus">+</button>
+                </div>
+              </div>
+
+              <p class="landing-plan-desc">For power users, designers, and scaling teams.</p>
+              
+              <ul class="landing-plan-features" style="text-align: left; margin: 1rem 0;">
+                <li class="feature-included">Full access to all PDF tools</li>
+                <li class="feature-included">Unlimited document processing</li>
+                <li class="feature-included">Access across Web, Mobile, and Desktop</li>
+                <li class="feature-included">Multi-user collaboration seats</li>
               </ul>
-              <button class="btn-landing-plan btn-landing-primary" id="btn-landing-premium">Go Premium</button>
+              
+              <button class="btn-landing-plan btn-landing-primary btn-plan-choose" data-plan="premium" id="btn-landing-premium" style="margin-top: auto; background: linear-gradient(135deg, #a855f7, #6366f1); border: none;">Go Premium</button>
             </div>
             
-            <!-- Team Plan Card -->
+            <!-- Business Plan Card -->
             <div class="plan-landing-card">
-              <h3 class="landing-plan-name">Team / Enterprise</h3>
-              <div class="landing-plan-price">
-                <span class="price-amount">$29</span>
-                <span class="price-period">/ month</span>
+              <div style="display: flex; align-items: center; gap: 0.5rem; justify-content: center; margin-bottom: 0.5rem;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: var(--text-primary);"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                <h3 class="landing-plan-name" style="margin: 0;">Business</h3>
               </div>
-              <p class="landing-plan-desc">For small businesses and agencies.</p>
-              <ul class="landing-plan-features">
-                <li>Up to 5 user seats included</li>
-                <li>Multi-user collaboration tools</li>
-                <li>Shared team settings & admin panel</li>
-                <li>Priority email customer support</li>
+              <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.25rem; justify-content: center;">
+                <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.998 5.998 0 00-12 0m12 0c0-.181-.013-.36-.039-.536a5.006 5.006 0 00-3.5-3.684M18 8.75a3 3 0 11-6 0 3 3 0 016 0zM4.5 12.003a11.954 11.954 0 016-1.003 11.954 11.954 0 016 1.003M3 18.75a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                25+ Users
+              </div>
+              <div class="landing-plan-price">
+                <span class="price-amount" style="font-size: 1.85rem; letter-spacing: -0.03em;">Let's talk</span>
+                <span class="price-period" style="display: block; margin-top: 0.25rem;">Customized solutions</span>
+              </div>
+              <p class="landing-plan-desc">For large teams and enterprise organizations.</p>
+              
+              <ul class="landing-plan-features" style="text-align: left; margin: 1.5rem 0;">
+                <li class="feature-included">All Premium features included</li>
+                <li class="feature-included">Custom contracts designed for scale</li>
+                <li class="feature-included">Dedicated Account Manager</li>
+                <li class="feature-included">Single Sign On (SSO)</li>
               </ul>
-              <button class="btn-landing-plan" id="btn-landing-team">Choose Team</button>
+              
+              <button class="btn-landing-plan" id="btn-landing-business" style="margin-top: auto;">Contact Sales</button>
             </div>
           </div>
         </section>
@@ -1474,6 +1524,58 @@
           </div>
         </div>
 
+        <!-- Contact Us Section -->
+        <section id="landing-contact-section" class="contact-section-landing" style="padding: 4rem 2rem; background: var(--bg-secondary); border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); margin-top: 3rem;">
+          <div style="max-width: 800px; margin: 0 auto; display: grid; grid-template-columns: 1fr; gap: 2.5rem; text-align: left;">
+            <div style="text-align: center; margin-bottom: 1rem;">
+              <span class="section-badge" style="background: rgba(225, 29, 72, 0.08); color: var(--accent-danger);">Get in Touch</span>
+              <h2 style="font-size: 2.25rem; font-weight: 800; margin: 0.5rem 0; letter-spacing: -0.02em;">Contact Our Sales Team</h2>
+              <p style="color: var(--text-secondary); max-width: 600px; margin: 0 auto; font-size: 1rem; line-height: 1.6;">
+                Have questions about our Enterprise plans, custom scale requirements, SSO integration, or SLAs? Fill out the form below and our team will get back to you within 24 hours.
+              </p>
+            </div>
+
+            <div class="crm-card" style="padding: 2.5rem; border: 1px solid var(--border-color); background: rgba(255, 255, 255, 0.01);">
+              <form id="landing-contact-sales-form" style="display: flex; flex-direction: column; gap: 1.25rem;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
+                  <div class="input-group" style="margin: 0;">
+                    <label class="input-label" for="landing-sales-first-name" style="font-weight: 700;">First Name*</label>
+                    <input type="text" id="landing-sales-first-name" class="text-input" placeholder="First Name" required style="padding: 0.75rem 1rem;" />
+                  </div>
+                  <div class="input-group" style="margin: 0;">
+                    <label class="input-label" for="landing-sales-last-name" style="font-weight: 700;">Last Name*</label>
+                    <input type="text" id="landing-sales-last-name" class="text-input" placeholder="Last Name" required style="padding: 0.75rem 1rem;" />
+                  </div>
+                </div>
+
+                <div class="input-group" style="margin: 0;">
+                  <label class="input-label" for="landing-sales-company" style="font-weight: 700;">Company Name*</label>
+                  <input type="text" id="landing-sales-company" class="text-input" placeholder="Company Name" required style="padding: 0.75rem 1rem;" />
+                </div>
+
+                <div class="input-group" style="margin: 0;">
+                  <label class="input-label" for="landing-sales-email" style="font-weight: 700;">Business Email*</label>
+                  <input type="email" id="landing-sales-email" class="text-input" placeholder="Your Business Email" required style="padding: 0.75rem 1rem;" />
+                </div>
+
+                <div class="input-group" style="margin: 0;">
+                  <label class="input-label" for="landing-sales-message" style="font-weight: 700;">Message*</label>
+                  <textarea id="landing-sales-message" class="text-input" rows="4" placeholder="What are you interested in?" required style="padding: 0.75rem 1rem; font-family: inherit; resize: vertical;"></textarea>
+                </div>
+
+                <div style="display: flex; align-items: flex-start; gap: 0.5rem; margin-top: 0.25rem;">
+                  <input type="checkbox" id="landing-sales-consent" required style="margin-top: 0.25rem; cursor: pointer;" />
+                  <label for="landing-sales-consent" style="font-size: 0.825rem; color: var(--text-secondary); line-height: 1.4; cursor: pointer;">I agree to receive marketing communications from PixelPDF and acknowledge that I can opt out upon request</label>
+                </div>
+
+                <p style="font-size: 0.775rem; color: var(--text-muted); margin: 0; line-height: 1.4;">By clicking Submit, you agree to PixelPDF's <a href="#" style="color: var(--accent-secondary); text-decoration: none;">Privacy Policy</a> and <a href="#" style="color: var(--accent-secondary); text-decoration: none;">Terms of Service</a></p>
+
+                <button type="submit" class="btn-action" style="align-self: flex-start; background: #e11d48; color: white; border: none; padding: 0.85rem 2.5rem; font-weight: 700; border-radius: 0.5rem; margin-top: 0.5rem; cursor: pointer; transition: background 0.2s;">Submit Inquiry</button>
+              </form>
+            </div>
+          </div>
+        </section>
+
       </section>
 
       <!-- ACTIVE WORKSPACE PAGE -->
@@ -1485,55 +1587,7 @@
           </div>
         </div>
 
-        <!-- Education Widget -->
-        <div id="tool-education-widget" class="tool-edu-widget" style="margin-bottom: 2rem;">
-          <div class="edu-widget-container">
-            <div class="edu-left-details">
-              <div class="edu-breadcrumbs">
-                <span id="edu-back-btn" class="edu-back-link"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.25rem; vertical-align: middle;"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg> Back to Tools</span>
-                <span class="edu-separator">•</span>
-                <span class="edu-meta-tag">Workspace</span>
-                <span class="edu-separator">•</span>
-                <span class="edu-meta-tag" id="edu-tool-category">Popular</span>
-              </div>
-              <div style="display: flex; align-items: center; gap: 1rem; margin-top: 0.75rem;">
-                <div class="edu-tool-icon-wrapper" id="edu-tool-icon">
-                  <!-- Injected via JS -->
-                </div>
-                <div>
-                  <h2 id="edu-tool-title" class="edu-title">Tool Name</h2>
-                  <p id="edu-tool-desc" class="edu-description">Tool description...</p>
-                </div>
-              </div>
-              <div class="edu-badges-list" id="edu-badges-container">
-                <!-- Badges injected via JS -->
-              </div>
-              
-              <!-- Mini info table -->
-              <div class="edu-info-grid">
-                <div class="edu-info-item">
-                  <span class="edu-info-label">INPUT</span>
-                  <span class="edu-info-value" id="edu-info-input">PDF files</span>
-                </div>
-                <div class="edu-info-item">
-                  <span class="edu-info-label">ENGINE</span>
-                  <span class="edu-info-value" id="edu-info-engine">Server-optimized</span>
-                </div>
-                <div class="edu-info-item">
-                  <span class="edu-info-label">OUTPUT</span>
-                  <span class="edu-info-value" id="edu-info-output">Export-ready PDF</span>
-                </div>
-              </div>
-            </div>
-            
-            <div class="edu-right-flow">
-              <h4>RECOMMENDED FLOW</h4>
-              <div class="edu-flow-steps" id="edu-flow-container">
-                <!-- Injected via JS -->
-              </div>
-            </div>
-          </div>
-        </div>
+
 
         <!-- Success Panel -->
         <div id="success-panel" class="success-card" style="display: none; text-align: center; padding: 3rem 2rem; border-radius: 1rem; background: var(--bg-card); border: 1.5px solid var(--border-color); box-shadow: var(--shadow-lg); animation: fadeIn 0.4s ease-out; margin-bottom: 2rem;">
@@ -1883,6 +1937,56 @@
         
         <!-- Dynamic Content Area (Visible only on Upload Page and Success Page) -->
         <div id="tool-details-container" class="tool-details-container">
+          <!-- Education Widget -->
+          <div id="tool-education-widget" class="tool-edu-widget" style="margin-bottom: 2rem;">
+            <div class="edu-widget-container">
+              <div class="edu-left-details">
+                <div class="edu-breadcrumbs">
+                  <span id="edu-back-btn" class="edu-back-link"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.25rem; vertical-align: middle;"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg> Back to Tools</span>
+                  <span class="edu-separator">•</span>
+                  <span class="edu-meta-tag">Workspace</span>
+                  <span class="edu-separator">•</span>
+                  <span class="edu-meta-tag" id="edu-tool-category">Popular</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 1rem; margin-top: 0.75rem;">
+                  <div class="edu-tool-icon-wrapper" id="edu-tool-icon">
+                    <!-- Injected via JS -->
+                  </div>
+                  <div>
+                    <h2 id="edu-tool-title" class="edu-title">Tool Name</h2>
+                    <p id="edu-tool-desc" class="edu-description">Tool description...</p>
+                  </div>
+                </div>
+                <div class="edu-badges-list" id="edu-badges-container">
+                  <!-- Badges injected via JS -->
+                </div>
+                
+                <!-- Mini info table -->
+                <div class="edu-info-grid">
+                  <div class="edu-info-item">
+                    <span class="edu-info-label">INPUT</span>
+                    <span class="edu-info-value" id="edu-info-input">PDF files</span>
+                  </div>
+                  <div class="edu-info-item">
+                    <span class="edu-info-label">ENGINE</span>
+                    <span class="edu-info-value" id="edu-info-engine">Server-optimized</span>
+                  </div>
+                  <div class="edu-info-item">
+                    <span class="edu-info-label">OUTPUT</span>
+                    <span class="edu-info-value" id="edu-info-output">Export-ready PDF</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="edu-right-flow">
+                <h4>RECOMMENDED FLOW</h4>
+                <div class="edu-flow-steps" id="edu-flow-container">
+                  <!-- Injected via JS -->
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Related Tools Section -->
           <section class="related-tools-section">
             <h3><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem; vertical-align: middle;"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg> Related Tools</h3>
@@ -2038,6 +2142,10 @@
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
                 <span>Invoices</span>
               </a>
+              <a href="#" class="account-sidebar-link" id="crm-sidebar-admin" data-tab="admin" style="display: none;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                <span>Admin Control</span>
+              </a>
             </nav>
           </aside>
 
@@ -2057,7 +2165,7 @@
 
               <div class="crm-grid-2col">
                 <!-- Profile Information Card -->
-                <div class="crm-card">
+                <div class="crm-card crm-col-span-2">
                   <div class="crm-card-title">Profile Info</div>
                   
                   <div style="display: flex; flex-direction: column; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem; text-align: center;">
@@ -2067,26 +2175,26 @@
                     <label class="btn-nav-back" style="font-size: 0.8rem; padding: 0.4rem 0.9rem; border-radius: 2rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.25rem; margin: 0;">
                       <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"/></svg>
                       Change Photo
-                      <input type="file" id="input-profile-pic" accept="image/*" style="display: none;" />
+                      <input type="file" id="dashboard-input-profile-pic" accept="image/*" style="display: none;" />
                     </label>
                   </div>
 
-                  <form id="settings-form" style="display: flex; flex-direction: column; gap: 1.25rem;">
+                  <form id="dashboard-settings-form" style="display: flex; flex-direction: column; gap: 1.25rem;">
                     <div style="display: flex; gap: 1rem; width: 100%;">
                       <div class="input-group" style="flex: 1; margin: 0;">
-                        <label class="input-label" for="settings-first-name">First Name</label>
-                        <input type="text" id="settings-first-name" class="text-input" placeholder="First Name" required />
+                        <label class="input-label" for="dashboard-settings-first-name">First Name</label>
+                        <input type="text" id="dashboard-settings-first-name" class="text-input" placeholder="First Name" required />
                       </div>
                       <div class="input-group" style="flex: 1; margin: 0;">
-                        <label class="input-label" for="settings-last-name">Last Name</label>
-                        <input type="text" id="settings-last-name" class="text-input" placeholder="Last Name" required />
+                        <label class="input-label" for="dashboard-settings-last-name">Last Name</label>
+                        <input type="text" id="dashboard-settings-last-name" class="text-input" placeholder="Last Name" required />
                       </div>
                     </div>
                     
                     <div style="display: flex; gap: 1rem; width: 100%;">
                       <div class="input-group" style="flex: 1; margin: 0;">
-                        <label class="input-label" for="settings-country">Country</label>
-                        <select id="settings-country" class="text-input" style="background: var(--bg-secondary); color: var(--text-primary); cursor: pointer; width: 100%;">
+                        <label class="input-label" for="dashboard-settings-country">Country</label>
+                        <select id="dashboard-settings-country" class="text-input" style="background: var(--bg-secondary); color: var(--text-primary); cursor: pointer; width: 100%;">
                           <option value="Pakistan">Pakistan 🇵🇰</option>
                           <option value="United States">United States 🇺🇸</option>
                           <option value="United Kingdom">United Kingdom 🇬🇧</option>
@@ -2097,8 +2205,8 @@
                         </select>
                       </div>
                       <div class="input-group" style="flex: 1; margin: 0;">
-                        <label class="input-label" for="settings-timezone">Timezone</label>
-                        <input type="text" id="settings-timezone" class="text-input" value="Asia/Karachi" placeholder="e.g. UTC, EST, Asia/Karachi" />
+                        <label class="input-label" for="dashboard-settings-timezone">Timezone</label>
+                        <input type="text" id="dashboard-settings-timezone" class="text-input" value="Asia/Karachi" placeholder="e.g. UTC, EST, Asia/Karachi" />
                       </div>
                     </div>
 
@@ -2106,48 +2214,14 @@
                   </form>
                 </div>
 
-                <!-- Right Side: Social Links -->
-                <div class="crm-card" style="display: flex; flex-direction: column; justify-content: space-between;">
-                  <div>
-                    <div class="crm-card-title">Social Links</div>
-                    <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 1.25rem;">
-                      Connect your social accounts to log in securely through third party providers.
-                    </p>
-
-                    <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 0.5rem; margin-bottom: 1.5rem;">
-                      <div style="width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; background: white; border-radius: 50%; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-                        <svg width="14" height="14" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.56-2.77c-.98.66-2.23 1.06-3.72 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
-                      </div>
-                      <div style="display: flex; flex-direction: column; min-width: 0;">
-                        <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-primary);" id="crm-social-email">Not connected</span>
-                        <span style="font-size: 0.7rem; color: var(--text-muted);">Google authentication account</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h4 style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.75rem;">Link more accounts</h4>
-                    <div style="display: flex; gap: 0.75rem;">
-                      <button type="button" onclick="showToast('Linking Facebook is not configured.', 'info')" class="btn-nav-back" style="padding: 0.5rem 1rem; border-radius: 0.5rem; display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; font-weight: 600; margin: 0;">
-                        <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M9 8H7v3h2v9h3v-9h3.6L16 8h-4V6c0-.9.7-1 1-1h3V2h-4c-3.3 0-5 1.7-5 5v1z"/></svg>
-                        <span>Facebook</span>
-                      </button>
-                      <button type="button" onclick="showToast('Linking GitHub is not configured.', 'info')" class="btn-nav-back" style="padding: 0.5rem 1rem; border-radius: 0.5rem; display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; font-weight: 600; margin: 0;">
-                        <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.464-1.11-1.464-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.579.688.481C19.137 20.162 22 16.418 22 12c0-5.523-4.477-10-10-10z"/></svg>
-                        <span>GitHub</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
                 <!-- Bottom block: Email card -->
                 <div class="crm-card crm-col-span-2">
                   <div class="crm-card-title">Email Settings</div>
                   <div class="input-group" style="margin: 0; max-width: 500px;">
-                    <label class="input-label">Current email address (Read-only)</label>
+                    <label class="input-label" id="settings-email-label">Current email address (Read-only)</label>
                     <div style="display: flex; gap: 0.5rem; width: 100%;">
                       <input type="email" id="settings-email" class="text-input" style="flex: 1; background: rgba(0,0,0,0.03); cursor: not-allowed;" readonly disabled />
-                      <button type="button" onclick="showToast('To change your email, please contact customer support.', 'info')" class="btn-nav-back" style="white-space: nowrap; margin: 0;">Change Request</button>
+                      <button type="button" id="btn-change-email" class="btn-nav-back" style="white-space: nowrap; margin: 0;">Change Request</button>
                     </div>
                   </div>
                 </div>
@@ -2243,85 +2317,75 @@
                 </div>
               </div>
 
-              <!-- Custom Seat slider -->
-              <div class="crm-card" style="margin-bottom: 2rem; padding: 2rem;">
-                <div style="text-align: center; margin-bottom: 1.5rem;">
-                  <h4 style="margin: 0 0 0.25rem 0; font-size: 1.15rem; font-weight: 700;">Calculate Enterprise & Team Package</h4>
-                  <p style="margin: 0; font-size: 0.85rem; color: var(--text-secondary);">Select the number of seats needed to calculate dynamic volume pricing</p>
-                </div>
-                
-                <div class="seats-slider-container" style="max-width: 500px; margin: 0 auto; text-align: center;">
-                  <div style="font-size: 1.25rem; font-weight: 700; color: var(--accent-primary); margin-bottom: 0.5rem;" id="crm-pricing-seats-count">1 user</div>
-                  <input type="range" id="crm-pricing-seats-slider" min="1" max="50" value="1" style="width: 100%; accent-color: var(--accent-primary); cursor: pointer; margin-bottom: 1rem;" />
-                  <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); padding: 0 0.25rem;">
-                    <span>1 User</span>
-                    <span>5 Seats (Base)</span>
-                    <span>15 Seats (Pro)</span>
-                    <span>50+ (Enterprise)</span>
-                  </div>
+              <!-- Billing Cycle Toggle -->
+              <div class="pricing-switch-container" style="margin-bottom: 1.5rem;">
+                <span class="toggle-label active" id="crm-toggle-label-monthly" style="font-size: 0.95rem; font-weight: 600; cursor: pointer; color: var(--text-primary);">Monthly Billing</span>
+                <label class="pricing-switch">
+                  <input type="checkbox" id="crm-pricing-toggle" />
+                  <span class="pricing-slider-toggle"></span>
+                </label>
+                <div style="display: flex; align-items: center; gap: 0.4rem;">
+                  <span class="toggle-label" id="crm-toggle-label-yearly" style="font-size: 0.95rem; font-weight: 600; cursor: pointer; color: var(--text-muted);">Yearly Billing</span>
+                  <span style="font-size: 0.7rem; font-weight: 700; background: var(--accent-success); color: white; padding: 0.15rem 0.45rem; border-radius: 100px; text-transform: uppercase; letter-spacing: 0.02em;">-42%</span>
                 </div>
               </div>
 
               <!-- Pricing grid -->
               <div class="pricing-grid-crm">
-                <!-- Card 1: Starter -->
-                <div class="pricing-card-crm" id="crm-card-plan-starter">
+                <!-- Card 1: Basic -->
+                <div class="pricing-card-crm" id="crm-card-plan-free">
                   <div class="pricing-badge-crm">Individual</div>
-                  <h3>Starter Plan</h3>
-                  <div class="price-crm"><span style="font-size: 1.85rem; font-weight: 800; color: var(--text-primary);">$9</span>/mo</div>
-                  <p class="plan-desc-crm">Great for individuals and freelancers needing larger conversion thresholds.</p>
+                  <h3>Basic Plan</h3>
+                  <div class="price-crm"><span style="font-size: 1.85rem; font-weight: 800; color: var(--text-primary);">$0</span>/mo</div>
+                  <p class="plan-desc-crm">Access to essential PDF tools with basic task quotas.</p>
                   <ul class="features-crm-list">
-                    <li>Single user account</li>
-                    <li>Up to 100MB file uploads</li>
-                    <li>Basic conversion engines</li>
-                    <li>Email support support</li>
+                    <li>Single user seat</li>
+                    <li>Limited document processing</li>
+                    <li>Local web platform only</li>
                   </ul>
-                  <button class="btn-action crm-btn-plan-choose btn-plan-choose" data-plan="starter" style="width: 100%; margin-top: 1.5rem; margin-bottom: 0;">Choose Starter</button>
+                  <button class="btn-action crm-btn-plan-choose" data-plan="free" disabled style="width: 100%; margin-top: auto; margin-bottom: 0; opacity: 0.5;">Current Plan</button>
                 </div>
 
-                <!-- Card 2: Base -->
-                <div class="pricing-card-crm" id="crm-card-plan-base">
-                  <div class="pricing-badge-crm">Small Teams</div>
-                  <h3>Base Plan</h3>
-                  <div class="price-crm"><span style="font-size: 1.85rem; font-weight: 800; color: var(--text-primary);">$29</span>/mo</div>
-                  <p class="plan-desc-crm">Perfect for small agencies and groups looking to collaborate together.</p>
+                <!-- Card 2: Premium -->
+                <div class="pricing-card-crm" id="crm-card-plan-premium" style="border: 2px solid var(--accent-primary); background: rgba(255, 255, 255, 0.01);">
+                  <div class="pricing-badge-crm" style="background: var(--accent-primary); color: white;">Popular</div>
+                  <h3>Premium Plan</h3>
+                  <div class="price-crm">
+                    <span id="crm-premium-price" style="font-size: 1.85rem; font-weight: 800; color: var(--text-primary);">$7</span>
+                    <span id="crm-premium-period">/ user / mo</span>
+                  </div>
+
+                  <!-- Seats Counter -->
+                  <div style="margin: 0.5rem 0;">
+                    <div style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.25rem;">Select seats (1 - 25):</div>
+                    <div class="seats-selector">
+                      <button type="button" class="seats-btn" id="btn-crm-seats-minus">-</button>
+                      <input type="number" class="seats-input" id="input-crm-seats" min="1" max="25" value="1" readonly />
+                      <button type="button" class="seats-btn" id="btn-crm-seats-plus">+</button>
+                    </div>
+                  </div>
+
+                  <p class="plan-desc-crm">Full tool access, unlimited tasks, and collaborative team seats.</p>
                   <ul class="features-crm-list">
-                    <li>Up to 5 team members</li>
-                    <li>Up to 250MB file uploads</li>
-                    <li>AI OCR PDF recognition</li>
-                    <li>Standard support response</li>
+                    <li>1 to 25 team members</li>
+                    <li>Unlimited task processing</li>
+                    <li>Full OCR & AI Assistant access</li>
                   </ul>
-                  <button class="btn-action crm-btn-plan-choose btn-plan-choose" data-plan="base" style="width: 100%; margin-top: 1.5rem; margin-bottom: 0;">Choose Base</button>
+                  <button class="btn-action crm-btn-plan-choose btn-plan-choose" data-plan="premium" id="btn-crm-premium-choose" style="width: 100%; margin-top: auto; margin-bottom: 0; background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); border: none;">Go Premium</button>
                 </div>
 
-                <!-- Card 3: Pro -->
-                <div class="pricing-card-crm" id="crm-card-plan-pro">
-                  <div class="pricing-badge-crm" style="background: rgba(168, 85, 247, 0.15); color: var(--accent-primary);">Most Popular</div>
-                  <h3>Pro Plan</h3>
-                  <div class="price-crm"><span style="font-size: 1.85rem; font-weight: 800; color: var(--text-primary);">$79</span>/mo</div>
-                  <p class="plan-desc-crm">High-performance package for businesses with complex document requirements.</p>
-                  <ul class="features-crm-list">
-                    <li>Up to 15 team members</li>
-                    <li>Up to 1GB file size limit</li>
-                    <li>Full AI Document Assistant</li>
-                    <li>24/7 priority customer support</li>
-                  </ul>
-                  <button class="btn-action crm-btn-plan-choose btn-plan-choose" data-plan="pro" style="width: 100%; margin-top: 1.5rem; margin-bottom: 0; background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); border: none;">Choose Pro</button>
-                </div>
-
-                <!-- Card 4: Enterprise -->
-                <div class="pricing-card-crm" id="crm-card-plan-enterprise">
+                <!-- Card 3: Business -->
+                <div class="pricing-card-crm" id="crm-card-plan-business">
                   <div class="pricing-badge-crm">Custom</div>
-                  <h3>Enterprise</h3>
-                  <div class="price-crm"><span style="font-size: 1.85rem; font-weight: 800; color: var(--text-primary);">$199</span>/mo</div>
-                  <p class="plan-desc-crm">Tailored security settings and dedicated instances for full data privacy.</p>
+                  <h3>Business</h3>
+                  <div class="price-crm" style="font-size: 1.5rem; font-weight: 700; margin: 0.5rem 0;">Let's talk</div>
+                  <p class="plan-desc-crm">Enterprise SSO integration, tailored contracts, and SLA guarantees.</p>
                   <ul class="features-crm-list">
-                    <li>Unlimited seat occupancy</li>
-                    <li>Unlimited upload sizing</li>
-                    <li>Custom SLA guarantees</li>
+                    <li>25+ user seat occupancy</li>
                     <li>Dedicated account manager</li>
+                    <li>Custom SLA guarantees</li>
                   </ul>
-                  <button class="btn-action crm-btn-plan-choose btn-plan-choose" data-plan="enterprise" style="width: 100%; margin-top: 1.5rem; margin-bottom: 0;">Contact Sales</button>
+                  <button class="btn-action crm-btn-plan-choose" data-plan="business" id="btn-crm-business" style="width: 100%; margin-top: auto; margin-bottom: 0;">Contact Sales</button>
                 </div>
               </div>
             </div>
@@ -2417,6 +2481,247 @@
                     </thead>
                     <tbody id="crm-invoices-list">
                       <!-- Populated dynamically based on subscription plan -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- Pane 8: Admin Control Center -->
+            <div id="pane-admin" class="account-tab-pane">
+              <div class="crm-card-header">
+                <h3>Admin Control Center</h3>
+              </div>
+
+              <div class="crm-card" style="padding: 2rem; margin-bottom: 2rem;">
+                <div class="crm-card-title" style="text-align: left;">Manage Custom Accounts & Permissions</div>
+                <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.5rem; line-height: 1.5; text-align: left;">
+                  Configure special subscriptions, seats, custom features, and roles for any registered user account.
+                </p>
+
+                <form id="crm-admin-set-plan-form" style="display: flex; flex-direction: column; gap: 1.25rem; max-width: 500px; margin: 0 auto; text-align: left;">
+                  <div class="input-group" style="margin: 0;">
+                    <label class="input-label" for="admin-target-email">Target User Email Address*</label>
+                    <input type="email" id="admin-target-email" class="text-input" placeholder="user@example.com" required style="padding: 0.65rem 0.85rem;" />
+                  </div>
+
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="input-group" style="margin: 0;">
+                      <label class="input-label" for="admin-target-plan">Plan Package*</label>
+                      <select id="admin-target-plan" class="text-input" style="background: var(--bg-secondary); color: var(--text-primary); cursor: pointer; padding: 0.65rem 0.85rem; height: 38px;">
+                        <option value="free">Free / Basic</option>
+                        <option value="custom">Custom (Tailored Tools)</option>
+                      </select>
+                    </div>
+                    <div class="input-group" style="margin: 0;">
+                      <label class="input-label" for="admin-target-role">System Role*</label>
+                      <select id="admin-target-role" class="text-input" style="background: var(--bg-secondary); color: var(--text-primary); cursor: pointer; padding: 0.65rem 0.85rem; height: 38px;">
+                        <option value="user">User</option>
+                        <option value="admin">Administrator</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="input-group" style="margin: 0;">
+                      <label class="input-label" for="admin-target-seats">Purchased Seats count</label>
+                      <input type="number" id="admin-target-seats" class="text-input" value="1" min="1" max="9999" style="padding: 0.65rem 0.85rem;" />
+                    </div>
+                    <div class="input-group" style="margin: 0;">
+                      <label class="input-label" for="admin-target-interval">Billing Cycle</label>
+                      <select id="admin-target-interval" class="text-input" style="background: var(--bg-secondary); color: var(--text-primary); cursor: pointer; padding: 0.65rem 0.85rem; height: 38px;">
+                        <option value="month">Monthly</option>
+                        <option value="year">Yearly</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <!-- Custom Tools Checklist (Toggled on Custom plan selection) -->
+                  <div id="admin-custom-tools-container" style="display: none; border: 1.5px solid var(--border-color); padding: 1.25rem; border-radius: 0.5rem; background: rgba(255,255,255,0.01); margin-top: 0.5rem;">
+                    <label class="input-label" style="margin-bottom: 0.5rem; font-weight: 700; color: var(--text-primary);">Configure Custom Plan Tool Permissions</label>
+                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem; line-height: 1.3;">
+                      Checked tools will receive Pro-level features and limits. Unchecked tools will fall back to Starter limits.
+                    </p>
+
+                    <div style="display: flex; flex-direction: column; gap: 1rem;">
+                      <!-- Category: Organize PDF -->
+                      <div>
+                        <div style="font-size: 0.775rem; font-weight: 700; color: var(--accent-primary); margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.05em;">Organize PDF</div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem 1rem;">
+                          <label style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-secondary); font-size: 0.85rem; cursor: pointer;">
+                            <input type="checkbox" class="admin-tool-checkbox" value="merge" checked /> Merge PDF
+                          </label>
+                          <label style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-secondary); font-size: 0.85rem; cursor: pointer;">
+                            <input type="checkbox" class="admin-tool-checkbox" value="split" checked /> Split PDF
+                          </label>
+                          <label style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-secondary); font-size: 0.85rem; cursor: pointer;">
+                            <input type="checkbox" class="admin-tool-checkbox" value="remove-pages" checked /> Remove pages
+                          </label>
+                          <label style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-secondary); font-size: 0.85rem; cursor: pointer;">
+                            <input type="checkbox" class="admin-tool-checkbox" value="extract-pages" checked /> Extract pages
+                          </label>
+                          <label style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-secondary); font-size: 0.85rem; cursor: pointer;">
+                            <input type="checkbox" class="admin-tool-checkbox" value="organize-pdf" checked /> Organize PDF
+                          </label>
+                          <label style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-secondary); font-size: 0.85rem; cursor: pointer;">
+                            <input type="checkbox" class="admin-tool-checkbox" value="scan-to-pdf" checked /> Scan to PDF
+                          </label>
+                        </div>
+                      </div>
+
+                      <!-- Category: Optimize PDF -->
+                      <div>
+                        <div style="font-size: 0.775rem; font-weight: 700; color: var(--accent-primary); margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.05em;">Optimize PDF</div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem 1rem;">
+                          <label style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-secondary); font-size: 0.85rem; cursor: pointer;">
+                            <input type="checkbox" class="admin-tool-checkbox" value="compress" checked /> Optimize / Compress PDF
+                          </label>
+                          <label style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-secondary); font-size: 0.85rem; cursor: pointer;">
+                            <input type="checkbox" class="admin-tool-checkbox" value="repair" checked /> Repair PDF
+                          </label>
+                          <label style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-secondary); font-size: 0.85rem; cursor: pointer;">
+                            <input type="checkbox" class="admin-tool-checkbox" value="ocr" checked /> OCR PDF
+                          </label>
+                        </div>
+                      </div>
+
+                      <!-- Category: Convert to PDF -->
+                      <div>
+                        <div style="font-size: 0.775rem; font-weight: 700; color: var(--accent-primary); margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.05em;">Convert to PDF</div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem 1rem;">
+                          <label style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-secondary); font-size: 0.85rem; cursor: pointer;">
+                            <input type="checkbox" class="admin-tool-checkbox" value="img-to-pdf" checked /> JPG to PDF
+                          </label>
+                          <label style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-secondary); font-size: 0.85rem; cursor: pointer;">
+                            <input type="checkbox" class="admin-tool-checkbox" value="word-to-pdf" checked /> Word to PDF
+                          </label>
+                          <label style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-secondary); font-size: 0.85rem; cursor: pointer;">
+                            <input type="checkbox" class="admin-tool-checkbox" value="ppt-to-pdf" checked /> PowerPoint to PDF
+                          </label>
+                          <label style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-secondary); font-size: 0.85rem; cursor: pointer;">
+                            <input type="checkbox" class="admin-tool-checkbox" value="excel-to-pdf" checked /> Excel to PDF
+                          </label>
+                          <label style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-secondary); font-size: 0.85rem; cursor: pointer;">
+                            <input type="checkbox" class="admin-tool-checkbox" value="html-to-pdf" checked /> HTML to PDF
+                          </label>
+                        </div>
+                      </div>
+
+                      <!-- Category: Convert from PDF -->
+                      <div>
+                        <div style="font-size: 0.775rem; font-weight: 700; color: var(--accent-primary); margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.05em;">Convert from PDF</div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem 1rem;">
+                          <label style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-secondary); font-size: 0.85rem; cursor: pointer;">
+                            <input type="checkbox" class="admin-tool-checkbox" value="pdf-to-img" checked /> PDF to JPG
+                          </label>
+                          <label style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-secondary); font-size: 0.85rem; cursor: pointer;">
+                            <input type="checkbox" class="admin-tool-checkbox" value="pdf-to-word" checked /> PDF to Word
+                          </label>
+                          <label style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-secondary); font-size: 0.85rem; cursor: pointer;">
+                            <input type="checkbox" class="admin-tool-checkbox" value="pdf-to-ppt" checked /> PDF to PowerPoint
+                          </label>
+                          <label style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-secondary); font-size: 0.85rem; cursor: pointer;">
+                            <input type="checkbox" class="admin-tool-checkbox" value="pdf-to-excel" checked /> PDF to Excel
+                          </label>
+                          <label style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-secondary); font-size: 0.85rem; cursor: pointer;">
+                            <input type="checkbox" class="admin-tool-checkbox" value="pdf-to-pdfa" checked /> PDF to PDF/A
+                          </label>
+                        </div>
+                      </div>
+
+                      <!-- Category: Edit PDF -->
+                      <div>
+                        <div style="font-size: 0.775rem; font-weight: 700; color: var(--accent-primary); margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.05em;">Edit PDF</div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem 1rem;">
+                          <label style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-secondary); font-size: 0.85rem; cursor: pointer;">
+                            <input type="checkbox" class="admin-tool-checkbox" value="rotate" checked /> Rotate PDF
+                          </label>
+                          <label style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-secondary); font-size: 0.85rem; cursor: pointer;">
+                            <input type="checkbox" class="admin-tool-checkbox" value="page-numbers" checked /> Add page numbers
+                          </label>
+                          <label style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-secondary); font-size: 0.85rem; cursor: pointer;">
+                            <input type="checkbox" class="admin-tool-checkbox" value="watermark" checked /> Add watermark
+                          </label>
+                          <label style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-secondary); font-size: 0.85rem; cursor: pointer;">
+                            <input type="checkbox" class="admin-tool-checkbox" value="crop" checked /> Crop PDF
+                          </label>
+                          <label style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-secondary); font-size: 0.85rem; cursor: pointer;">
+                            <input type="checkbox" class="admin-tool-checkbox" value="edit-pdf" checked /> Edit PDF
+                          </label>
+                          <label style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-secondary); font-size: 0.85rem; cursor: pointer;">
+                            <input type="checkbox" class="admin-tool-checkbox" value="pdf-forms" checked /> PDF Forms
+                          </label>
+                        </div>
+                      </div>
+
+                      <!-- Category: PDF Security -->
+                      <div>
+                        <div style="font-size: 0.775rem; font-weight: 700; color: var(--accent-primary); margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.05em;">PDF Security</div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem 1rem;">
+                          <label style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-secondary); font-size: 0.85rem; cursor: pointer;">
+                            <input type="checkbox" class="admin-tool-checkbox" value="unlock" checked /> Unlock PDF
+                          </label>
+                          <label style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-secondary); font-size: 0.85rem; cursor: pointer;">
+                            <input type="checkbox" class="admin-tool-checkbox" value="protect" checked /> Protect PDF
+                          </label>
+                          <label style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-secondary); font-size: 0.85rem; cursor: pointer;">
+                            <input type="checkbox" class="admin-tool-checkbox" value="sign" checked /> Sign PDF
+                          </label>
+                          <label style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-secondary); font-size: 0.85rem; cursor: pointer;">
+                            <input type="checkbox" class="admin-tool-checkbox" value="redact" checked /> Redact PDF
+                          </label>
+                          <label style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-secondary); font-size: 0.85rem; cursor: pointer;">
+                            <input type="checkbox" class="admin-tool-checkbox" value="compare" checked /> Compare PDF
+                          </label>
+                        </div>
+                      </div>
+
+                      <!-- Category: PDF Intelligence -->
+                      <div>
+                        <div style="font-size: 0.775rem; font-weight: 700; color: var(--accent-primary); margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.05em;">PDF Intelligence & AI</div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem 1rem;">
+                          <label style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-secondary); font-size: 0.85rem; cursor: pointer;">
+                            <input type="checkbox" class="admin-tool-checkbox" value="ai-assistant" checked /> AI Summarizer / Translate PDF
+                          </label>
+                          <label style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-secondary); font-size: 0.85rem; cursor: pointer;">
+                            <input type="checkbox" class="admin-tool-checkbox" value="remove-background" checked /> Remove background (AI)
+                          </label>
+                          <label style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-secondary); font-size: 0.85rem; cursor: pointer;">
+                            <input type="checkbox" class="admin-tool-checkbox" value="upscale-image" checked /> High resolution images / Upscaler
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="input-group" style="margin: 0;">
+                    <label class="input-label" for="admin-target-ai-credits">AI Monthly Credits limit</label>
+                    <input type="number" id="admin-target-ai-credits" class="text-input" value="50" min="0" max="999999" style="padding: 0.65rem 0.85rem;" />
+                  </div>
+
+                  <button type="submit" class="btn-action" style="padding: 0.75rem 2rem; font-weight: 700; align-self: flex-start; margin: 0.5rem 0 0 0;">Save User Configuration</button>
+                </form>
+              </div>
+
+              <!-- Contact Inquiries Panel -->
+              <div class="crm-card" style="padding: 2rem; margin-top: 2rem;">
+                <div class="crm-card-title" style="text-align: left; margin-bottom: 1rem;">Enterprise Sales Inquiries</div>
+                <div style="overflow-x: auto; width: 100%;">
+                  <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: left;">
+                    <thead>
+                      <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-secondary); font-weight: 700;">
+                        <th style="padding: 0.75rem 1rem;">Name</th>
+                        <th style="padding: 0.75rem 1rem;">Company</th>
+                        <th style="padding: 0.75rem 1rem;">Email</th>
+                        <th style="padding: 0.75rem 1rem;">Message</th>
+                        <th style="padding: 0.75rem 1rem;">Date</th>
+                        <th style="padding: 0.75rem 1rem; text-align: center;">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody id="admin-inquiries-tbody">
+                      <tr>
+                        <td colspan="6" style="text-align: center; padding: 2rem; color: var(--text-muted);">Loading inquiries...</td>
+                      </tr>
                     </tbody>
                   </table>
                 </div>
@@ -2656,24 +2961,24 @@
           <label class="btn-hero-secondary" style="font-size: 0.8rem; padding: 0.4rem 0.85rem; border-radius: 2rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.25rem; border: 1px solid var(--border-hover); background: var(--bg-secondary); color: var(--text-primary);">
             <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"/></svg>
             Change Photo
-            <input type="file" id="input-profile-pic" accept="image/*" style="display: none;" />
+            <input type="file" id="modal-input-profile-pic" accept="image/*" style="display: none;" />
           </label>
         </div>
 
-        <form id="settings-form" style="display: flex; flex-direction: column; gap: 1rem; width: 100%;">
+        <form id="modal-settings-form" style="display: flex; flex-direction: column; gap: 1rem; width: 100%;">
           <div style="display: flex; gap: 0.75rem; width: 100%;">
             <div class="input-group" style="flex: 1;">
-              <label class="input-label" for="settings-first-name">First Name</label>
-              <input type="text" id="settings-first-name" class="text-input" placeholder="First Name" required />
+              <label class="input-label" for="modal-settings-first-name">First Name</label>
+              <input type="text" id="modal-settings-first-name" class="text-input" placeholder="First Name" required />
             </div>
             <div class="input-group" style="flex: 1;">
-              <label class="input-label" for="settings-last-name">Last Name</label>
-              <input type="text" id="settings-last-name" class="text-input" placeholder="Last Name" required />
+              <label class="input-label" for="modal-settings-last-name">Last Name</label>
+              <input type="text" id="modal-settings-last-name" class="text-input" placeholder="Last Name" required />
             </div>
           </div>
           <div class="input-group">
             <label class="input-label">Email Address (Read-only)</label>
-            <input type="email" id="settings-email" class="text-input" style="background: rgba(0,0,0,0.03); cursor: not-allowed;" readonly disabled />
+            <input type="email" id="modal-settings-email" class="text-input" style="background: rgba(0,0,0,0.03); cursor: not-allowed;" readonly disabled />
           </div>
           <button type="submit" class="btn-action" style="width: 100%;">Save Changes</button>
         </form>
@@ -2690,88 +2995,436 @@
           <p style="color: var(--text-secondary); font-size: 0.85rem; margin: 0;">Unlock limits and tools that suit your team's workflow</p>
         </div>
 
-        <!-- Seats Slider -->
-        <div class="seats-slider-container" style="width: 100%; max-width: 540px; margin: 0 auto 1rem auto; text-align: center; background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: 0.75rem; padding: 0.75rem 1rem;">
-          <label for="pricing-seats-slider" style="font-size: 0.85rem; font-weight: 600; color: var(--text-primary); display: block; margin-bottom: 0.5rem;">
-            Estimated Team Seats: <span id="pricing-seats-count" style="color: var(--accent-primary); font-weight: 700; font-size: 1rem;">1 user</span>
+        <!-- Billing Cycle Toggle -->
+        <div class="pricing-switch-container" style="margin-bottom: 1rem;">
+          <span class="toggle-label active" id="modal-toggle-label-monthly" style="font-size: 0.9rem; font-weight: 600; cursor: pointer; color: var(--text-primary);">Monthly Billing</span>
+          <label class="pricing-switch">
+            <input type="checkbox" id="modal-pricing-toggle" />
+            <span class="pricing-slider-toggle"></span>
           </label>
-          <input type="range" id="pricing-seats-slider" min="1" max="30" value="1" style="width: 100%; accent-color: var(--accent-primary); height: 5px; border-radius: 3px; cursor: pointer; margin-bottom: 0.25rem;" />
-          <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-muted); padding: 0 2px;">
-            <span>1 seat</span>
-            <span>5 seats</span>
-            <span>15 seats</span>
-            <span>30+ seats</span>
+          <div style="display: flex; align-items: center; gap: 0.4rem;">
+            <span class="toggle-label" id="modal-toggle-label-yearly" style="font-size: 0.9rem; font-weight: 600; cursor: pointer; color: var(--text-muted);">Yearly Billing</span>
+            <span style="font-size: 0.7rem; font-weight: 700; background: var(--accent-success); color: white; padding: 0.1rem 0.4rem; border-radius: 100px; text-transform: uppercase; letter-spacing: 0.02em;">-42%</span>
           </div>
         </div>
 
         <!-- Pricing Cards Grid -->
         <div class="pricing-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; width: 100%; margin-bottom: 1rem;">
           
-          <!-- Starter Card -->
-          <div class="pricing-card" id="card-plan-starter" data-plan="starter">
-            <h4 class="plan-name">Starter</h4>
-            <div class="plan-price">
-              <span class="price-amount">$10</span>
-              <span class="price-period">/month</span>
+          <!-- Free Plan Card -->
+          <div class="pricing-card" id="card-plan-free" data-plan="free" style="padding: 1.25rem; display: flex; flex-direction: column;">
+            <div style="display: flex; align-items: center; gap: 0.5rem; justify-content: center; margin-bottom: 0.5rem;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: var(--accent-primary);"><path d="M20 12v10H4V12m16-4H4m16 0a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2m16 0h-4M4 8h4m4-6v6"/></svg>
+              <h4 class="plan-name" style="margin: 0; font-size: 1.15rem;">Basic</h4>
             </div>
-            <p class="plan-desc">For personal use after free limits</p>
-            <ul class="plan-features">
-              <li class="feature-included">1 user seat</li>
-              <li class="feature-included">Unlimited PDF tools</li>
-              <li class="feature-included">AI upscaling & up to 10MB+</li>
+            <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.25rem; justify-content: center;">
+              1 User
+            </div>
+            <div class="plan-price">
+              <span class="price-amount" style="font-size: 1.75rem;">$0</span>
+              <span class="price-period" style="font-size: 0.8rem;">/ forever</span>
+            </div>
+            <p class="plan-desc" style="font-size: 0.8rem; margin-bottom: 1rem;">Access to essential PDF converters and basic files limits.</p>
+            <ul class="plan-features" style="text-align: left; margin: 1rem 0; font-size: 0.8rem; padding-left: 0;">
+              <li class="feature-included">Essential PDF tools</li>
+              <li class="feature-included">Standard limits & sizing</li>
             </ul>
-            <button class="btn-action btn-plan-choose" data-plan="starter" style="width: 100%;">Choose Starter</button>
+            <button class="btn-action" onclick="document.getElementById('btn-close-upgrade').click()" style="width: 100%; margin-top: auto; background: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-primary);">Current Plan</button>
           </div>
 
-          <!-- Base Card -->
-          <div class="pricing-card" id="card-plan-base" data-plan="base">
-            <h4 class="plan-name">Base</h4>
-            <div class="plan-price">
-              <span class="price-amount">$29</span>
-              <span class="price-period">/month</span>
+          <!-- Premium Plan Card -->
+          <div class="pricing-card highlighted-plan" id="card-plan-premium" data-plan="premium" style="padding: 1.25rem; display: flex; flex-direction: column; background: rgba(255, 255, 255, 0.015); border: 2px solid var(--accent-primary);">
+            <div class="popular-badge" style="top: -10px; font-size: 0.7rem; padding: 0.15rem 0.6rem; background: var(--accent-primary); color: white;">Popular</div>
+            <div style="display: flex; align-items: center; gap: 0.5rem; justify-content: center; margin-bottom: 0.5rem;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: #f59e0b;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+              <h4 class="plan-name" style="margin: 0; font-size: 1.15rem;">Premium</h4>
             </div>
-            <p class="plan-desc">Great for small, budding teams</p>
-            <ul class="plan-features">
-              <li class="feature-included">Up to 5 user seats</li>
+            <div style="font-size: 0.75rem; color: #f59e0b; font-weight: 700; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.25rem; justify-content: center;">
+              1 - 25 Users
+            </div>
+            <div class="plan-price">
+              <span class="price-amount" id="modal-premium-price" style="font-size: 1.75rem;">$7</span>
+              <span class="price-period" id="modal-premium-period" style="font-size: 0.8rem;">/ user / month</span>
+            </div>
+
+            <!-- Seats Counter -->
+            <div style="margin: 0.5rem 0;">
+              <div style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.25rem;">Select seats needed:</div>
+              <div class="seats-selector">
+                <button type="button" class="seats-btn" id="btn-modal-seats-minus">-</button>
+                <input type="number" class="seats-input" id="input-modal-seats" min="1" max="25" value="1" readonly />
+                <button type="button" class="seats-btn" id="btn-modal-seats-plus">+</button>
+              </div>
+            </div>
+
+            <p class="plan-desc" style="font-size: 0.8rem; margin-bottom: 1rem;">Full access to all PDF tools, OCR, and unlimited processing.</p>
+            <ul class="plan-features" style="text-align: left; margin: 1rem 0; font-size: 0.8rem; padding-left: 0;">
+              <li class="feature-included">All tools and AI credits</li>
               <li class="feature-included">Multi-user collaboration</li>
-              <li class="feature-included">Unlimited PDF tools & uploads</li>
             </ul>
-            <button class="btn-action btn-plan-choose" data-plan="base" style="width: 100%;">Choose Base</button>
+            <button class="btn-action btn-plan-choose" data-plan="premium" id="btn-modal-premium-choose" style="width: 100%; margin-top: auto; background: linear-gradient(135deg, #a855f7, #6366f1); border: none;">Go Premium</button>
           </div>
 
-          <!-- Pro Card -->
-          <div class="pricing-card highlighted-plan" id="card-plan-pro" data-plan="pro">
-            <div class="popular-badge">Save 20%</div>
-            <h4 class="plan-name">Pro</h4>
-            <div class="plan-price">
-              <span class="price-amount">$99</span>
-              <span class="price-period">/month</span>
+          <!-- Business Plan Card -->
+          <div class="pricing-card" id="card-plan-business" data-plan="business" style="padding: 1.25rem; display: flex; flex-direction: column;">
+            <div style="display: flex; align-items: center; gap: 0.5rem; justify-content: center; margin-bottom: 0.5rem;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: var(--text-primary);"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+              <h4 class="plan-name" style="margin: 0; font-size: 1.15rem;">Business</h4>
             </div>
-            <p class="plan-desc">Designed for active teams & power users</p>
-            <ul class="plan-features">
-              <li class="feature-included">Up to 15 user seats</li>
-              <li class="feature-included">Multi-user collaboration</li>
-              <li class="feature-included">Unlimited PDF tools & uploads</li>
-            </ul>
-            <button class="btn-action btn-plan-choose" data-plan="pro" style="width: 100%; background: linear-gradient(135deg, #a855f7, #6366f1); border: none;">Choose Pro</button>
-          </div>
-
-          <!-- Enterprise Card -->
-          <div class="pricing-card" id="card-plan-enterprise" data-plan="enterprise">
-            <h4 class="plan-name">Enterprise</h4>
-            <div class="plan-price">
-              <span class="price-amount">$120</span>
-              <span class="price-period">/month</span>
+            <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.25rem; justify-content: center;">
+              25+ Users
             </div>
-            <p class="plan-desc">Maximum capability and customization</p>
-            <ul class="plan-features">
-              <li class="feature-included">Up to 100 user seats</li>
-              <li class="feature-included">Multi-user collaboration</li>
-              <li class="feature-included">Unlimited PDF tools & support</li>
+            <div class="plan-price">
+              <span class="price-amount" style="font-size: 1.6rem; letter-spacing: -0.02em;">Let's talk</span>
+              <span class="price-period" style="font-size: 0.8rem; display: block;">Customized contracts</span>
+            </div>
+            <p class="plan-desc" style="font-size: 0.8rem; margin-bottom: 1rem;">SSO configuration, custom SLAs, and dedicated manager support.</p>
+            <ul class="plan-features" style="text-align: left; margin: 1rem 0; font-size: 0.8rem; padding-left: 0;">
+              <li class="feature-included">Custom scale contracts</li>
+              <li class="feature-included">SSO & Account Manager</li>
             </ul>
-            <button class="btn-action btn-plan-choose" data-plan="enterprise" style="width: 100%;">Choose Enterprise</button>
+            <button class="btn-action" id="btn-modal-business" style="width: 100%; margin-top: auto;">Contact Sales</button>
           </div>
 
+        </div>
+
+        <!-- Plan Comparison Chart -->
+        <div class="pricing-comparison-container" style="margin-top: 2rem; width: 100%; border-top: 1px solid var(--border-color); padding-top: 2rem;">
+          <h4 style="font-size: 1.25rem; font-weight: 700; text-align: center; margin-bottom: 1.5rem; color: var(--text-primary);">Compare Plan Features</h4>
+          
+          <div style="overflow-x: auto; width: 100%;">
+            <table class="comparison-table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem; min-width: 600px;">
+              <thead>
+                <tr style="border-bottom: 2.5px solid var(--border-color); color: var(--text-primary); font-weight: 700;">
+                  <th style="padding: 1rem 0.75rem; width: 40%;">Feature</th>
+                  <th style="padding: 1rem 0.75rem; text-align: center; width: 20%;">Basic</th>
+                  <th style="padding: 1rem 0.75rem; text-align: center; width: 20%; color: #f59e0b;">Premium</th>
+                  <th style="padding: 1rem 0.75rem; text-align: center; width: 20%;">Business</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Category: Filesize per task -->
+                <tr id="category-filesize-header" style="background: rgba(255,255,255,0.02); font-weight: 700; color: var(--text-primary); cursor: pointer; user-select: none;">
+                  <td colspan="4" style="padding: 0.75rem; border-bottom: 1px solid var(--border-color);">
+                    <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                      <span>Filesize per task</span>
+                      <span id="category-filesize-arrow" style="transition: transform 0.2s; transform: rotate(0deg); font-family: monospace; font-size: 1.25rem; font-weight: bold; line-height: 1; padding-right: 0.5rem;">&rsaquo;</span>
+                    </div>
+                  </td>
+                </tr>
+                <tr class="category-filesize-row" style="border-bottom: 1px solid var(--border-color); color: var(--text-secondary); display: none;">
+                  <td style="padding: 0.85rem 0.75rem;">Merge PDF</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center;">100 MB</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 600;">4 GB</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 600;">4 GB</td>
+                </tr>
+                <tr class="category-filesize-row" style="border-bottom: 1px solid var(--border-color); color: var(--text-secondary); display: none;">
+                  <td style="padding: 0.85rem 0.75rem;">Split PDF</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center;">100 MB</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 600;">4 GB</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 600;">4 GB</td>
+                </tr>
+                <tr class="category-filesize-row" style="border-bottom: 1px solid var(--border-color); color: var(--text-secondary); display: none;">
+                  <td style="padding: 0.85rem 0.75rem;">Compress PDF</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center;">200 MB</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 600;">4 GB</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 600;">4 GB</td>
+                </tr>
+                <tr class="category-filesize-row" style="border-bottom: 1px solid var(--border-color); color: var(--text-secondary); display: none;">
+                  <td style="padding: 0.85rem 0.75rem;">Office to PDF (Word, Excel, PPT to PDF)</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center;">15 MB</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 600;">4 GB</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 600;">4 GB</td>
+                </tr>
+                <tr class="category-filesize-row" style="border-bottom: 1px solid var(--border-color); color: var(--text-secondary); display: none;">
+                  <td style="padding: 0.85rem 0.75rem;">PDF to Word, Excel, PowerPoint</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center;">15 MB</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 600;">4 GB</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 600;">4 GB</td>
+                </tr>
+                <tr class="category-filesize-row" style="border-bottom: 1px solid var(--border-color); color: var(--text-secondary); display: none;">
+                  <td style="padding: 0.85rem 0.75rem;">OCR PDF</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center;">15 MB</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 600;">4 GB</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 600;">4 GB</td>
+                </tr>
+                <tr class="category-filesize-row" style="border-bottom: 1px solid var(--border-color); color: var(--text-secondary); display: none;">
+                  <td style="padding: 0.85rem 0.75rem;">PDF to JPG</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center;">25 MB</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 600;">4 GB</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 600;">4 GB</td>
+                </tr>
+                <tr class="category-filesize-row" style="border-bottom: 1px solid var(--border-color); color: var(--text-secondary); display: none;">
+                  <td style="padding: 0.85rem 0.75rem;">Image to PDF</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center;">40 MB</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 600;">4 GB</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 600;">4 GB</td>
+                </tr>
+                <tr class="category-filesize-row" style="border-bottom: 1px solid var(--border-color); color: var(--text-secondary); display: none;">
+                  <td style="padding: 0.85rem 0.75rem;">Utility Tools (Protect, Unlock, Rotate, Watermark, organize, repair, crop)</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center;">100 MB</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 600;">4 GB</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 600;">4 GB</td>
+                </tr>
+                <tr class="category-filesize-row" style="border-bottom: 1px solid var(--border-color); color: var(--text-secondary); display: none;">
+                  <td style="padding: 0.85rem 0.75rem;">Edit PDF</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center;">100 MB</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center;">100 MB</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center;">100 MB</td>
+                </tr>
+                <tr class="category-filesize-row" style="border-bottom: 1px solid var(--border-color); color: var(--text-secondary); display: none;">
+                  <td style="padding: 0.85rem 0.75rem;">Sign PDF</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center;">50 MB</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center;">50 MB</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center;">50 MB</td>
+                </tr>
+                <tr class="category-filesize-row" style="border-bottom: 1px solid var(--border-color); color: var(--text-secondary); display: none;">
+                  <td style="padding: 0.85rem 0.75rem;">Redact PDF / Compare PDFs</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center;">400 MB</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center;">400 MB</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center;">400 MB</td>
+                </tr>
+                <tr class="category-filesize-row" style="border-bottom: 1px solid var(--border-color); color: var(--text-secondary); display: none;">
+                  <td style="padding: 0.85rem 0.75rem;">PDF Forms</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center;">15 MB</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center;">100 MB</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center;">100 MB</td>
+                </tr>
+                <tr class="category-filesize-row" style="border-bottom: 1px solid var(--border-color); color: var(--text-secondary); display: none;">
+                  <td style="padding: 0.85rem 0.75rem;">AI Summarizer</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--text-muted); font-weight: bold;">—</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center;">50 MB</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center;">50 MB</td>
+                </tr>
+                <tr class="category-filesize-row" style="border-bottom: 1px solid var(--border-color); color: var(--text-secondary); display: none;">
+                  <td style="padding: 0.85rem 0.75rem;">Translate PDF</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--text-muted); font-weight: bold;">—</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center;">200 MB</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center;">200 MB</td>
+                </tr>
+
+                <!-- Category: Batch Processing -->
+                <tr id="category-batch-header" style="background: rgba(255,255,255,0.02); font-weight: 700; color: var(--text-primary); cursor: pointer; user-select: none;">
+                  <td colspan="4" style="padding: 0.75rem; border-bottom: 1px solid var(--border-color);">
+                    <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                      <span>Batch Processing Limits</span>
+                      <span id="category-batch-arrow" style="transition: transform 0.2s; transform: rotate(0deg); font-family: monospace; font-size: 1.25rem; font-weight: bold; line-height: 1; padding-right: 0.5rem;">&rsaquo;</span>
+                    </div>
+                  </td>
+                </tr>
+                <tr class="category-batch-row" style="border-bottom: 1px solid var(--border-color); color: var(--text-secondary); display: none;">
+                  <td style="padding: 0.85rem 0.75rem;">Merge PDF</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center;">25 files</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 600;">500 files</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 600;">500 files</td>
+                </tr>
+                <tr class="category-batch-row" style="border-bottom: 1px solid var(--border-color); color: var(--text-secondary); display: none;">
+                  <td style="padding: 0.85rem 0.75rem;">Split PDF</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center;">1 file</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center;">1 file</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center;">1 file</td>
+                </tr>
+                <tr class="category-batch-row" style="border-bottom: 1px solid var(--border-color); color: var(--text-secondary); display: none;">
+                  <td style="padding: 0.85rem 0.75rem;">Compress PDF</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center;">2 files</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 600;">10 files</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 600;">10 files</td>
+                </tr>
+                <tr class="category-batch-row" style="border-bottom: 1px solid var(--border-color); color: var(--text-secondary); display: none;">
+                  <td style="padding: 0.85rem 0.75rem;">Office to PDF (Word / Excel / PowerPoint)</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center;">1 file</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 600;">10 files</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 600;">10 files</td>
+                </tr>
+                <tr class="category-batch-row" style="border-bottom: 1px solid var(--border-color); color: var(--text-secondary); display: none;">
+                  <td style="padding: 0.85rem 0.75rem;">PDF to Office (Word / Excel / PowerPoint)</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center;">1 file</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 600;">10 files</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 600;">10 files</td>
+                </tr>
+                <tr class="category-batch-row" style="border-bottom: 1px solid var(--border-color); color: var(--text-secondary); display: none;">
+                  <td style="padding: 0.85rem 0.75rem;">OCR PDF</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center;">1 file</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 600;">10 files</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 600;">10 files</td>
+                </tr>
+                <tr class="category-batch-row" style="border-bottom: 1px solid var(--border-color); color: var(--text-secondary); display: none;">
+                  <td style="padding: 0.85rem 0.75rem;">PDF to JPG</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center;">2 files</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 600;">10 files</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 600;">10 files</td>
+                </tr>
+                <tr class="category-batch-row" style="border-bottom: 1px solid var(--border-color); color: var(--text-secondary); display: none;">
+                  <td style="padding: 0.85rem 0.75rem;">Image to PDF</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center;">20 files</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 600;">80 files</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 600;">80 files</td>
+                </tr>
+                <tr class="category-batch-row" style="border-bottom: 1px solid var(--border-color); color: var(--text-secondary); display: none;">
+                  <td style="padding: 0.85rem 0.75rem;">Utility Tools (Page Numbers / Watermark)</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center;">2 files</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 600;">10 files</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 600;">10 files</td>
+                </tr>
+                <tr class="category-batch-row" style="border-bottom: 1px solid var(--border-color); color: var(--text-secondary); display: none;">
+                  <td style="padding: 0.85rem 0.75rem;">Rotate PDF</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center;">20 files</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 600;">80 files</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 600;">80 files</td>
+                </tr>
+                <tr class="category-batch-row" style="border-bottom: 1px solid var(--border-color); color: var(--text-secondary); display: none;">
+                  <td style="padding: 0.85rem 0.75rem;">Unlock / Protect PDF</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center;">2 files</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 600;">80 files</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 600;">80 files</td>
+                </tr>
+                <tr class="category-batch-row" style="border-bottom: 1px solid var(--border-color); color: var(--text-secondary); display: none;">
+                  <td style="padding: 0.85rem 0.75rem;">Organize PDF Pages</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center;">5 files</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 600;">20 files</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 600;">20 files</td>
+                </tr>
+                <tr class="category-batch-row" style="border-bottom: 1px solid var(--border-color); color: var(--text-secondary); display: none;">
+                  <td style="padding: 0.85rem 0.75rem;">Repair PDF</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center;">1 file</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 600;">10 files</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 600;">10 files</td>
+                </tr>
+                <tr class="category-batch-row" style="border-bottom: 1px solid var(--border-color); color: var(--text-secondary); display: none;">
+                  <td style="padding: 0.85rem 0.75rem;">Edit PDF / Redact / Forms / Crop</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center;">1 file</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center;">1 file</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center;">1 file</td>
+                </tr>
+                <tr class="category-batch-row" style="border-bottom: 1px solid var(--border-color); color: var(--text-secondary); display: none;">
+                  <td style="padding: 0.85rem 0.75rem;">Sign PDF</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center;">3 files</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 600;">5 files</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 600;">5 files</td>
+                </tr>
+                <tr class="category-batch-row" style="border-bottom: 1px solid var(--border-color); color: var(--text-secondary); display: none;">
+                  <td style="padding: 0.85rem 0.75rem;">Compare PDF</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center;">2 files</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 600;">2 files</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 600;">2 files</td>
+                </tr>
+                <tr class="category-batch-row" style="border-bottom: 1px solid var(--border-color); color: var(--text-secondary); display: none;">
+                  <td style="padding: 0.85rem 0.75rem;">AI Summarizer / Translate</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center;">1 file</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center;">1 file</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center;">1 file</td>
+                </tr>
+
+                <!-- Category: Tools -->
+                <tr id="category-tools-header" style="background: rgba(255,255,255,0.02); font-weight: 700; color: var(--text-primary); cursor: pointer; user-select: none;">
+                  <td colspan="4" style="padding: 0.75rem; border-bottom: 1px solid var(--border-color);">
+                    <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                      <span>Standard PDF Tools</span>
+                      <span id="category-tools-arrow" style="transition: transform 0.2s; transform: rotate(0deg); font-family: monospace; font-size: 1.25rem; font-weight: bold; line-height: 1; padding-right: 0.5rem;">&rsaquo;</span>
+                    </div>
+                  </td>
+                </tr>
+                <tr class="category-tools-row" style="border-bottom: 1px solid var(--border-color); color: var(--text-secondary); display: none;">
+                  <td style="padding: 0.85rem 0.75rem;">Merge, Split, & Compress PDF</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 700;">✓</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 700;">✓</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 700;">✓</td>
+                </tr>
+                <tr class="category-tools-row" style="border-bottom: 1px solid var(--border-color); color: var(--text-secondary); display: none;">
+                  <td style="padding: 0.85rem 0.75rem;">PDF to Word / Word to PDF</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 700;">✓</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 700;">✓</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 700;">✓</td>
+                </tr>
+                <tr class="category-tools-row" style="border-bottom: 1px solid var(--border-color); color: var(--text-secondary); display: none;">
+                  <td style="padding: 0.85rem 0.75rem;">PDF to Excel / PowerPoint</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 700;">✓</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 700;">✓</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 700;">✓</td>
+                </tr>
+                <tr class="category-tools-row" style="border-bottom: 1px solid var(--border-color); color: var(--text-secondary); display: none;">
+                  <td style="padding: 0.85rem 0.75rem;">Edit, Sign, Watermark, & Protect PDF</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 700;">✓</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 700;">✓</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 700;">✓</td>
+                </tr>
+                <tr class="category-tools-row" style="border-bottom: 1px solid var(--border-color); color: var(--text-secondary); display: none;">
+                  <td style="padding: 0.85rem 0.75rem;">OCR PDF (Standard text recognition)</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 700;">✓</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 700;">✓</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 700;">✓</td>
+                </tr>
+                <tr class="category-tools-row" style="border-bottom: 1px solid var(--border-color); color: var(--text-secondary); display: none;">
+                  <td style="padding: 0.85rem 0.75rem;">Redact PDF / Compare PDFs</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 700;">✓</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 700;">✓</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 700;">✓</td>
+                </tr>
+                <tr class="category-tools-row" style="border-bottom: 1px solid var(--border-color); color: var(--text-secondary); display: none;">
+                  <td style="padding: 0.85rem 0.75rem;">PDF Forms (Standard forms filling)</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 700;">✓</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 700;">✓</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 700;">✓</td>
+                </tr>
+
+                <!-- Category: AI Tools -->
+                <tr id="category-ai-header" style="background: rgba(255,255,255,0.02); font-weight: 700; color: var(--text-primary); cursor: pointer; user-select: none;">
+                  <td colspan="4" style="padding: 0.75rem; border-bottom: 1px solid var(--border-color);">
+                    <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                      <span>AI PDF Features</span>
+                      <span id="category-ai-arrow" style="transition: transform 0.2s; transform: rotate(0deg); font-family: monospace; font-size: 1.25rem; font-weight: bold; line-height: 1; padding-right: 0.5rem;">&rsaquo;</span>
+                    </div>
+                  </td>
+                </tr>
+                <tr class="category-ai-row" style="border-bottom: 1px solid var(--border-color); color: var(--text-secondary); display: none;">
+                  <td style="padding: 0.85rem 0.75rem;">AI Summarizer (Standard AI)</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--text-muted); font-weight: bold;">—</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 700;">✓</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 700;">✓</td>
+                </tr>
+                <tr class="category-ai-row" style="border-bottom: 1px solid var(--border-color); color: var(--text-secondary); display: none;">
+                  <td style="padding: 0.85rem 0.75rem;">Translate PDF (Standard AI)</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--text-muted); font-weight: bold;">—</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 700;">✓</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 700;">✓</td>
+                </tr>
+                <tr class="category-ai-row" style="border-bottom: 1px solid var(--border-color); color: var(--text-secondary); display: none;">
+                  <td style="padding: 0.85rem 0.75rem;">AI Monthly Credits</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--text-muted); font-weight: bold;">—</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; font-weight: 600; color: #a855f7;">2,000 credits</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; font-weight: 600; color: #a855f7;">Custom scale</td>
+                </tr>
+ 
+                <!-- Category: Business & Collaboration -->
+                <tr id="category-business-header" style="background: rgba(255,255,255,0.02); font-weight: 700; color: var(--text-primary); cursor: pointer; user-select: none;">
+                  <td colspan="4" style="padding: 0.75rem; border-bottom: 1px solid var(--border-color);">
+                    <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                      <span>Business & Support</span>
+                      <span id="category-business-arrow" style="transition: transform 0.2s; transform: rotate(0deg); font-family: monospace; font-size: 1.25rem; font-weight: bold; line-height: 1; padding-right: 0.5rem;">&rsaquo;</span>
+                    </div>
+                  </td>
+                </tr>
+                <tr class="category-business-row" style="border-bottom: 1px solid var(--border-color); color: var(--text-secondary); display: none;">
+                  <td style="padding: 0.85rem 0.75rem;">Multi-user Teams</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--text-muted); font-weight: bold;">—</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 700;">✓</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 700;">✓</td>
+                </tr>
+                <tr class="category-business-row" style="border-bottom: 1px solid var(--border-color); color: var(--text-secondary); display: none;">
+                  <td style="padding: 0.85rem 0.75rem;">Volume discount on seats</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--text-muted); font-weight: bold;">—</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 700;">✓</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; color: var(--accent-success); font-weight: 700;">✓</td>
+                </tr>
+                <tr class="category-business-row" style="border-bottom: 1px solid var(--border-color); color: var(--text-secondary); display: none;">
+                  <td style="padding: 0.85rem 0.75rem;">Customer support level</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center;">Basic support</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; font-weight: 600; color: var(--accent-success);">Preferential</td>
+                  <td style="padding: 0.85rem 0.75rem; text-align: center; font-weight: 600; color: var(--accent-success);">Dedicated support</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
 
         <!-- Logged Out Actions -->
@@ -2930,6 +3583,8 @@
         <button class="btn-action" id="btn-help-faq-scroll" style="margin-top: 0.5rem; background: var(--accent-secondary); border: none; border-radius: 0.5rem; padding: 0.75rem; font-weight: 600; color: white; cursor: pointer;">Browse FAQ Section</button>
       </div>
     </div>
+
+
 
     <!-- Language Selection Modal Overlay -->
     <div id="language-modal-overlay" class="overlay" style="z-index: 12000; display: none;">

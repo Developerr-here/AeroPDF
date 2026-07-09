@@ -297,6 +297,7 @@ export async function generatePagePreviews(pdfBuffer, onProgress) {
   
   for (let i = 1; i <= totalPages; i++) {
     const page = await pdf.getPage(i);
+    const originalViewport = page.getViewport({ scale: 1.0 });
     const viewport = page.getViewport({ scale: 0.5 });
     
     const canvas = document.createElement('canvas');
@@ -307,7 +308,12 @@ export async function generatePagePreviews(pdfBuffer, onProgress) {
     const renderContext = { canvasContext: context, viewport: viewport };
     await page.render(renderContext).promise;
     const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-    previews.push({ pageNum: i, dataUrl });
+    previews.push({ 
+      pageNum: i, 
+      dataUrl,
+      width: originalViewport.width,
+      height: originalViewport.height
+    });
     
     if (onProgress) {
       onProgress(i, totalPages);

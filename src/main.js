@@ -1,9 +1,9 @@
 import './style.css';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
-import { 
-  mergePDFs, 
-  splitPDF, 
-  splitPDFIntoIndividual, 
+import {
+  mergePDFs,
+  splitPDF,
+  splitPDFIntoIndividual,
   removePages,
   organizePDF,
   compressPDF,
@@ -46,6 +46,8 @@ const VENDOR_BILLING_INFO = {
 // Application State
 let currentTool = null;
 let uploadedFiles = [];
+let pricingInterval = 'month'; // 'month' or 'year'
+let pricingSeats = 1; // 1 to 25
 let pagePreviews = [];
 let pageRotations = {};
 let selectedPages = new Set();
@@ -243,32 +245,32 @@ const TOOL_META = {
   'extract-pages': { title: 'Extract Pages', desc: 'Save selected pages from a PDF as a new file.', uploadHeadline: 'Upload a PDF to extract pages from', uploadSubline: 'or drag and drop it here', accepts: '.pdf', multiple: false },
   'organize-pdf': { title: 'Organize PDF', desc: 'Reorder pages in a PDF visually.', uploadHeadline: 'Upload a PDF to reorder pages', uploadSubline: 'or drag and drop it here', accepts: '.pdf', multiple: false },
   'scan-to-pdf': { title: 'Scan to PDF', desc: 'Capture images from your camera and compile them to PDF.', uploadHeadline: 'Webcam snapshot tool active', uploadSubline: 'Use controls below to capture', accepts: '', multiple: true, noUpload: true },
-  compress: { title: 'Compress PDF', desc: 'Optimize and shrink the file size of your PDF.', uploadHeadline: 'Upload a PDF to compress', uploadSubline: 'or drag and drop it here', accepts: '.pdf', multiple: false },
-  repair: { title: 'Repair PDF', desc: 'Attempt to recover content from damaged or corrupt PDFs.', uploadHeadline: 'Upload a PDF to repair', uploadSubline: 'or drag and drop it here', accepts: '.pdf', multiple: false },
-  ocr: { title: 'OCR PDF', desc: 'Recognize scanned text layers and convert to searchable formats.', uploadHeadline: 'Upload a scanned PDF to apply OCR', uploadSubline: 'or drag and drop it here', accepts: '.pdf', multiple: false },
+  compress: { title: 'Compress PDF', desc: 'Optimize and shrink the file size of your PDF.', uploadHeadline: 'Upload one or more PDFs to compress', uploadSubline: 'or drag and drop them here', accepts: '.pdf', multiple: true },
+  repair: { title: 'Repair PDF', desc: 'Attempt to recover content from damaged or corrupt PDFs.', uploadHeadline: 'Upload one or more PDFs to repair', uploadSubline: 'or drag and drop them here', accepts: '.pdf', multiple: true },
+  ocr: { title: 'OCR PDF', desc: 'Recognize scanned text layers and convert to searchable formats.', uploadHeadline: 'Upload scanned PDFs to apply OCR', uploadSubline: 'or drag and drop them here', accepts: '.pdf', multiple: true },
   'img-to-pdf': { title: 'JPG to PDF', desc: 'Convert JPG and PNG images into a PDF file.', uploadHeadline: 'Upload images to convert to PDF', uploadSubline: 'or drag and drop them here', accepts: 'image/png, image/jpeg, image/jpg', multiple: true },
-  'word-to-pdf': { title: 'Word to PDF', desc: 'Convert DOCX documents to formatted PDFs.', uploadHeadline: 'Upload a Word file to convert', uploadSubline: 'or drag and drop it here', accepts: '.docx', multiple: false },
-  'ppt-to-pdf': { title: 'PPT to PDF', desc: 'Convert PowerPoint slides to PDFs.', uploadHeadline: 'Upload a PPTX presentation to convert', uploadSubline: 'or drag and drop it here', accepts: '.pptx', multiple: false },
-  'excel-to-pdf': { title: 'Excel to PDF', desc: 'Convert XLSX spreadsheets to PDFs.', uploadHeadline: 'Upload an Excel spreadsheet to convert', uploadSubline: 'or drag and drop it here', accepts: '.xlsx', multiple: false },
+  'word-to-pdf': { title: 'Word to PDF', desc: 'Convert DOCX documents to formatted PDFs.', uploadHeadline: 'Upload Word files to convert', uploadSubline: 'or drag and drop them here', accepts: '.docx', multiple: true },
+  'ppt-to-pdf': { title: 'PPT to PDF', desc: 'Convert PowerPoint slides to PDFs.', uploadHeadline: 'Upload PPTX presentations to convert', uploadSubline: 'or drag and drop them here', accepts: '.pptx', multiple: true },
+  'excel-to-pdf': { title: 'Excel to PDF', desc: 'Convert XLSX spreadsheets to PDFs.', uploadHeadline: 'Upload Excel spreadsheets to convert', uploadSubline: 'or drag and drop them here', accepts: '.xlsx', multiple: true },
   'html-to-pdf': { title: 'HTML to PDF', desc: 'Compile raw HTML code or web URLs into formatted PDFs.', uploadHeadline: 'HTML input mode active', uploadSubline: 'Configure parameters in sidebar', accepts: '', multiple: false, noUpload: true },
-  'pdf-to-img': { title: 'PDF to JPG', desc: 'Extract pages from a PDF as separate PNG image downloads.', uploadHeadline: 'Upload a PDF to convert to images', uploadSubline: 'or drag and drop it here', accepts: '.pdf', multiple: false },
-  'pdf-to-word': { title: 'PDF to Word', desc: 'Export PDF content text into a Word document.', uploadHeadline: 'Upload a PDF to convert to DOCX', uploadSubline: 'or drag and drop it here', accepts: '.pdf', multiple: false },
-  'pdf-to-ppt': { title: 'PDF to PPT', desc: 'Export PDF pages into PowerPoint presentation slides.', uploadHeadline: 'Upload a PDF to convert to PPTX', uploadSubline: 'or drag and drop it here', accepts: '.pdf', multiple: false },
-  'pdf-to-excel': { title: 'PDF to Excel', desc: 'Parse table boundaries and export data to Excel spreadsheet rows.', uploadHeadline: 'Upload a PDF to convert to XLSX', uploadSubline: 'or drag and drop it here', accepts: '.pdf', multiple: false },
-  rotate: { title: 'Rotate PDF', desc: 'Set portrait/landscape rotation angles on pages.', uploadHeadline: 'Upload a PDF to rotate pages', uploadSubline: 'or drag and drop it here', accepts: '.pdf', multiple: false },
-  'page-numbers': { title: 'Page Numbers', desc: 'Stamp page count numbering onto page corners.', uploadHeadline: 'Upload a PDF to add page numbers', uploadSubline: 'or drag and drop it here', accepts: '.pdf', multiple: false },
-  watermark: { title: 'Add Watermark', desc: 'Overlay customized text watermarks onto all pages.', uploadHeadline: 'Upload a PDF to watermark', uploadSubline: 'or drag and drop it here', accepts: '.pdf', multiple: false },
+  'pdf-to-img': { title: 'PDF to JPG', desc: 'Extract pages from a PDF as separate PNG image downloads.', uploadHeadline: 'Upload one or more PDFs to convert to images', uploadSubline: 'or drag and drop them here', accepts: '.pdf', multiple: true },
+  'pdf-to-word': { title: 'PDF to Word', desc: 'Export PDF content text into a Word document.', uploadHeadline: 'Upload one or more PDFs to convert to DOCX', uploadSubline: 'or drag and drop them here', accepts: '.pdf', multiple: true },
+  'pdf-to-ppt': { title: 'PDF to PPT', desc: 'Export PDF pages into PowerPoint presentation slides.', uploadHeadline: 'Upload one or more PDFs to convert to PPTX', uploadSubline: 'or drag and drop them here', accepts: '.pdf', multiple: true },
+  'pdf-to-excel': { title: 'PDF to Excel', desc: 'Parse table boundaries and export data to Excel spreadsheet rows.', uploadHeadline: 'Upload one or more PDFs to convert to XLSX', uploadSubline: 'or drag and drop them here', accepts: '.pdf', multiple: true },
+  rotate: { title: 'Rotate PDF', desc: 'Set portrait/landscape rotation angles on pages.', uploadHeadline: 'Upload one or more PDFs to rotate pages', uploadSubline: 'or drag and drop them here', accepts: '.pdf', multiple: true },
+  'page-numbers': { title: 'Page Numbers', desc: 'Stamp page count numbering onto page corners.', uploadHeadline: 'Upload one or more PDFs to add page numbers', uploadSubline: 'or drag and drop them here', accepts: '.pdf', multiple: true },
+  watermark: { title: 'Add Watermark', desc: 'Overlay customized text watermarks onto all pages.', uploadHeadline: 'Upload one or more PDFs to watermark', uploadSubline: 'or drag and drop them here', accepts: '.pdf', multiple: true },
   crop: { title: 'Crop PDF', desc: 'Visual margin boundaries clipper.', uploadHeadline: 'Upload a PDF to crop margins', uploadSubline: 'or drag and drop it here', accepts: '.pdf', multiple: false },
   'edit-pdf': { title: 'Edit PDF', desc: 'Draw annotations or type custom text overlays onto pages.', uploadHeadline: 'Upload a PDF to edit text on', uploadSubline: 'or drag and drop it here', accepts: '.pdf', multiple: false },
   'pdf-forms': { title: 'PDF Forms', desc: 'Fill out interactive form fields in documents.', uploadHeadline: 'Upload a PDF form to fill', uploadSubline: 'or drag and drop it here', accepts: '.pdf', multiple: false },
-  protect: { title: 'Protect PDF', desc: 'Lock and encrypt a PDF with a password.', uploadHeadline: 'Upload a PDF to encrypt', uploadSubline: 'or drag and drop it here', accepts: '.pdf', multiple: false },
-  unlock: { title: 'Unlock PDF', desc: 'Unlock password constraints from encrypted PDFs.', uploadHeadline: 'Upload an encrypted PDF to unlock', uploadSubline: 'or drag and drop it here', accepts: '.pdf', multiple: false },
+  protect: { title: 'Protect PDF', desc: 'Lock and encrypt a PDF with a password.', uploadHeadline: 'Upload one or more PDFs to encrypt', uploadSubline: 'or drag and drop them here', accepts: '.pdf', multiple: true },
+  unlock: { title: 'Unlock PDF', desc: 'Unlock password constraints from encrypted PDFs.', uploadHeadline: 'Upload encrypted PDFs to unlock', uploadSubline: 'or drag and drop them here', accepts: '.pdf', multiple: true },
   sign: { title: 'Sign PDF', desc: 'Visually stamp custom signature drawings onto pages.', uploadHeadline: 'Upload a PDF to sign', uploadSubline: 'or drag and drop it here', accepts: '.pdf', multiple: false },
   redact: { title: 'Redact PDF', desc: 'Visually black out sensitive section coordinates on pages.', uploadHeadline: 'Upload a PDF to redact sections', uploadSubline: 'or drag and drop it here', accepts: '.pdf', multiple: false },
   compare: { title: 'Compare PDF', desc: 'Validate metadata and page alignment comparisons between two PDFs.', uploadHeadline: 'Upload two PDF documents to compare', uploadSubline: 'or drag and drop them here', accepts: '.pdf', multiple: true },
   'ai-assistant': { title: 'AI PDF Assistant', desc: 'Chat, translate, summarize, or generate study notes from PDF text.', uploadHeadline: 'Upload a PDF to analyze with AI', uploadSubline: 'or drag and drop it here', accepts: '.pdf', multiple: false },
-  'remove-background': { title: 'Background Remover', desc: 'Remove background from images automatically using AI.', uploadHeadline: 'Upload an image to remove background', uploadSubline: 'or drag and drop it here', accepts: 'image/png, image/jpeg, image/jpg', multiple: false },
-  'upscale-image': { title: 'Image Upscaler', desc: 'Enhance resolution and quality of images.', uploadHeadline: 'Upload an image to upscale', uploadSubline: 'or drag and drop it here', accepts: 'image/png, image/jpeg, image/jpg', multiple: false }
+  'remove-background': { title: 'Background Remover', desc: 'Remove background from images automatically using AI.', uploadHeadline: 'Upload one or more images to remove background', uploadSubline: 'or drag and drop them here', accepts: 'image/png, image/jpeg, image/jpg', multiple: true },
+  'upscale-image': { title: 'Image Upscaler', desc: 'Enhance resolution and quality of images.', uploadHeadline: 'Upload one or more images to upscale', uploadSubline: 'or drag and drop them here', accepts: 'image/png, image/jpeg, image/jpg', multiple: true }
 };
 
 // Success download cache
@@ -558,9 +560,9 @@ function getExtraContentForTool(toolId) {
   if (TOOL_EXTRA_CONTENT[toolId]) {
     return TOOL_EXTRA_CONTENT[toolId];
   }
-  
+
   const meta = TOOL_META[toolId] || { title: 'Document Tool', desc: 'Manage your documents easily.' };
-  
+
   let category = 'Utility';
   let icon = '🛠️';
   if (toolId.includes('pdf-to-') || toolId.includes('-to-pdf')) {
@@ -640,7 +642,7 @@ function showSuccessView(filename) {
   setWorkspaceState('success');
 }
 
-window.toggleToolFaq = function(index) {
+window.toggleToolFaq = function (index) {
   const panel = document.getElementById(`tool-faq-panel-${index}`);
   const icon = document.getElementById(`tool-faq-icon-${index}`);
   if (!panel || !icon) return;
@@ -659,16 +661,16 @@ window.toggleToolFaq = function(index) {
 async function loadToolLandingBlogs() {
   const container = document.getElementById('tool-blogs-grid');
   if (!container) return;
-  
+
   const toolId = currentTool;
   if (!toolId) return;
   const meta = TOOL_META[toolId] || { title: 'Document Tool', desc: 'Manage your documents easily.' };
-  
+
   try {
     const res = await fetch('/api/blog');
     const data = await res.json();
     let postsToShow = [];
-    
+
     // Define tool keywords for filtering real articles
     const TOOL_KEYWORDS = {
       'merge': ['merge', 'combine', 'join', 'concatenate', 'unify'],
@@ -700,7 +702,7 @@ async function loadToolLandingBlogs() {
       'ai-summarize': ['summarize', 'summary', 'abstract', 'condense', 'ai', 'key points'],
       'ai-translate': ['translate', 'translation', 'language', 'multilingual', 'ai', 'interpret']
     };
-    
+
     if (res.ok && data.posts && data.posts.length > 0) {
       const keywords = TOOL_KEYWORDS[toolId] || [toolId.replace('-', ' ')];
       // Filter real posts by keyword matches in title or content
@@ -711,7 +713,7 @@ async function loadToolLandingBlogs() {
       });
       postsToShow = matchedPosts.slice(0, 3);
     }
-    
+
     // If we have fewer than 3 real posts, generate high-quality fallback articles specific to this tool
     if (postsToShow.length < 3) {
       const fallbacks = [
@@ -743,13 +745,13 @@ async function loadToolLandingBlogs() {
           isFallback: true
         }
       ];
-      
+
       while (postsToShow.length < 3) {
         const fbIndex = postsToShow.length;
         postsToShow.push(fallbacks[fbIndex]);
       }
     }
-    
+
     // Render posts
     container.innerHTML = postsToShow.map(post => {
       const dateStr = new Date(post.createdAt).toLocaleDateString(undefined, {
@@ -759,9 +761,9 @@ async function loadToolLandingBlogs() {
       const doc = new DOMParser().parseFromString(post.content, 'text/html');
       const textContent = doc.body.textContent || "";
       const snippet = textContent.length > 120 ? textContent.substring(0, 120) + "..." : textContent;
-      
+
       const badgeText = post.category || (post.isFallback ? 'Guide' : 'Community Article');
-      
+
       return `
         <article class="testimonial-card" style="font-style: normal; gap: 1rem; align-items: stretch; justify-content: space-between; border-radius: 0.75rem; border: 1px solid var(--border-color); background: var(--bg-card); padding: 1.25rem;">
           <div>
@@ -781,7 +783,7 @@ async function loadToolLandingBlogs() {
         </article>
       `;
     }).join('');
-    
+
   } catch (err) {
     console.error(err);
   }
@@ -789,26 +791,26 @@ async function loadToolLandingBlogs() {
 
 function populateToolLandingDetails(tool, meta) {
   const extra = getExtraContentForTool(tool);
-  
+
   document.getElementById('edu-tool-category').textContent = extra.category;
-  
+
   const iconWrapper = document.getElementById('edu-tool-icon');
   if (iconWrapper) {
     iconWrapper.textContent = extra.icon;
   }
-  
+
   document.getElementById('edu-tool-title').textContent = meta.title;
   document.getElementById('edu-tool-desc').textContent = meta.desc;
-  
+
   const badgesContainer = document.getElementById('edu-badges-container');
   if (badgesContainer) {
     badgesContainer.innerHTML = extra.badges.map(b => `<span class="edu-badge">${escapeHTML(b)}</span>`).join('');
   }
-  
+
   document.getElementById('edu-info-input').textContent = extra.input;
   document.getElementById('edu-info-engine').textContent = extra.engine;
   document.getElementById('edu-info-output').textContent = extra.output;
-  
+
   const flowContainer = document.getElementById('edu-flow-container');
   if (flowContainer) {
     flowContainer.innerHTML = extra.flow.map((step, idx) => `
@@ -818,7 +820,7 @@ function populateToolLandingDetails(tool, meta) {
       </div>
     `).join('');
   }
-  
+
   let relatedList = extra.related || ['merge', 'split', 'compress'];
   relatedList = relatedList.filter(id => id !== tool).slice(0, 3);
   const relatedGrid = document.getElementById('related-tools-grid');
@@ -839,20 +841,20 @@ function populateToolLandingDetails(tool, meta) {
       `;
     }).join('');
   }
-  
+
   document.getElementById('detail-about-title').textContent = `About ${meta.title}`;
   document.getElementById('detail-about-text').textContent = extra.about;
-  
+
   const featuresList = document.getElementById('detail-features-list');
   if (featuresList) {
     featuresList.innerHTML = extra.features.map(f => `<li>${escapeHTML(f)}</li>`).join('');
   }
-  
+
   const usersList = document.getElementById('detail-users-list');
   if (usersList) {
     usersList.innerHTML = extra.whoUses.map(u => `<li>${escapeHTML(u)}</li>`).join('');
   }
-  
+
   document.getElementById('detail-steps-title').textContent = `How to Use ${meta.title}`;
   const stepsTimeline = document.getElementById('detail-steps-timeline');
   if (stepsTimeline) {
@@ -863,7 +865,7 @@ function populateToolLandingDetails(tool, meta) {
       </div>
     `).join('');
   }
-  
+
   const faqAccordion = document.getElementById('tool-faq-accordion');
   if (faqAccordion) {
     faqAccordion.innerHTML = extra.faqs.map((f, index) => {
@@ -880,9 +882,9 @@ function populateToolLandingDetails(tool, meta) {
       `;
     }).join('');
   }
-  
+
   loadToolLandingBlogs();
-  
+
   if (meta.noUpload) {
     setWorkspaceState('operations');
   } else {
@@ -906,6 +908,27 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Process query parameters for Stripe payment success redirects
   const urlParams = new URLSearchParams(window.location.search);
+
+  // Handle auto-launching a tool or tab from URL parameters
+  const launchTool = urlParams.get('tool');
+  if (launchTool) {
+    navigateToTool(launchTool);
+  }
+
+  const launchTab = urlParams.get('tab');
+  if (launchTab === 'blog') {
+    navigateToBlog();
+  } else if (launchTab === 'profile' || launchTab === 'billing' || launchTab === 'teams') {
+    navigateToAccountDashboard(launchTab);
+  }
+
+  if (urlParams.get('contact') === 'true') {
+    const salesOverlay = document.getElementById('contact-sales-overlay');
+    if (salesOverlay) salesOverlay.classList.add('active');
+  } else if (urlParams.get('upgrade') === 'true' || urlParams.get('pricing') === 'true') {
+    showAuthModal('upgrade');
+  }
+
   const paymentStatus = urlParams.get('payment');
   const sessionId = urlParams.get('session_id');
 
@@ -972,7 +995,7 @@ function setupCardMouseEffect() {
 function updateThemeUI(isDark) {
   const btn = document.getElementById('btn-toggle-dark');
   if (!btn) return;
-  
+
   if (isDark) {
     document.body.classList.add('dark-theme');
     btn.title = "Toggle Light Mode";
@@ -1037,13 +1060,968 @@ function closeAuthDrawer() {
   }
 }
 
-function setupEventListeners() {
-  document.getElementById('logo-link').addEventListener('click', (e) => {
-    e.preventDefault();
-    navigateToDashboard();
+function updatePricingDisplay() {
+  const isYearly = pricingInterval === 'year';
+  const price = isYearly ? 4 : 7;
+  const periodText = isYearly ? '/ user / month (billed yearly)' : '/ user / month';
+
+  // Update landing page
+  const landPrice = document.getElementById('landing-premium-price');
+  const landPeriod = document.getElementById('landing-premium-period');
+  const landToggle = document.getElementById('landing-pricing-toggle');
+  const landInput = document.getElementById('input-landing-seats');
+
+  if (landPrice) landPrice.textContent = `$${price}`;
+  if (landPeriod) landPeriod.textContent = periodText;
+  if (landToggle) landToggle.checked = isYearly;
+  if (landInput) landInput.value = pricingSeats;
+
+  // Toggle labels highlights for landing
+  const landLblMonthly = document.getElementById('landing-toggle-label-monthly');
+  const landLblYearly = document.getElementById('landing-toggle-label-yearly');
+  if (landLblMonthly && landLblYearly) {
+    if (isYearly) {
+      landLblMonthly.classList.remove('active');
+      landLblMonthly.style.color = 'var(--text-muted)';
+      landLblYearly.classList.add('active');
+      landLblYearly.style.color = 'var(--text-primary)';
+    } else {
+      landLblMonthly.classList.add('active');
+      landLblMonthly.style.color = 'var(--text-primary)';
+      landLblYearly.classList.remove('active');
+      landLblYearly.style.color = 'var(--text-muted)';
+    }
+  }
+
+  // Update upgrade modal
+  const modalPrice = document.getElementById('modal-premium-price');
+  const modalPeriod = document.getElementById('modal-premium-period');
+  const modalToggle = document.getElementById('modal-pricing-toggle');
+  const modalInput = document.getElementById('input-modal-seats');
+
+  if (modalPrice) modalPrice.textContent = `$${price}`;
+  if (modalPeriod) modalPeriod.textContent = periodText;
+  if (modalToggle) modalToggle.checked = isYearly;
+  if (modalInput) modalInput.value = pricingSeats;
+
+  const modalLblMonthly = document.getElementById('modal-toggle-label-monthly');
+  const modalLblYearly = document.getElementById('modal-toggle-label-yearly');
+  if (modalLblMonthly && modalLblYearly) {
+    if (isYearly) {
+      modalLblMonthly.classList.remove('active');
+      modalLblMonthly.style.color = 'var(--text-muted)';
+      modalLblYearly.classList.add('active');
+      modalLblYearly.style.color = 'var(--text-primary)';
+    } else {
+      modalLblMonthly.classList.add('active');
+      modalLblMonthly.style.color = 'var(--text-primary)';
+      modalLblYearly.classList.remove('active');
+      modalLblYearly.style.color = 'var(--text-muted)';
+    }
+  }
+
+  // Update CRM dashboard
+  const crmPrice = document.getElementById('crm-premium-price');
+  const crmPeriod = document.getElementById('crm-premium-period');
+  const crmToggle = document.getElementById('crm-pricing-toggle');
+  const crmInput = document.getElementById('input-crm-seats');
+
+  if (crmPrice) crmPrice.textContent = `$${price}`;
+  if (crmPeriod) crmPeriod.textContent = periodText;
+  if (crmToggle) crmToggle.checked = isYearly;
+  if (crmInput) crmInput.value = pricingSeats;
+
+  const crmLblMonthly = document.getElementById('crm-toggle-label-monthly');
+  const crmLblYearly = document.getElementById('crm-toggle-label-yearly');
+  if (crmLblMonthly && crmLblYearly) {
+    if (isYearly) {
+      crmLblMonthly.classList.remove('active');
+      crmLblMonthly.style.color = 'var(--text-muted)';
+      crmLblYearly.classList.add('active');
+      crmLblYearly.style.color = 'var(--text-primary)';
+    } else {
+      crmLblMonthly.classList.add('active');
+      crmLblMonthly.style.color = 'var(--text-primary)';
+      crmLblYearly.classList.remove('active');
+      crmLblYearly.style.color = 'var(--text-muted)';
+    }
+  }
+}
+
+function initializePricingListeners() {
+  // Interval Toggles
+  const landToggle = document.getElementById('landing-pricing-toggle');
+  if (landToggle) {
+    landToggle.addEventListener('change', (e) => {
+      pricingInterval = e.target.checked ? 'year' : 'month';
+      updatePricingDisplay();
+    });
+  }
+  const modalToggle = document.getElementById('modal-pricing-toggle');
+  if (modalToggle) {
+    modalToggle.addEventListener('change', (e) => {
+      pricingInterval = e.target.checked ? 'year' : 'month';
+      updatePricingDisplay();
+    });
+  }
+
+  // Filesize per task Dropdown Toggle
+  const headerFilesize = document.getElementById('category-filesize-header');
+  const arrowFilesize = document.getElementById('category-filesize-arrow');
+  if (headerFilesize && arrowFilesize) {
+    headerFilesize.addEventListener('click', () => {
+      const rows = document.querySelectorAll('.category-filesize-row');
+      const isCollapsed = arrowFilesize.style.transform === 'rotate(0deg)' || arrowFilesize.style.transform === '';
+      if (isCollapsed) {
+        rows.forEach(r => r.style.display = 'table-row');
+        arrowFilesize.style.transform = 'rotate(90deg)';
+      } else {
+        rows.forEach(r => r.style.display = 'none');
+        arrowFilesize.style.transform = 'rotate(0deg)';
+      }
+    });
+  }
+
+  // Standard PDF Tools Dropdown Toggle
+  const headerTools = document.getElementById('category-tools-header');
+  const arrowTools = document.getElementById('category-tools-arrow');
+  if (headerTools && arrowTools) {
+    headerTools.addEventListener('click', () => {
+      const rows = document.querySelectorAll('.category-tools-row');
+      const isCollapsed = arrowTools.style.transform === 'rotate(0deg)' || arrowTools.style.transform === '';
+      if (isCollapsed) {
+        // Expand
+        rows.forEach(r => r.style.display = 'table-row');
+        arrowTools.style.transform = 'rotate(90deg)';
+      } else {
+        // Collapse
+        rows.forEach(r => r.style.display = 'none');
+        arrowTools.style.transform = 'rotate(0deg)';
+      }
+    });
+  }
+
+  // Batch Processing Dropdown Toggle
+  const headerBatch = document.getElementById('category-batch-header');
+  const arrowBatch = document.getElementById('category-batch-arrow');
+  if (headerBatch && arrowBatch) {
+    headerBatch.addEventListener('click', () => {
+      const rows = document.querySelectorAll('.category-batch-row');
+      const isCollapsed = arrowBatch.style.transform === 'rotate(0deg)' || arrowBatch.style.transform === '';
+      if (isCollapsed) {
+        rows.forEach(r => r.style.display = 'table-row');
+        arrowBatch.style.transform = 'rotate(90deg)';
+      } else {
+        rows.forEach(r => r.style.display = 'none');
+        arrowBatch.style.transform = 'rotate(0deg)';
+      }
+    });
+  }
+
+  // AI PDF Features Dropdown Toggle
+  const headerAI = document.getElementById('category-ai-header');
+  const arrowAI = document.getElementById('category-ai-arrow');
+  if (headerAI && arrowAI) {
+    headerAI.addEventListener('click', () => {
+      const rows = document.querySelectorAll('.category-ai-row');
+      const isCollapsed = arrowAI.style.transform === 'rotate(0deg)' || arrowAI.style.transform === '';
+      if (isCollapsed) {
+        rows.forEach(r => r.style.display = 'table-row');
+        arrowAI.style.transform = 'rotate(90deg)';
+      } else {
+        rows.forEach(r => r.style.display = 'none');
+        arrowAI.style.transform = 'rotate(0deg)';
+      }
+    });
+  }
+
+  // Business & Support Dropdown Toggle
+  const headerBusiness = document.getElementById('category-business-header');
+  const arrowBusiness = document.getElementById('category-business-arrow');
+  if (headerBusiness && arrowBusiness) {
+    headerBusiness.addEventListener('click', () => {
+      const rows = document.querySelectorAll('.category-business-row');
+      const isCollapsed = arrowBusiness.style.transform === 'rotate(0deg)' || arrowBusiness.style.transform === '';
+      if (isCollapsed) {
+        rows.forEach(r => r.style.display = 'table-row');
+        arrowBusiness.style.transform = 'rotate(90deg)';
+      } else {
+        rows.forEach(r => r.style.display = 'none');
+        arrowBusiness.style.transform = 'rotate(0deg)';
+      }
+    });
+  }
+
+  const crmToggle = document.getElementById('crm-pricing-toggle');
+  if (crmToggle) {
+    crmToggle.addEventListener('change', (e) => {
+      pricingInterval = e.target.checked ? 'year' : 'month';
+      updatePricingDisplay();
+    });
+  }
+
+  // Seat control helper
+  const adjustSeats = (amount) => {
+    pricingSeats = Math.min(25, Math.max(1, pricingSeats + amount));
+    updatePricingDisplay();
+  };
+
+  // Seat controls binding
+  ['landing', 'modal', 'crm'].forEach(prefix => {
+    const btnMinus = document.getElementById(`btn-${prefix}-seats-minus`);
+    const btnPlus = document.getElementById(`btn-${prefix}-seats-plus`);
+    if (btnMinus) btnMinus.addEventListener('click', () => adjustSeats(-1));
+    if (btnPlus) btnPlus.addEventListener('click', () => adjustSeats(1));
   });
+
+  // Contact Sales buttons binding
+  ['btn-landing-business', 'btn-modal-business', 'btn-crm-business'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        
+        // Hide auth modal overlay if open
+        const settingsModal = document.getElementById('auth-modal-overlay');
+        const upgradeModal = document.getElementById('upgrade-modal');
+        if (upgradeModal && settingsModal) {
+          settingsModal.classList.remove('active');
+          upgradeModal.style.display = 'none';
+        }
+        
+        // Ensure we navigate back to the main landing page first
+        navigateToDashboard();
+        
+        // Scroll smoothly to the contact section at the bottom of the landing page
+        const contactSec = document.getElementById('landing-contact-section');
+        if (contactSec) {
+          contactSec.scrollIntoView({ behavior: 'smooth' });
+        }
+      });
+    }
+  });
+
+  // Handle Landing Page Contact Sales form submission (SMTP-driven + Database-backed)
+  const landingContactForm = document.getElementById('landing-contact-sales-form');
+  if (landingContactForm) {
+    landingContactForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const firstName = document.getElementById('landing-sales-first-name').value.trim();
+      const lastName = document.getElementById('landing-sales-last-name').value.trim();
+      const companyName = document.getElementById('landing-sales-company').value.trim();
+      const businessEmail = document.getElementById('landing-sales-email').value.trim();
+      const message = document.getElementById('landing-sales-message').value.trim();
+
+      try {
+        const res = await fetch('/api/contact-sales', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ firstName, lastName, companyName, businessEmail, message })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to submit inquiry');
+        
+        showToast(data.message || 'Thank you! Your inquiry was sent successfully.', 'success');
+        landingContactForm.reset();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    });
+  }
+
+  // Initial call to sync display states
+  updatePricingDisplay();
+}
+
+// function setupEventListeners() {
+//   const dropzone = document.getElementById('dropzone');
+//   const fileInput = document.getElementById('file-input-element');
+//   const logoLink = document.getElementById('logo-link');
+//   if (logoLink) {
+//     logoLink.addEventListener('click', (e) => {
+//       if (window.location.pathname !== '/' && window.location.pathname !== '/index.html') {
+//         return; // Let standard link redirect
+//       }
+//       e.preventDefault();
+//       navigateToDashboard();
+//     });
+//   }
+
+//   const backToDash = document.getElementById('btn-back-to-dashboard');
+//   if (backToDash) backToDash.addEventListener('click', navigateToDashboard);
+
+//   // AI Assistant Mode Selection Change Listener
+//   const aiModeSelect = document.getElementById('ai-assistant-mode-select');
+//   if (aiModeSelect) {
+//     aiModeSelect.addEventListener('change', (e) => {
+//       const mode = e.target.value;
+//       // Hide all mode-specific panels
+//       document.querySelectorAll('.ai-mode-panel').forEach(panel => {
+//         panel.style.display = 'none';
+//       });
+//       // Show selected panel
+//       if (mode === 'summarize') {
+//         document.getElementById('ai-mode-description-summarize').style.display = 'block';
+//       } else if (mode === 'notes') {
+//         document.getElementById('ai-mode-description-notes').style.display = 'block';
+//       } else if (mode === 'chat') {
+//         document.getElementById('ai-mode-input-chat').style.display = 'block';
+//       } else if (mode === 'translate') {
+//         document.getElementById('ai-mode-input-translate').style.display = 'block';
+//       }
+//     });
+//   }
+
+//   // Dashboard routing cards
+//   document.querySelectorAll('.tool-card').forEach(card => {
+//     card.addEventListener('click', () => {
+//       navigateToTool(card.dataset.tool);
+//     });
+//   });
+
+//   // Popular Tools click routing
+//   document.querySelectorAll('.pop-tool-card').forEach(card => {
+//     card.addEventListener('click', () => {
+//       navigateToTool(card.dataset.tool);
+//     });
+//   });
+
+//   // Hero action buttons (launch feature modal)
+//   const showHeroFeatureModal = () => {
+//     const overlay = document.getElementById('hero-feature-overlay');
+//     if (overlay) overlay.classList.add('active');
+//   };
+//   const hideHeroFeatureModal = () => {
+//     const overlay = document.getElementById('hero-feature-overlay');
+//     if (overlay) overlay.classList.remove('active');
+//   };
+
+//   const btnHeroUpload = document.getElementById('btn-hero-upload');
+//   if (btnHeroUpload) {
+//     btnHeroUpload.addEventListener('click', showHeroFeatureModal);
+//   }
+//   const btnCloseHeroFeature = document.getElementById('btn-close-hero-feature');
+//   if (btnCloseHeroFeature) {
+//     btnCloseHeroFeature.addEventListener('click', hideHeroFeatureModal);
+//   }
+
+//   document.querySelectorAll('.hero-feature-btn').forEach(btn => {
+//     btn.addEventListener('click', () => {
+//       const selectedTool = btn.dataset.tool;
+//       hideHeroFeatureModal();
+//       navigateToTool(selectedTool);
+//       setTimeout(() => {
+//         const fileInput = document.getElementById('file-input-element');
+//         if (fileInput) fileInput.click();
+//       }, 50);
+//     });
+//   });
+
+//   const scrollExplore = (e) => {
+//     e.preventDefault();
+//     navigateToDashboard();
+//     document.querySelector('.all-tools-header').scrollIntoView({ behavior: 'smooth' });
+//   };
+//   const heroExplore = document.getElementById('btn-hero-explore');
+//   if (heroExplore) heroExplore.addEventListener('click', scrollExplore);
+
+//   const popViewAll = document.getElementById('btn-popular-view-all');
+//   if (popViewAll) popViewAll.addEventListener('click', scrollExplore);
+
+//   // AI assistant CTA
+//   const tryAi = document.getElementById('btn-try-ai-assistant');
+//   if (tryAi) {
+//     tryAi.addEventListener('click', () => {
+//       navigateToTool('ai-assistant');
+//     });
+//   }
+
+//   // Header Nav Menu & Mega Menu Hover Logic
+//   // Header Nav Menu & Mega Menu Hover Logic
+//   const allToolsBtn = document.getElementById('nav-link-all-tools');
+//   const aiToolsBtn = document.getElementById('nav-link-ai-tools');
+//   const megaMenu = document.getElementById('desktop-mega-menu');
+//   const aiToolsMenu = document.getElementById('desktop-ai-tools-menu');
+//   let menuTimeout;
+
+//   const showMenu = (menu) => {
+//     clearTimeout(menuTimeout);
+//     if (menu === megaMenu) {
+//       if (aiToolsMenu) aiToolsMenu.classList.remove('active');
+//     } else {
+//       if (megaMenu) megaMenu.classList.remove('active');
+//     }
+//     if (menu) menu.classList.add('active');
+//   };
+
+//   const hideMenu = (menu) => {
+//     menuTimeout = setTimeout(() => {
+//       if (menu) menu.classList.remove('active');
+//     }, 150);
+//   };
+
+//   if (allToolsBtn && megaMenu) {
+//     allToolsBtn.addEventListener('mouseenter', () => showMenu(megaMenu));
+//     allToolsBtn.addEventListener('mouseleave', () => hideMenu(megaMenu));
+//     allToolsBtn.addEventListener('click', scrollExplore);
+//     megaMenu.addEventListener('mouseenter', () => showMenu(megaMenu));
+//     megaMenu.addEventListener('mouseleave', () => hideMenu(megaMenu));
+//   }
+
+//   if (aiToolsBtn && aiToolsMenu) {
+//     aiToolsBtn.addEventListener('mouseenter', () => showMenu(aiToolsMenu));
+//     aiToolsBtn.addEventListener('mouseleave', () => hideMenu(aiToolsMenu));
+//     aiToolsBtn.addEventListener('click', (e) => {
+//       if (window.location.pathname !== '/' && window.location.pathname !== '/index.html') {
+//         return; // Native redirect
+//       }
+//       e.preventDefault();
+//       navigateToDashboard();
+//       const aiCard = document.querySelector('.ai-assistant-side-card');
+//       if (aiCard) aiCard.scrollIntoView({ behavior: 'smooth' });
+//     });
+//     aiToolsMenu.addEventListener('mouseenter', () => showMenu(aiToolsMenu));
+//     aiToolsMenu.addEventListener('mouseleave', () => hideMenu(aiToolsMenu));
+//   }
+
+//   // Mega menu click routing
+//   document.querySelectorAll('.mega-menu-item').forEach(item => {
+//     item.addEventListener('click', (e) => {
+//       if (window.location.pathname !== '/' && window.location.pathname !== '/index.html') {
+//         return; // Native redirect
+//       }
+//       e.preventDefault();
+//       navigateToTool(item.dataset.tool);
+//       if (megaMenu) megaMenu.classList.remove('active');
+//     });
+//   });
+
+//   // AI Tools menu click routing
+//   if (aiToolsMenu) {
+//     aiToolsMenu.querySelectorAll('.ai-tool-card-link').forEach(item => {
+//       item.addEventListener('click', (e) => {
+//         if (window.location.pathname !== '/' && window.location.pathname !== '/index.html') {
+//           return; // Native redirect
+//         }
+//         e.preventDefault();
+//         navigateToTool(item.dataset.tool);
+//         aiToolsMenu.classList.remove('active');
+//       });
+//     });
+//   }
+
+//   // Mobile tools drawer toggle
+//   const toolsDrawer = document.getElementById('mobile-tools-drawer');
+//   const openToolsBtn = document.getElementById('btn-open-tools-drawer');
+//   const closeToolsBtn = document.getElementById('btn-close-tools-drawer');
+
+//   if (openToolsBtn) {
+//     openToolsBtn.addEventListener('click', (e) => {
+//       e.preventDefault();
+//       openToolsDrawer();
+//     });
+//   }
+
+//   const crmTriggerBtn = document.getElementById('btn-trigger-crm');
+//   if (crmTriggerBtn) {
+//     crmTriggerBtn.addEventListener('click', (e) => {
+//       e.preventDefault();
+//       openCRMDrawer();
+//     });
+//   }
+
+//   const floatingCrmHandle = document.getElementById('btn-floating-crm-handle');
+//   if (floatingCrmHandle) {
+//     floatingCrmHandle.addEventListener('click', (e) => {
+//       e.preventDefault();
+//       const accDash = document.getElementById('account-dashboard-page');
+//       if (accDash && accDash.style.display === 'block') {
+//         openCRMDrawer();
+//       } else {
+//         if (currentUser) {
+//           navigateToAccountDashboard('profile');
+//           setTimeout(() => openCRMDrawer(), 100);
+//         } else {
+//           showAuthModal('login');
+//         }
+//       }
+//     });
+//   }
+//   if (closeToolsBtn) closeToolsBtn.addEventListener('click', closeToolsDrawer);
+//   if (toolsDrawer) {
+//     toolsDrawer.addEventListener('click', (e) => {
+//       if (e.target === toolsDrawer) closeToolsDrawer();
+//     });
+//   }
+
+//   // Mobile tools drawer click routing
+//   document.querySelectorAll('.drawer-tool-item').forEach(item => {
+//     item.addEventListener('click', (e) => {
+//       if (window.location.pathname !== '/' && window.location.pathname !== '/index.html') {
+//         return; // Native redirect
+//       }
+//       e.preventDefault();
+//       navigateToTool(item.dataset.tool);
+//       closeToolsDrawer();
+//     });
+//   });
+
+//   // Mobile auth drawer toggle
+//   const authDrawer = document.getElementById('mobile-auth-drawer');
+//   const openAuthBtn = document.getElementById('btn-open-auth-drawer');
+//   const closeAuthBtn = document.getElementById('btn-close-auth-drawer');
+
+//   if (openAuthBtn) {
+//     openAuthBtn.addEventListener('click', (e) => {
+//       e.preventDefault();
+//       e.stopPropagation(); // Stop immediate click-outside closing
+
+//       if (currentUser) {
+//         if (window.innerWidth > 768) {
+//           // Desktop: Toggle profile dropdown
+//           const dropdown = document.getElementById('profile-dropdown');
+//           if (dropdown) {
+//             const isVisible = dropdown.style.display === 'flex';
+//             dropdown.style.display = isVisible ? 'none' : 'flex';
+//           }
+//         } else {
+//           // Mobile: Open settings drawer
+//           openAuthDrawer();
+//         }
+//       } else {
+//         // Logged out: Open login/signup drawer
+//         openAuthDrawer();
+//       }
+//     });
+//   }
+//   if (closeAuthBtn) closeAuthBtn.addEventListener('click', closeAuthDrawer);
+//   if (authDrawer) {
+//     authDrawer.addEventListener('click', (e) => {
+//       if (e.target === authDrawer) closeAuthDrawer();
+//     });
+//   }
+
+//   // Mobile auth drawer links click handling
+//   const mobLinkFeatures = document.getElementById('mob-link-features');
+//   if (mobLinkFeatures) {
+//     mobLinkFeatures.addEventListener('click', (e) => {
+//       e.preventDefault();
+//       closeAuthDrawer();
+//       navigateToDashboard();
+//       document.querySelector('.premium-stats-grid').scrollIntoView({ behavior: 'smooth' });
+//     });
+//   }
+
+//   const mobLinkAbout = document.getElementById('mob-link-about');
+//   if (mobLinkAbout) {
+//     mobLinkAbout.addEventListener('click', (e) => {
+//       e.preventDefault();
+//       closeAuthDrawer();
+//       showToast('PixelPDF - Developed by Advanced Agentic Coding team.', 'info');
+//     });
+//   }
+
+//   const mobLinkHelp = document.getElementById('mob-link-help');
+//   if (mobLinkHelp) {
+//     mobLinkHelp.addEventListener('click', (e) => {
+//       e.preventDefault();
+//       closeAuthDrawer();
+//       showToast('Need help? Contact support at support@pixelpdf.com', 'info');
+//     });
+//   }
+
+//   const mobLinkLanguage = document.getElementById('mob-link-language');
+//   if (mobLinkLanguage) {
+//     mobLinkLanguage.addEventListener('click', (e) => {
+//       e.preventDefault();
+//       closeAuthDrawer();
+//       showToast('English language selected.', 'info');
+//     });
+//   }
+
+//   const navPricing = document.getElementById('nav-link-pricing');
+//   if (navPricing) {
+//     navPricing.addEventListener('click', (e) => {
+//       e.preventDefault();
+//       showAuthModal('upgrade');
+//     });
+//   }
+//   const navBlog = document.getElementById('nav-link-blog');
+//   if (navBlog) {
+//     navBlog.addEventListener('click', (e) => {
+//       if (window.location.pathname !== '/' && window.location.pathname !== '/index.html') {
+//         return; // Let standard link redirect
+//       }
+//       e.preventDefault();
+//       navigateToBlog();
+//     });
+//   }
+
+//   // Dark/Night Mode Toggle
+//   const toggleDark = document.getElementById('btn-toggle-dark');
+//   if (toggleDark) {
+//     toggleDark.addEventListener('click', () => {
+//       const isDarkNow = !document.body.classList.contains('dark-theme');
+//       updateThemeUI(isDarkNow);
+//       safeStorage.setItem('pixelpdf_theme', isDarkNow ? 'dark' : 'light');
+//       showToast(isDarkNow ? 'Night mode enabled!' : 'Light mode enabled!', 'info');
+//     });
+//   }
+
+//   // Upload drops
+//   if (dropzone && fileInput) {
+//     dropzone.addEventListener('click', () => fileInput.click());
+
+//     dropzone.addEventListener('dragover', (e) => {
+//       e.preventDefault();
+//       dropzone.classList.add('dragover');
+//     });
+
+//     dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+
+//     dropzone.addEventListener('drop', (e) => {
+//       e.preventDefault();
+//       dropzone.classList.remove('dragover');
+//       if (e.dataTransfer.files.length > 0) handleFilesSelected(e.dataTransfer.files);
+//     });
+
+//     fileInput.addEventListener('change', (e) => {
+//       if (e.target.files.length > 0) handleFilesSelected(e.target.files);
+//     });
+//   }
+
+//   const btnClearWorkspace = document.getElementById('btn-clear-workspace');
+//   if (btnClearWorkspace) btnClearWorkspace.addEventListener('click', clearWorkspace);
+
+//   const btnProcessAction = document.getElementById('btn-process-action');
+//   if (btnProcessAction) btnProcessAction.addEventListener('click', processFiles);
+
+//   const btnSelectAll = document.getElementById('btn-select-all-pages');
+//   if (btnSelectAll) {
+//     btnSelectAll.addEventListener('click', () => {
+//       pagePreviews.forEach((_, idx) => selectedPages.add(idx));
+//       renderPreviewsGrid();
+//       updateProcessButtonState();
+//     });
+//   }
+
+//   const btnDeselectAll = document.getElementById('btn-deselect-all-pages');
+//   if (btnDeselectAll) {
+//     btnDeselectAll.addEventListener('click', () => {
+//       selectedPages.clear();
+//       renderPreviewsGrid();
+//       updateProcessButtonState();
+//     });
+//   }
+
+//   // Reorder buttons & Remove
+//   const filesList = document.getElementById('files-list');
+//   if (filesList) {
+//     filesList.addEventListener('click', (e) => {
+//       const removeBtn = e.target.closest('.btn-remove-file');
+//       const upBtn = e.target.closest('.btn-reorder-up');
+//       const downBtn = e.target.closest('.btn-reorder-down');
+
+//       if (removeBtn) {
+//         const idx = parseInt(removeBtn.dataset.index, 10);
+//         uploadedFiles.splice(idx, 1);
+//         renderFilesList();
+//         updateProcessButtonState();
+//         if (uploadedFiles.length === 0) hideOperationsArea();
+//       }
+
+//       if (upBtn) {
+//         const idx = parseInt(upBtn.dataset.index, 10);
+//         if (idx > 0) {
+//           const temp = uploadedFiles[idx];
+//           uploadedFiles[idx] = uploadedFiles[idx - 1];
+//           uploadedFiles[idx - 1] = temp;
+//           renderFilesList();
+//         }
+//       }
+
+//       if (downBtn) {
+//         const idx = parseInt(downBtn.dataset.index, 10);
+//         if (idx < uploadedFiles.length - 1) {
+//           const temp = uploadedFiles[idx];
+//           uploadedFiles[idx] = uploadedFiles[idx + 1];
+//           uploadedFiles[idx + 1] = temp;
+//           renderFilesList();
+//         }
+//       }
+//     });
+//   }
+
+//   // Web camera snap trigger
+//   const btnWebcamSnap = document.getElementById('btn-webcam-snap');
+//   if (btnWebcamSnap) btnWebcamSnap.addEventListener('click', captureWebcamSnapshot);
+
+//   const btnWebcamToggle = document.getElementById('btn-webcam-toggle');
+//   if (btnWebcamToggle) btnWebcamToggle.addEventListener('click', stopWebcamStream);
+
+//   // Watermark parameters slide displays
+//   const wText = document.getElementById('watermark-text');
+//   const wSize = document.getElementById('watermark-size');
+//   const wRot = document.getElementById('watermark-rotation');
+//   const wOpac = document.getElementById('watermark-opacity');
+
+//   if (wSize) wSize.addEventListener('input', (e) => { const el = document.getElementById('watermark-size-val'); if (el) el.textContent = e.target.value; });
+//   if (wRot) wRot.addEventListener('input', (e) => { const el = document.getElementById('watermark-rotation-val'); if (el) el.textContent = e.target.value; });
+//   if (wOpac) wOpac.addEventListener('input', (e) => { const el = document.getElementById('watermark-opacity-val'); if (el) el.textContent = e.target.value; });
+
+//   // HTML conversion controls toggle
+//   const htmlInputType = document.getElementById('html-input-type');
+//   if (htmlInputType) {
+//     htmlInputType.addEventListener('change', (e) => {
+//       const codeGrp = document.getElementById('html-code-group');
+//       const urlGrp = document.getElementById('html-url-group');
+//       if (e.target.value === 'url') {
+//         if (codeGrp) codeGrp.style.display = 'none';
+//         if (urlGrp) urlGrp.style.display = 'flex';
+//       } else {
+//         if (codeGrp) codeGrp.style.display = 'flex';
+//         if (urlGrp) urlGrp.style.display = 'none';
+//       }
+//       updateProcessButtonState();
+//     });
+//   }
+
+//   const htmlText = document.getElementById('html-textarea');
+//   if (htmlText) htmlText.addEventListener('input', updateProcessButtonState);
+
+//   const htmlUrl = document.getElementById('html-url-input');
+//   if (htmlUrl) htmlUrl.addEventListener('input', updateProcessButtonState);
+
+//   const pdfPass = document.getElementById('pdf-password-input');
+//   if (pdfPass) pdfPass.addEventListener('input', updateProcessButtonState);
+
+//   const pdfUnlockPass = document.getElementById('pdf-unlock-password');
+//   if (pdfUnlockPass) pdfUnlockPass.addEventListener('input', updateProcessButtonState);
+
+//   const copyAiResult = document.getElementById('btn-copy-ai-result');
+//   if (copyAiResult) {
+//     copyAiResult.addEventListener('click', () => {
+//       const contentEl = document.getElementById('ai-results-content');
+//       const text = contentEl ? contentEl.textContent : '';
+//       if (text) {
+//         navigator.clipboard.writeText(text);
+//         showToast('AI content copied to clipboard!', 'success');
+//       }
+//     });
+//   }
+
+//   // Category tabs filtering
+//   document.querySelectorAll('.category-tab').forEach(tab => {
+//     tab.addEventListener('click', () => {
+//       document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
+//       tab.classList.add('active');
+//       const cat = tab.dataset.category;
+//       filterCategoryColumns(cat);
+//     });
+//   });
+
+//   // Footer navigation & tool links
+//   document.querySelectorAll('.footer-tool-link').forEach(link => {
+//     link.addEventListener('click', (e) => {
+//       e.preventDefault();
+//       navigateToTool(link.dataset.tool);
+//       window.scrollTo({ top: 0, behavior: 'smooth' });
+//     });
+//   });
+
+//   const footerLogo = document.getElementById('footer-logo-link');
+//   if (footerLogo) {
+//     footerLogo.addEventListener('click', (e) => {
+//       e.preventDefault();
+//       navigateToDashboard();
+//       window.scrollTo({ top: 0, behavior: 'smooth' });
+//     });
+//   }
+
+//   const footerBlog = document.getElementById('footer-link-blog');
+//   if (footerBlog) {
+//     footerBlog.addEventListener('click', (e) => {
+//       e.preventDefault();
+//       navigateToBlog();
+//       window.scrollTo({ top: 0, behavior: 'smooth' });
+//     });
+//   }
+
+//   const footerPricing = document.getElementById('footer-link-pricing');
+//   if (footerPricing) {
+//     footerPricing.addEventListener('click', (e) => {
+//       e.preventDefault();
+//       showAuthModal('upgrade');
+//     });
+//   }
+
+//   const footerSettings = document.getElementById('footer-link-settings');
+//   if (footerSettings) {
+//     footerSettings.addEventListener('click', (e) => {
+//       e.preventDefault();
+//       if (currentUser) {
+//         navigateToAccountDashboard('profile');
+//       } else {
+//         showToast('Please login or sign up first to access account settings.', 'info');
+//         showAuthModal('login');
+//       }
+//     });
+//   }
+
+//   // Role Tabs click switching
+//   document.querySelectorAll('.role-tab').forEach(tab => {
+//     tab.addEventListener('click', (e) => {
+//       e.preventDefault();
+//       document.querySelectorAll('.role-tab').forEach(t => t.classList.remove('active'));
+//       document.querySelectorAll('.role-tab-content').forEach(c => c.classList.remove('active'));
+
+//       tab.classList.add('active');
+//       const target = document.getElementById(`tab-${tab.dataset.tab}`);
+//       if (target) target.classList.add('active');
+//     });
+//   });
+
+//   // Pricing landing buttons action triggers
+//   const btnLandingFree = document.getElementById('btn-landing-free');
+//   if (btnLandingFree) {
+//     btnLandingFree.addEventListener('click', (e) => {
+//       e.preventDefault();
+//       const allToolsHeader = document.querySelector('.all-tools-header');
+//       if (allToolsHeader) {
+//         allToolsHeader.scrollIntoView({ behavior: 'smooth' });
+//       }
+//     });
+//   }
+
+//   const btnLandingPremium = document.getElementById('btn-landing-premium');
+//   if (btnLandingPremium) {
+//     btnLandingPremium.addEventListener('click', (e) => {
+//       e.preventDefault();
+//       showAuthModal('upgrade');
+//     });
+//   }
+
+//   const btnLandingTeam = document.getElementById('btn-landing-team');
+//   if (btnLandingTeam) {
+//     btnLandingTeam.addEventListener('click', (e) => {
+//       e.preventDefault();
+//       showAuthModal('upgrade');
+//     });
+//   }
+
+//   const btnLandingBlogAll = document.getElementById('btn-landing-blog-all');
+//   if (btnLandingBlogAll) {
+//     btnLandingBlogAll.addEventListener('click', (e) => {
+//       e.preventDefault();
+//       navigateToBlog();
+//       window.scrollTo({ top: 0, behavior: 'smooth' });
+//     });
+//   }
+
+//   // FAQ Accordion Triggers
+//   document.querySelectorAll('.faq-trigger').forEach(trigger => {
+//     trigger.addEventListener('click', (e) => {
+//       e.preventDefault();
+//       const item = trigger.closest('.faq-item');
+//       const panel = item.querySelector('.faq-panel');
+//       const isActive = item.classList.contains('active');
+
+//       // Close all other panels
+//       document.querySelectorAll('.faq-item').forEach(i => {
+//         i.classList.remove('active');
+//         const p = i.querySelector('.faq-panel');
+//         if (p) p.style.maxHeight = null;
+//       });
+
+//       if (!isActive) {
+//         item.classList.add('active');
+//         panel.style.maxHeight = panel.scrollHeight + 'px';
+//       }
+//     });
+//   });
+
+//   const newsletterForm = document.getElementById('newsletter-form');
+//   if (newsletterForm) {
+//     newsletterForm.addEventListener('submit', async (e) => {
+//       e.preventDefault();
+//       const emailInput = document.getElementById('newsletter-email');
+//       const email = emailInput ? emailInput.value.trim() : '';
+//       if (email) {
+//         showToast('Redirecting to Stripe checkout...', 'info');
+//         try {
+//           const res = await fetch('/api/stripe/newsletter-checkout', {
+//             method: 'POST',
+//             headers: {
+//               'Content-Type': 'application/json'
+//             },
+//             body: JSON.stringify({ email })
+//           });
+//           const data = await res.json();
+//           if (!res.ok) {
+//             throw new Error(data.error || 'Failed to initialize newsletter checkout');
+//           }
+//           if (data.url) {
+//             window.location.href = data.url;
+//           } else {
+//             throw new Error('Checkout URL not received');
+//           }
+//         } catch (err) {
+//           console.error(err);
+//           showToast(err.message || 'Newsletter checkout failed.', 'error');
+//         }
+//       }
+//     });
+//   }
+
+//   const eduBackBtn = document.getElementById('edu-back-btn');
+//   if (eduBackBtn) {
+//     eduBackBtn.addEventListener('click', navigateToDashboard);
+//   }
+
+//   const btnDownloadResult = document.getElementById('btn-download-result');
+//   if (btnDownloadResult) {
+//     btnDownloadResult.addEventListener('click', () => {
+//       if (lastProcessedFile) {
+//         triggerFileDownload(lastProcessedFile.bytes, lastProcessedFile.filename, lastProcessedFile.mimeType);
+//         showToast('Download started!', 'success');
+//       } else {
+//         showToast('No processed file found.', 'error');
+//       }
+//     });
+//   }
+
+//   const btnStartAnother = document.getElementById('btn-start-another');
+//   if (btnStartAnother) {
+//     btnStartAnother.addEventListener('click', () => {
+//       clearWorkspace();
+//     });
+//   }
+
+//   initializePricingListeners();
+//   setupCRMDashboardEventListeners();
+//   setupCardMouseEffect();
+// }
+
+// Draw Pen Setup
+
+function setupEventListeners() {
+  const dropzone = document.getElementById('dropzone');
+  const fileInput = document.getElementById('file-input-element');
+  const logoLink = document.getElementById('logo-link');
   
-  document.getElementById('btn-back-to-dashboard').addEventListener('click', navigateToDashboard);
+  if (logoLink) {
+    logoLink.addEventListener('click', (e) => {
+      if (window.location.pathname !== '/' && window.location.pathname !== '/index.html') {
+        return; // Let standard link redirect
+      }
+      e.preventDefault();
+      navigateToDashboard();
+    });
+  }
+
+  const backToDash = document.getElementById('btn-back-to-dashboard');
+  if (backToDash) backToDash.addEventListener('click', navigateToDashboard);
 
   // AI Assistant Mode Selection Change Listener
   const aiModeSelect = document.getElementById('ai-assistant-mode-select');
@@ -1066,7 +2044,7 @@ function setupEventListeners() {
       }
     });
   }
-  
+
   // Dashboard routing cards
   document.querySelectorAll('.tool-card').forEach(card => {
     card.addEventListener('click', () => {
@@ -1106,8 +2084,8 @@ function setupEventListeners() {
       hideHeroFeatureModal();
       navigateToTool(selectedTool);
       setTimeout(() => {
-        const fileInput = document.getElementById('file-input-element');
-        if (fileInput) fileInput.click();
+        const fInput = document.getElementById('file-input-element');
+        if (fInput) fInput.click();
       }, 50);
     });
   });
@@ -1115,24 +2093,30 @@ function setupEventListeners() {
   const scrollExplore = (e) => {
     e.preventDefault();
     navigateToDashboard();
-    document.querySelector('.all-tools-header').scrollIntoView({ behavior: 'smooth' });
+    const allToolsHeader = document.querySelector('.all-tools-header');
+    if (allToolsHeader) allToolsHeader.scrollIntoView({ behavior: 'smooth' });
   };
-  document.getElementById('btn-hero-explore').addEventListener('click', scrollExplore);
-  document.getElementById('btn-popular-view-all').addEventListener('click', scrollExplore);
+  const heroExplore = document.getElementById('btn-hero-explore');
+  if (heroExplore) heroExplore.addEventListener('click', scrollExplore);
+
+  const popViewAll = document.getElementById('btn-popular-view-all');
+  if (popViewAll) popViewAll.addEventListener('click', scrollExplore);
 
   // AI assistant CTA
-  document.getElementById('btn-try-ai-assistant').addEventListener('click', () => {
-    navigateToTool('ai-assistant');
-  });
+  const tryAi = document.getElementById('btn-try-ai-assistant');
+  if (tryAi) {
+    tryAi.addEventListener('click', () => {
+      navigateToTool('ai-assistant');
+    });
+  }
 
-  // Header Nav Menu & Mega Menu Hover Logic
   // Header Nav Menu & Mega Menu Hover Logic
   const allToolsBtn = document.getElementById('nav-link-all-tools');
   const aiToolsBtn = document.getElementById('nav-link-ai-tools');
   const megaMenu = document.getElementById('desktop-mega-menu');
   const aiToolsMenu = document.getElementById('desktop-ai-tools-menu');
   let menuTimeout;
-  
+
   const showMenu = (menu) => {
     clearTimeout(menuTimeout);
     if (menu === megaMenu) {
@@ -1142,13 +2126,13 @@ function setupEventListeners() {
     }
     if (menu) menu.classList.add('active');
   };
-  
+
   const hideMenu = (menu) => {
     menuTimeout = setTimeout(() => {
       if (menu) menu.classList.remove('active');
     }, 150);
   };
-  
+
   if (allToolsBtn && megaMenu) {
     allToolsBtn.addEventListener('mouseenter', () => showMenu(megaMenu));
     allToolsBtn.addEventListener('mouseleave', () => hideMenu(megaMenu));
@@ -1156,22 +2140,30 @@ function setupEventListeners() {
     megaMenu.addEventListener('mouseenter', () => showMenu(megaMenu));
     megaMenu.addEventListener('mouseleave', () => hideMenu(megaMenu));
   }
-  
+
   if (aiToolsBtn && aiToolsMenu) {
     aiToolsBtn.addEventListener('mouseenter', () => showMenu(aiToolsMenu));
     aiToolsBtn.addEventListener('mouseleave', () => hideMenu(aiToolsMenu));
     aiToolsBtn.addEventListener('click', (e) => {
+      if (window.location.pathname !== '/' && window.location.pathname !== '/index.html') {
+        return; // Native redirect
+      }
       e.preventDefault();
       navigateToDashboard();
-      document.querySelector('.ai-assistant-side-card').scrollIntoView({ behavior: 'smooth' });
+      const aiCard = document.querySelector('.ai-assistant-side-card');
+      if (aiCard) aiCard.scrollIntoView({ behavior: 'smooth' });
     });
     aiToolsMenu.addEventListener('mouseenter', () => showMenu(aiToolsMenu));
     aiToolsMenu.addEventListener('mouseleave', () => hideMenu(aiToolsMenu));
   }
-  
+
   // Mega menu click routing
   document.querySelectorAll('.mega-menu-item').forEach(item => {
-    item.addEventListener('click', () => {
+    item.addEventListener('click', (e) => {
+      if (window.location.pathname !== '/' && window.location.pathname !== '/index.html') {
+        return; // Native redirect
+      }
+      e.preventDefault();
       navigateToTool(item.dataset.tool);
       if (megaMenu) megaMenu.classList.remove('active');
     });
@@ -1180,7 +2172,11 @@ function setupEventListeners() {
   // AI Tools menu click routing
   if (aiToolsMenu) {
     aiToolsMenu.querySelectorAll('.ai-tool-card-link').forEach(item => {
-      item.addEventListener('click', () => {
+      item.addEventListener('click', (e) => {
+        if (window.location.pathname !== '/' && window.location.pathname !== '/index.html') {
+          return; // Native redirect
+        }
+        e.preventDefault();
         navigateToTool(item.dataset.tool);
         aiToolsMenu.classList.remove('active');
       });
@@ -1191,7 +2187,7 @@ function setupEventListeners() {
   const toolsDrawer = document.getElementById('mobile-tools-drawer');
   const openToolsBtn = document.getElementById('btn-open-tools-drawer');
   const closeToolsBtn = document.getElementById('btn-close-tools-drawer');
-  
+
   if (openToolsBtn) {
     openToolsBtn.addEventListener('click', (e) => {
       e.preventDefault();
@@ -1230,10 +2226,14 @@ function setupEventListeners() {
       if (e.target === toolsDrawer) closeToolsDrawer();
     });
   }
-  
+
   // Mobile tools drawer click routing
   document.querySelectorAll('.drawer-tool-item').forEach(item => {
-    item.addEventListener('click', () => {
+    item.addEventListener('click', (e) => {
+      if (window.location.pathname !== '/' && window.location.pathname !== '/index.html') {
+        return; // Native redirect
+      }
+      e.preventDefault();
       navigateToTool(item.dataset.tool);
       closeToolsDrawer();
     });
@@ -1243,12 +2243,12 @@ function setupEventListeners() {
   const authDrawer = document.getElementById('mobile-auth-drawer');
   const openAuthBtn = document.getElementById('btn-open-auth-drawer');
   const closeAuthBtn = document.getElementById('btn-close-auth-drawer');
-  
+
   if (openAuthBtn) {
     openAuthBtn.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation(); // Stop immediate click-outside closing
-      
+
       if (currentUser) {
         if (window.innerWidth > 768) {
           // Desktop: Toggle profile dropdown
@@ -1273,7 +2273,7 @@ function setupEventListeners() {
       if (e.target === authDrawer) closeAuthDrawer();
     });
   }
-  
+
   // Mobile auth drawer links click handling
   const mobLinkFeatures = document.getElementById('mob-link-features');
   if (mobLinkFeatures) {
@@ -1281,10 +2281,11 @@ function setupEventListeners() {
       e.preventDefault();
       closeAuthDrawer();
       navigateToDashboard();
-      document.querySelector('.premium-stats-grid').scrollIntoView({ behavior: 'smooth' });
+      const premiumStatsGrid = document.querySelector('.premium-stats-grid');
+      if (premiumStatsGrid) premiumStatsGrid.scrollIntoView({ behavior: 'smooth' });
     });
   }
-  
+
   const mobLinkAbout = document.getElementById('mob-link-about');
   if (mobLinkAbout) {
     mobLinkAbout.addEventListener('click', (e) => {
@@ -1293,7 +2294,7 @@ function setupEventListeners() {
       showToast('PixelPDF - Developed by Advanced Agentic Coding team.', 'info');
     });
   }
-  
+
   const mobLinkHelp = document.getElementById('mob-link-help');
   if (mobLinkHelp) {
     mobLinkHelp.addEventListener('click', (e) => {
@@ -1302,7 +2303,7 @@ function setupEventListeners() {
       showToast('Need help? Contact support at support@pixelpdf.com', 'info');
     });
   }
-  
+
   const mobLinkLanguage = document.getElementById('mob-link-language');
   if (mobLinkLanguage) {
     mobLinkLanguage.addEventListener('click', (e) => {
@@ -1312,135 +2313,175 @@ function setupEventListeners() {
     });
   }
 
-  document.getElementById('nav-link-pricing').addEventListener('click', (e) => {
-    e.preventDefault();
-    showAuthModal('upgrade');
-  });
-  document.getElementById('nav-link-blog').addEventListener('click', (e) => {
-    e.preventDefault();
-    navigateToBlog();
-  });
-  
-  // Dark/Night Mode Toggle
-  document.getElementById('btn-toggle-dark').addEventListener('click', () => {
-    const isDarkNow = !document.body.classList.contains('dark-theme');
-    updateThemeUI(isDarkNow);
-    safeStorage.setItem('pixelpdf_theme', isDarkNow ? 'dark' : 'light');
-    showToast(isDarkNow ? 'Night mode enabled!' : 'Light mode enabled!', 'info');
-  });
-  
-  // Upload drops
-  const dropzone = document.getElementById('dropzone');
-  const fileInput = document.getElementById('file-input-element');
-  
-  dropzone.addEventListener('click', () => fileInput.click());
-  
-  dropzone.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    dropzone.classList.add('dragover');
-  });
-  
-  dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
-  
-  dropzone.addEventListener('drop', (e) => {
-    e.preventDefault();
-    dropzone.classList.remove('dragover');
-    if (e.dataTransfer.files.length > 0) handleFilesSelected(e.dataTransfer.files);
-  });
-  
-  fileInput.addEventListener('change', (e) => {
-    if (e.target.files.length > 0) handleFilesSelected(e.target.files);
-  });
-  
-  document.getElementById('btn-clear-workspace').addEventListener('click', clearWorkspace);
-  document.getElementById('btn-process-action').addEventListener('click', processFiles);
-  
-  document.getElementById('btn-select-all-pages').addEventListener('click', () => {
-    pagePreviews.forEach((_, idx) => selectedPages.add(idx));
-    renderPreviewsGrid();
-    updateProcessButtonState();
-  });
-  
-  document.getElementById('btn-deselect-all-pages').addEventListener('click', () => {
-    selectedPages.clear();
-    renderPreviewsGrid();
-    updateProcessButtonState();
-  });
+  const navPricing = document.getElementById('nav-link-pricing');
+  if (navPricing) {
+    navPricing.addEventListener('click', (e) => {
+      e.preventDefault();
+      showAuthModal('upgrade');
+    });
+  }
+  const navBlog = document.getElementById('nav-link-blog');
+  if (navBlog) {
+    navBlog.addEventListener('click', (e) => {
+      if (window.location.pathname !== '/' && window.location.pathname !== '/index.html') {
+        return; // Let standard link redirect
+      }
+      e.preventDefault();
+      navigateToBlog();
+    });
+  }
 
-  // Reorder buttons & Remove
-  document.getElementById('files-list').addEventListener('click', (e) => {
-    const removeBtn = e.target.closest('.btn-remove-file');
-    const upBtn = e.target.closest('.btn-reorder-up');
-    const downBtn = e.target.closest('.btn-reorder-down');
-    
-    if (removeBtn) {
-      const idx = parseInt(removeBtn.dataset.index, 10);
-      uploadedFiles.splice(idx, 1);
-      renderFilesList();
+  // Dark/Night Mode Toggle
+  const toggleDark = document.getElementById('btn-toggle-dark');
+  if (toggleDark) {
+    toggleDark.addEventListener('click', () => {
+      const isDarkNow = !document.body.classList.contains('dark-theme');
+      updateThemeUI(isDarkNow);
+      safeStorage.setItem('pixelpdf_theme', isDarkNow ? 'dark' : 'light');
+      showToast(isDarkNow ? 'Night mode enabled!' : 'Light mode enabled!', 'info');
+    });
+  }
+
+  // Upload drops - WRAPPED IN A SAFE CHECK
+  if (dropzone && fileInput) {
+    dropzone.addEventListener('click', () => fileInput.click());
+
+    dropzone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropzone.classList.add('dragover');
+    });
+
+    dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+
+    dropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropzone.classList.remove('dragover');
+      if (e.dataTransfer.files.length > 0) handleFilesSelected(e.dataTransfer.files);
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files.length > 0) handleFilesSelected(e.target.files);
+    });
+  }
+
+  const btnClearWorkspace = document.getElementById('btn-clear-workspace');
+  if (btnClearWorkspace) btnClearWorkspace.addEventListener('click', clearWorkspace);
+
+  const btnProcessAction = document.getElementById('btn-process-action');
+  if (btnProcessAction) btnProcessAction.addEventListener('click', processFiles);
+
+  const btnSelectAll = document.getElementById('btn-select-all-pages');
+  if (btnSelectAll) {
+    btnSelectAll.addEventListener('click', () => {
+      pagePreviews.forEach((_, idx) => selectedPages.add(idx));
+      renderPreviewsGrid();
       updateProcessButtonState();
-      if (uploadedFiles.length === 0) hideOperationsArea();
-    }
-    
-    if (upBtn) {
-      const idx = parseInt(upBtn.dataset.index, 10);
-      if (idx > 0) {
-        const temp = uploadedFiles[idx];
-        uploadedFiles[idx] = uploadedFiles[idx - 1];
-        uploadedFiles[idx - 1] = temp;
+    });
+  }
+
+  const btnDeselectAll = document.getElementById('btn-deselect-all-pages');
+  if (btnDeselectAll) {
+    btnDeselectAll.addEventListener('click', () => {
+      selectedPages.clear();
+      renderPreviewsGrid();
+      updateProcessButtonState();
+    });
+  }
+
+  // Reorder buttons & Remove - WRAPPED IN A SAFE CHECK
+  const filesList = document.getElementById('files-list');
+  if (filesList) {
+    filesList.addEventListener('click', (e) => {
+      const removeBtn = e.target.closest('.btn-remove-file');
+      const upBtn = e.target.closest('.btn-reorder-up');
+      const downBtn = e.target.closest('.btn-reorder-down');
+
+      if (removeBtn) {
+        const idx = parseInt(removeBtn.dataset.index, 10);
+        uploadedFiles.splice(idx, 1);
         renderFilesList();
+        updateProcessButtonState();
+        if (uploadedFiles.length === 0) hideOperationsArea();
       }
-    }
-    
-    if (downBtn) {
-      const idx = parseInt(downBtn.dataset.index, 10);
-      if (idx < uploadedFiles.length - 1) {
-        const temp = uploadedFiles[idx];
-        uploadedFiles[idx] = uploadedFiles[idx + 1];
-        uploadedFiles[idx + 1] = temp;
-        renderFilesList();
+
+      if (upBtn) {
+        const idx = parseInt(upBtn.dataset.index, 10);
+        if (idx > 0) {
+          const temp = uploadedFiles[idx];
+          uploadedFiles[idx] = uploadedFiles[idx - 1];
+          uploadedFiles[idx - 1] = temp;
+          renderFilesList();
+        }
       }
-    }
-  });
+
+      if (downBtn) {
+        const idx = parseInt(downBtn.dataset.index, 10);
+        if (idx < uploadedFiles.length - 1) {
+          const temp = uploadedFiles[idx];
+          uploadedFiles[idx] = uploadedFiles[idx + 1];
+          uploadedFiles[idx + 1] = temp;
+          renderFilesList();
+        }
+      }
+    });
+  }
 
   // Web camera snap trigger
-  document.getElementById('btn-webcam-snap').addEventListener('click', captureWebcamSnapshot);
-  document.getElementById('btn-webcam-toggle').addEventListener('click', stopWebcamStream);
+  const btnWebcamSnap = document.getElementById('btn-webcam-snap');
+  if (btnWebcamSnap) btnWebcamSnap.addEventListener('click', captureWebcamSnapshot);
+
+  const btnWebcamToggle = document.getElementById('btn-webcam-toggle');
+  if (btnWebcamToggle) btnWebcamToggle.addEventListener('click', stopWebcamStream);
 
   // Watermark parameters slide displays
-  const wText = document.getElementById('watermark-text');
   const wSize = document.getElementById('watermark-size');
   const wRot = document.getElementById('watermark-rotation');
   const wOpac = document.getElementById('watermark-opacity');
 
-  wSize.addEventListener('input', (e) => document.getElementById('watermark-size-val').textContent = e.target.value);
-  wRot.addEventListener('input', (e) => document.getElementById('watermark-rotation-val').textContent = e.target.value);
-  wOpac.addEventListener('input', (e) => document.getElementById('watermark-opacity-val').textContent = e.target.value);
+  if (wSize) wSize.addEventListener('input', (e) => { const el = document.getElementById('watermark-size-val'); if (el) el.textContent = e.target.value; });
+  if (wRot) wRot.addEventListener('input', (e) => { const el = document.getElementById('watermark-rotation-val'); if (el) el.textContent = e.target.value; });
+  if (wOpac) wOpac.addEventListener('input', (e) => { const el = document.getElementById('watermark-opacity-val'); if (el) el.textContent = e.target.value; });
 
   // HTML conversion controls toggle
   const htmlInputType = document.getElementById('html-input-type');
-  htmlInputType.addEventListener('change', (e) => {
-    if (e.target.value === 'url') {
-      document.getElementById('html-code-group').style.display = 'none';
-      document.getElementById('html-url-group').style.display = 'flex';
-    } else {
-      document.getElementById('html-code-group').style.display = 'flex';
-      document.getElementById('html-url-group').style.display = 'none';
-    }
-    updateProcessButtonState();
-  });
+  if (htmlInputType) {
+    htmlInputType.addEventListener('change', (e) => {
+      const codeGrp = document.getElementById('html-code-group');
+      const urlGrp = document.getElementById('html-url-group');
+      if (e.target.value === 'url') {
+        if (codeGrp) codeGrp.style.display = 'none';
+        if (urlGrp) urlGrp.style.display = 'flex';
+      } else {
+        if (codeGrp) codeGrp.style.display = 'flex';
+        if (urlGrp) urlGrp.style.display = 'none';
+      }
+      updateProcessButtonState();
+    });
+  }
 
-  document.getElementById('html-textarea').addEventListener('input', updateProcessButtonState);
-  document.getElementById('html-url-input').addEventListener('input', updateProcessButtonState);
-  document.getElementById('pdf-password-input').addEventListener('input', updateProcessButtonState);
-  document.getElementById('pdf-unlock-password').addEventListener('input', updateProcessButtonState);
-  
-  document.getElementById('btn-copy-ai-result').addEventListener('click', () => {
-    const text = document.getElementById('ai-results-content').textContent;
-    if (text) {
-      navigator.clipboard.writeText(text);
-      showToast('AI content copied to clipboard!', 'success');
-    }
-  });
+  const htmlText = document.getElementById('html-textarea');
+  if (htmlText) htmlText.addEventListener('input', updateProcessButtonState);
+
+  const htmlUrl = document.getElementById('html-url-input');
+  if (htmlUrl) htmlUrl.addEventListener('input', updateProcessButtonState);
+
+  const pdfPass = document.getElementById('pdf-password-input');
+  if (pdfPass) pdfPass.addEventListener('input', updateProcessButtonState);
+
+  const pdfUnlockPass = document.getElementById('pdf-unlock-password');
+  if (pdfUnlockPass) pdfUnlockPass.addEventListener('input', updateProcessButtonState);
+
+  const copyAiResult = document.getElementById('btn-copy-ai-result');
+  if (copyAiResult) {
+    copyAiResult.addEventListener('click', () => {
+      const contentEl = document.getElementById('ai-results-content');
+      const text = contentEl ? contentEl.textContent : '';
+      if (text) {
+        navigator.clipboard.writeText(text);
+        showToast('AI content copied to clipboard!', 'success');
+      }
+    });
+  }
 
   // Category tabs filtering
   document.querySelectorAll('.category-tab').forEach(tab => {
@@ -1483,12 +2524,7 @@ function setupEventListeners() {
   if (footerPricing) {
     footerPricing.addEventListener('click', (e) => {
       e.preventDefault();
-      if (currentUser) {
-        navigateToAccountDashboard('billing');
-      } else {
-        showToast('Please login or sign up first to view subscription packages.', 'info');
-        showAuthModal('login');
-      }
+      showAuthModal('upgrade');
     });
   }
 
@@ -1511,7 +2547,7 @@ function setupEventListeners() {
       e.preventDefault();
       document.querySelectorAll('.role-tab').forEach(t => t.classList.remove('active'));
       document.querySelectorAll('.role-tab-content').forEach(c => c.classList.remove('active'));
-      
+
       tab.classList.add('active');
       const target = document.getElementById(`tab-${tab.dataset.tab}`);
       if (target) target.classList.add('active');
@@ -1562,14 +2598,14 @@ function setupEventListeners() {
       const item = trigger.closest('.faq-item');
       const panel = item.querySelector('.faq-panel');
       const isActive = item.classList.contains('active');
-      
+
       // Close all other panels
       document.querySelectorAll('.faq-item').forEach(i => {
         i.classList.remove('active');
         const p = i.querySelector('.faq-panel');
         if (p) p.style.maxHeight = null;
       });
-      
+
       if (!isActive) {
         item.classList.add('active');
         panel.style.maxHeight = panel.scrollHeight + 'px';
@@ -1634,23 +2670,25 @@ function setupEventListeners() {
     });
   }
 
+  initializePricingListeners();
   setupCRMDashboardEventListeners();
   setupCardMouseEffect();
 }
 
-// Draw Pen Setup
+
 function setupSignaturePad() {
   const canvas = document.getElementById('signature-pad');
+  if (!canvas) return;
   sigCtx = canvas.getContext('2d');
   sigCtx.strokeStyle = '#000000';
   sigCtx.lineWidth = 3;
   sigCtx.lineCap = 'round';
-  
+
   canvas.addEventListener('mousedown', startDrawing);
   canvas.addEventListener('mousemove', draw);
   canvas.addEventListener('mouseup', stopDrawing);
   canvas.addEventListener('mouseleave', stopDrawing);
-  
+
   canvas.addEventListener('touchstart', (e) => {
     e.preventDefault();
     const touch = e.touches[0];
@@ -1659,7 +2697,7 @@ function setupSignaturePad() {
     sigCtx.beginPath();
     sigCtx.moveTo(touch.clientX - rect.left, touch.clientY - rect.top);
   });
-  
+
   canvas.addEventListener('touchmove', (e) => {
     e.preventDefault();
     if (!isDrawing) return;
@@ -1668,9 +2706,9 @@ function setupSignaturePad() {
     sigCtx.lineTo(touch.clientX - rect.left, touch.clientY - rect.top);
     sigCtx.stroke();
   });
-  
+
   canvas.addEventListener('touchend', stopDrawing);
-  
+
   document.getElementById('btn-clear-sigpad').addEventListener('click', () => {
     sigCtx.clearRect(0, 0, canvas.width, canvas.height);
     signatureDataUrl = null;
@@ -1705,14 +2743,14 @@ function navigateToTool(tool) {
   currentTool = tool;
   const meta = TOOL_META[tool];
   if (!meta) return;
-  
+
   clearWorkspace();
-  
+
   document.getElementById('current-tool-title').textContent = meta.title;
   document.getElementById('current-tool-desc').textContent = meta.desc;
-  
+
   const dropzone = document.getElementById('dropzone');
-  
+
   if (meta.noUpload) {
     dropzone.style.display = 'none';
     showOperationsArea();
@@ -1721,7 +2759,7 @@ function navigateToTool(tool) {
     document.getElementById('upload-headline').textContent = meta.uploadHeadline;
     document.getElementById('upload-subline').textContent = meta.uploadSubline;
   }
-  
+
   const fileInput = document.getElementById('file-input-element');
   fileInput.accept = meta.accepts;
   if (meta.multiple) {
@@ -1729,40 +2767,46 @@ function navigateToTool(tool) {
   } else {
     fileInput.removeAttribute('multiple');
   }
-  
+
   document.getElementById('dashboard-page').style.display = 'none';
   document.getElementById('blog-page').style.display = 'none';
-  
+
   const accDash = document.getElementById('account-dashboard-page');
   if (accDash) accDash.style.display = 'none';
 
   document.getElementById('workspace-page').style.display = 'block';
   document.getElementById('btn-back-to-dashboard').style.display = 'flex';
-  
+
   toggleSettingsPanels(tool);
-  
+
   // Populate landing page details (breadcrumbs, content grids, FAQs, blogs)
   populateToolLandingDetails(tool, meta);
-  
+
   // Custom camera initialization
   if (tool === 'scan-to-pdf') {
     startWebcamStream();
   }
   updateHeaderTriggers();
+  window.scrollTo(0, 0);
 }
 
 function navigateToDashboard() {
   currentTool = null;
   stopWebcamStream();
   clearWorkspace();
-  document.getElementById('workspace-page').style.display = 'none';
-  document.getElementById('blog-page').style.display = 'none';
-  
+  const workPage = document.getElementById('workspace-page');
+  if (workPage) workPage.style.display = 'none';
+  const blogPage = document.getElementById('blog-page');
+  if (blogPage) blogPage.style.display = 'none';
+
   const accDash = document.getElementById('account-dashboard-page');
   if (accDash) accDash.style.display = 'none';
 
-  document.getElementById('btn-back-to-dashboard').style.display = 'none';
-  document.getElementById('dashboard-page').style.display = 'block';
+  const backBtn = document.getElementById('btn-back-to-dashboard');
+  if (backBtn) backBtn.style.display = 'none';
+
+  const dashPage = document.getElementById('dashboard-page');
+  if (dashPage) dashPage.style.display = 'block';
 
   // Reset category tabs to "All Tools"
   document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
@@ -1781,20 +2825,29 @@ function navigateToAccountDashboard(tabName = 'profile') {
     showAuthModal('login');
     return;
   }
-  
+
   currentTool = null;
   stopWebcamStream();
   clearWorkspace();
-  
-  document.getElementById('workspace-page').style.display = 'none';
-  document.getElementById('dashboard-page').style.display = 'none';
-  document.getElementById('blog-page').style.display = 'none';
-  
+
+  const workPage = document.getElementById('workspace-page');
+  if (workPage) workPage.style.display = 'none';
+
+  const dashPage = document.getElementById('dashboard-page');
+  if (dashPage) dashPage.style.display = 'none';
+
+  const blogPage = document.getElementById('blog-page');
+  if (blogPage) blogPage.style.display = 'none';
+
+  const pricingPage = document.getElementById('pricing-page');
+  if (pricingPage) pricingPage.style.display = 'none';
+
   const accDash = document.getElementById('account-dashboard-page');
   if (accDash) accDash.style.display = 'block';
-  
-  document.getElementById('btn-back-to-dashboard').style.display = 'flex';
-  
+
+  const backBtn = document.getElementById('btn-back-to-dashboard');
+  if (backBtn) backBtn.style.display = 'flex';
+
   // Populate sidebar profile info
   const nameLabel = document.getElementById('account-sidebar-name');
   if (nameLabel) {
@@ -1808,18 +2861,19 @@ function navigateToAccountDashboard(tabName = 'profile') {
     badgeLabel.textContent = `${planName.charAt(0).toUpperCase() + planName.slice(1)} Plan`;
     badgeLabel.className = `profile-dropdown-plan-badge ${isPremium ? 'premium' : 'free'}`;
   }
-  
+
   // Populate profile form inputs
-  const settingsFirstName = document.getElementById('settings-first-name');
+  const settingsFirstName = document.getElementById('dashboard-settings-first-name');
   if (settingsFirstName) settingsFirstName.value = currentUser.first_name || '';
-  const settingsLastName = document.getElementById('settings-last-name');
+  const settingsLastName = document.getElementById('dashboard-settings-last-name');
   if (settingsLastName) settingsLastName.value = currentUser.last_name || '';
+
   const settingsEmail = document.getElementById('settings-email');
   if (settingsEmail) settingsEmail.value = currentUser.email || '';
-  
+
   // Load and populate country and timezone from storage if available
-  const countrySelect = document.getElementById('settings-country');
-  const timezoneInput = document.getElementById('settings-timezone');
+  const countrySelect = document.getElementById('dashboard-settings-country');
+  const timezoneInput = document.getElementById('dashboard-settings-timezone');
   if (countrySelect || timezoneInput) {
     const localProfile = safeStorage.getItem(`pixelpdf_profile_${currentUser.email}`);
     if (localProfile) {
@@ -1842,7 +2896,7 @@ function navigateToAccountDashboard(tabName = 'profile') {
   if (crmSocialEmail) {
     crmSocialEmail.textContent = currentUser.email;
   }
-  
+
   // Refresh settings avatar wrapper
   document.querySelectorAll('.settings-avatar-wrapper').forEach(w => {
     w.innerHTML = getAvatarHtml(currentUser.profile_pic, "100%", "18%");
@@ -1850,6 +2904,17 @@ function navigateToAccountDashboard(tabName = 'profile') {
 
   // Load business details from storage
   loadCRMBusinessDetails();
+
+  // Handle Admin Control tab visibility
+  const adminTab = document.getElementById('crm-sidebar-admin');
+  if (adminTab) {
+    if (currentUser.role === 'admin') {
+      adminTab.style.display = 'flex';
+    } else {
+      adminTab.style.display = 'none';
+      if (tabName === 'admin') tabName = 'profile'; // fallback
+    }
+  }
 
   // Set the active tab
   switchAccountTab(tabName);
@@ -1877,7 +2942,7 @@ function switchAccountTab(tabName) {
       pane.style.display = 'none';
     }
   });
-  
+
   // Custom integrations when switching tab
   if (tabName === 'teams') {
     loadCRMTeamData();
@@ -1885,13 +2950,100 @@ function switchAccountTab(tabName) {
     syncCRMBillingData();
   } else if (tabName === 'invoices') {
     renderCRMInvoices();
+  } else if (tabName === 'admin') {
+    loadCRMAdminInquiries();
   }
 }
 window.switchAccountTab = switchAccountTab;
 
+async function loadCRMAdminInquiries() {
+  const tbody = document.getElementById('admin-inquiries-tbody');
+  if (!tbody) return;
+
+  tbody.innerHTML = `
+    <tr>
+      <td colspan="6" style="text-align: center; padding: 2rem; color: var(--text-muted);">Fetching enterprise inquiries...</td>
+    </tr>
+  `;
+
+  try {
+    const res = await fetch('/api/admin/inquiries', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to load inquiries');
+
+    const inquiries = data.inquiries || [];
+    if (inquiries.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="6" style="text-align: center; padding: 2rem; color: var(--text-muted);">No inquiries received yet.</td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = inquiries.map(inq => {
+      const formattedDate = new Date(inq.createdAt).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+      return `
+        <tr style="border-bottom: 1px solid var(--border-color); color: var(--text-secondary);">
+          <td style="padding: 1rem 0.75rem; font-weight: 600; color: var(--text-primary);">${inq.first_name} ${inq.last_name}</td>
+          <td style="padding: 1rem 0.75rem;">${inq.company_name}</td>
+          <td style="padding: 1rem 0.75rem;"><a href="mailto:${inq.business_email}" style="color: var(--accent-primary); text-decoration: none;">${inq.business_email}</a></td>
+          <td style="padding: 1rem 0.75rem; max-width: 250px; white-space: pre-wrap; word-break: break-word;">${inq.message}</td>
+          <td style="padding: 1rem 0.75rem; white-space: nowrap;">${formattedDate}</td>
+          <td style="padding: 1rem 0.75rem; text-align: center;">
+            <button onclick="deleteCRMInquiry(${inq.id})" class="btn-action" style="background: var(--accent-danger); border: none; padding: 0.35rem 0.75rem; font-size: 0.75rem; border-radius: 0.25rem; font-weight: 600; color: white; cursor: pointer;">
+              Delete
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+  } catch (err) {
+    console.error(err);
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="6" style="text-align: center; padding: 2rem; color: var(--accent-danger); font-weight: 600;">${err.message}</td>
+      </tr>
+    `;
+  }
+}
+window.loadCRMAdminInquiries = loadCRMAdminInquiries;
+
+async function deleteCRMInquiry(id) {
+  if (!confirm('Are you sure you want to permanently delete this sales inquiry?')) return;
+
+  try {
+    const res = await fetch(`/api/admin/inquiries/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to delete inquiry');
+
+    showToast('Inquiry deleted successfully', 'success');
+    loadCRMAdminInquiries();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+window.deleteCRMInquiry = deleteCRMInquiry;
+
 async function loadCRMTeamData() {
   if (!token) return;
-  
+
   try {
     const res = await fetch('/api/collaboration/list', {
       headers: {
@@ -1900,23 +3052,23 @@ async function loadCRMTeamData() {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Failed to fetch team list');
-    
+
     const inviteForm = document.getElementById('crm-team-invite-form');
     const seatUsage = document.getElementById('crm-team-seat-usage');
     const seatBar = document.getElementById('crm-team-seat-bar');
     const listContainer = document.getElementById('crm-team-members-list');
-    
+
     if (!listContainer) return;
 
     if (!data.canCollaborate) {
       if (inviteForm) inviteForm.style.display = 'none';
       if (seatUsage) seatUsage.textContent = '1 / 1 seat (Only you)';
       if (seatBar) seatBar.style.width = '100%';
-      
+
       const userEmail = currentUser ? currentUser.email : 'you';
       const userName = currentUser ? ((currentUser.first_name && currentUser.last_name) ? `${currentUser.first_name} ${currentUser.last_name}` : (currentUser.display_name || '')) : '';
       const displayLabel = userName ? `${userName} (${userEmail})` : userEmail;
-      
+
       listContainer.innerHTML = `
         <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; background: rgba(0,0,0,0.02); border: 1px solid var(--border-color); border-radius: 0.5rem; width: 100%;">
           <span style="font-size: 0.85rem; font-weight: 500; color: var(--text-primary);">${escapeHTML(displayLabel)}</span>
@@ -1933,17 +3085,17 @@ async function loadCRMTeamData() {
       `;
     } else {
       if (inviteForm) inviteForm.style.display = 'flex';
-      
+
       const percent = Math.min(100, Math.round((data.seatsUsed / data.maxSeats) * 100));
       if (seatUsage) seatUsage.textContent = `${data.seatsUsed} / ${data.maxSeats} used`;
       if (seatBar) seatBar.style.width = `${percent}%`;
-      
+
       listContainer.innerHTML = '';
       if (data.collaborators.length === 0) {
         listContainer.innerHTML = `<p style="font-size: 0.85rem; color: var(--text-muted); text-align: center; padding: 2rem 0;">No team members invited yet.</p>`;
         return;
       }
-      
+
       data.collaborators.forEach(c => {
         const row = document.createElement('div');
         row.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 0.5rem; width: 100%; box-sizing: border-box;';
@@ -1953,7 +3105,7 @@ async function loadCRMTeamData() {
         `;
         listContainer.appendChild(row);
       });
-      
+
       listContainer.querySelectorAll('.btn-remove-member-crm').forEach(btn => {
         btn.addEventListener('click', async (e) => {
           const email = e.currentTarget.getAttribute('data-email');
@@ -1989,47 +3141,56 @@ async function removeTeamMemberCRM(email) {
 
 function syncCRMBillingData() {
   if (!currentUser) return;
-  
+
   const isPremium = currentUser.is_premium || currentUser.subscription_plan && currentUser.subscription_plan !== 'free';
   const plan = currentUser.subscription_plan || 'free';
-  
+
   const titleEl = document.getElementById('crm-billing-plan-title');
   const descEl = document.getElementById('crm-billing-plan-desc');
   const priceEl = document.getElementById('crm-billing-plan-price');
   const durationEl = document.getElementById('crm-billing-plan-duration');
-  
+
   if (titleEl) {
     titleEl.textContent = `${plan.charAt(0).toUpperCase() + plan.slice(1)} Plan`;
   }
-  
+
   if (priceEl) {
-    if (plan === 'starter') {
-      priceEl.textContent = '$9';
-      if (durationEl) durationEl.textContent = 'per month';
-    } else if (plan === 'base') {
-      priceEl.textContent = '$29';
-      if (durationEl) durationEl.textContent = 'per month';
-    } else if (plan === 'pro') {
-      priceEl.textContent = '$79';
-      if (durationEl) durationEl.textContent = 'per month';
-    } else if (plan === 'enterprise') {
-      priceEl.textContent = '$199';
+    if (plan === 'premium') {
+      const seatPrice = currentUser.subscription_interval === 'year' ? 48 : 7;
+      const totalAmount = seatPrice * (currentUser.subscription_seats || 1);
+      priceEl.textContent = `$${totalAmount}`;
+      if (durationEl) {
+        durationEl.textContent = `for ${currentUser.subscription_seats || 1} seat${(currentUser.subscription_seats || 1) > 1 ? 's' : ''} / ${currentUser.subscription_interval === 'year' ? 'year' : 'month'}`;
+      }
+      if (descEl) {
+        descEl.textContent = `Your team workspace has access to all Premium PDF tools, OCR, and AI document assistant features.`;
+      }
+    } else if (plan === 'business') {
+      priceEl.textContent = 'Custom';
+      if (durationEl) durationEl.textContent = 'Customized Enterprise Pricing';
+      if (descEl) descEl.textContent = `SSO setup, dedicated account manager, and custom SLA parameters are active.`;
+    } else if (plan === 'starter' || plan === 'base' || plan === 'pro' || plan === 'enterprise') {
+      // Legacy compatibility
+      const prices = { starter: '$9', base: '$29', pro: '$79', enterprise: '$199' };
+      priceEl.textContent = prices[plan] || '$0';
       if (durationEl) durationEl.textContent = 'per month';
     } else {
       priceEl.textContent = '$0';
       if (durationEl) durationEl.textContent = 'Forever Free';
+      if (descEl) descEl.textContent = `Upgrade below to add team members, expand file size limits, and access AI OCR tools.`;
     }
   }
-  
+
   // Disable button for current plan
   document.querySelectorAll('.crm-btn-plan-choose').forEach(btn => {
     const btnPlan = btn.getAttribute('data-plan');
+    if (!btnPlan) return;
     if (btnPlan === plan) {
       btn.textContent = 'Current Plan';
       btn.disabled = true;
       btn.style.opacity = '0.5';
     } else {
-      btn.textContent = `Choose ${btnPlan.charAt(0).toUpperCase() + btnPlan.slice(1)}`;
+      btn.textContent = btnPlan === 'business' ? 'Contact Sales' : `Choose ${btnPlan.charAt(0).toUpperCase() + btnPlan.slice(1)}`;
       btn.disabled = false;
       btn.style.opacity = '1';
     }
@@ -2039,7 +3200,7 @@ function syncCRMBillingData() {
 function renderCRMInvoices() {
   const container = document.getElementById('crm-invoices-list');
   if (!container) return;
-  
+
   if (!currentUser || !currentUser.subscription_plan || currentUser.subscription_plan === 'free') {
     container.innerHTML = `
       <tr>
@@ -2065,32 +3226,32 @@ function renderCRMInvoices() {
     pro: '$79.00',
     enterprise: '$199.00'
   };
-  
+
   const planName = planNames[plan] || 'Premium Plan';
   const priceText = planPrices[plan] || '$9.00';
-  
+
   // Calculate historical invoice months since creation
   const registrationDate = currentUser.createdAt ? new Date(currentUser.createdAt) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000); // 30 days ago fallback
   const now = new Date();
-  
+
   let invoices = [];
   let tempDate = new Date(registrationDate.getFullYear(), registrationDate.getMonth(), 15);
-  
+
   // Generate invoice for each month from registration date to today
   while (tempDate <= now) {
     const monthName = tempDate.toLocaleString('default', { month: 'short' });
     const year = tempDate.getFullYear();
     const day = tempDate.getDate();
-    
+
     // Period is 1 month
     const nextMonthDate = new Date(tempDate.getFullYear(), tempDate.getMonth() + 1, day);
     const endMonthName = nextMonthDate.toLocaleString('default', { month: 'short' });
     const endYear = nextMonthDate.getFullYear();
-    
+
     const invoiceId = `INV-${currentUser.id.substring(0, 4).toUpperCase()}-${year}-${(tempDate.getMonth() + 1).toString().padStart(2, '0')}`;
     const dateText = `${monthName} ${day}, ${year}`;
     const periodText = `${monthName} ${day} - ${endMonthName} ${day}, ${tempDate.getMonth() + 1 > 11 ? year + 1 : year}`;
-    
+
     invoices.push({
       id: invoiceId,
       date: dateText,
@@ -2098,14 +3259,14 @@ function renderCRMInvoices() {
       amount: priceText,
       plan: planName
     });
-    
+
     // Move to next month
     tempDate.setMonth(tempDate.getMonth() + 1);
   }
-  
+
   // Sort reverse chronological
   invoices.reverse();
-  
+
   container.innerHTML = '';
   invoices.forEach(inv => {
     const tr = document.createElement('tr');
@@ -2127,7 +3288,7 @@ function renderCRMInvoices() {
     `;
     container.appendChild(tr);
   });
-  
+
   // Attach event listeners for dynamic PDF downloads
   container.querySelectorAll('.btn-download-inv-pdf').forEach(btn => {
     btn.addEventListener('click', (e) => {
@@ -2146,7 +3307,7 @@ function updateCRMActivePricingCard() {
   if (!slider) return;
   const seats = parseInt(slider.value, 10);
   const seatsCount = document.getElementById('crm-pricing-seats-count');
-  
+
   if (seatsCount) {
     if (seats >= 30) {
       seatsCount.textContent = '30+ users (Enterprise)';
@@ -2154,10 +3315,10 @@ function updateCRMActivePricingCard() {
       seatsCount.textContent = `${seats} user${seats > 1 ? 's' : ''}`;
     }
   }
-  
+
   const cards = document.querySelectorAll('.pricing-card-crm');
   cards.forEach(c => c.classList.remove('active-plan'));
-  
+
   let targetPlan = 'starter';
   if (seats === 1) {
     targetPlan = 'starter';
@@ -2168,7 +3329,7 @@ function updateCRMActivePricingCard() {
   } else {
     targetPlan = 'enterprise';
   }
-  
+
   const targetCard = document.getElementById(`crm-card-plan-${targetPlan}`);
   if (targetCard) {
     targetCard.classList.add('active-plan');
@@ -2179,13 +3340,13 @@ function saveCRMBusinessDetails() {
   const companyName = document.getElementById('business-company-name').value;
   const taxId = document.getElementById('business-tax-id').value;
   const billingEmail = document.getElementById('business-billing-email').value;
-  
+
   const address1 = document.getElementById('business-address-line1').value;
   const city = document.getElementById('business-city').value;
   const zip = document.getElementById('business-zip').value;
   const state = document.getElementById('business-state').value;
   const country = document.getElementById('business-country').value;
-  
+
   const bizProfile = { companyName, taxId, billingEmail, address1, city, zip, state, country };
   safeStorage.setItem('pixelpdf_business_profile', JSON.stringify(bizProfile));
   showToast('Business profile and billing address saved successfully.', 'success');
@@ -2200,7 +3361,7 @@ function loadCRMBusinessDetails() {
       document.getElementById('business-company-name').value = biz.companyName || '';
       document.getElementById('business-tax-id').value = biz.taxId || '';
       document.getElementById('business-billing-email').value = biz.billingEmail || '';
-      
+
       document.getElementById('business-address-line1').value = biz.address1 || '';
       document.getElementById('business-city').value = biz.city || '';
       document.getElementById('business-zip').value = biz.zip || '';
@@ -2233,16 +3394,16 @@ function setupCRMDashboardEventListeners() {
   if (crmSecurityForm) {
     crmSecurityForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      
+
       const currentPassword = document.getElementById('security-current-password').value;
       const newPassword = document.getElementById('security-new-password').value;
       const confirmPassword = document.getElementById('security-confirm-password').value;
-      
+
       if (newPassword !== confirmPassword) {
         showToast('New passwords do not match.', 'error');
         return;
       }
-      
+
       try {
         const res = await fetch('/api/user/change-password', {
           method: 'POST',
@@ -2254,7 +3415,7 @@ function setupCRMDashboardEventListeners() {
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Failed to update password');
-        
+
         showToast('Password updated successfully', 'success');
         crmSecurityForm.reset();
       } catch (err) {
@@ -2271,7 +3432,7 @@ function setupCRMDashboardEventListeners() {
       const emailInput = document.getElementById('crm-team-invite-email');
       const email = emailInput.value.trim();
       if (!email) return;
-      
+
       try {
         const res = await fetch('/api/collaboration/add', {
           method: 'POST',
@@ -2283,7 +3444,7 @@ function setupCRMDashboardEventListeners() {
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Failed to invite team member');
-        
+
         showToast(data.message || 'Invitation sent successfully!', 'success');
         emailInput.value = '';
         loadCRMTeamData();
@@ -2309,6 +3470,61 @@ function setupCRMDashboardEventListeners() {
     });
   }
 
+  // Bind Admin Control Center user edit form
+  const crmAdminForm = document.getElementById('crm-admin-set-plan-form');
+  const planSelect = document.getElementById('admin-target-plan');
+  const customToolsContainer = document.getElementById('admin-custom-tools-container');
+  if (planSelect && customToolsContainer) {
+    planSelect.addEventListener('change', () => {
+      if (planSelect.value === 'custom') {
+        customToolsContainer.style.display = 'block';
+      } else {
+        customToolsContainer.style.display = 'none';
+      }
+    });
+  }
+
+  if (crmAdminForm) {
+    crmAdminForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const email = document.getElementById('admin-target-email').value.trim();
+      const plan = planSelect ? planSelect.value : 'free';
+      const role = document.getElementById('admin-target-role').value;
+      const seats = parseInt(document.getElementById('admin-target-seats').value, 10) || 1;
+      const interval = document.getElementById('admin-target-interval').value;
+      const aiCredits = parseInt(document.getElementById('admin-target-ai-credits').value, 10) || 50;
+      const checkedCheckboxes = Array.from(document.querySelectorAll('.admin-tool-checkbox:checked'));
+      const allowedTools = checkedCheckboxes.map(cb => cb.value);
+
+      const customFeatures = {
+        ai_credits_limit: aiCredits,
+        allowedTools: allowedTools
+      };
+
+      try {
+        const res = await fetch('/api/admin/set-plan', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ email, plan, seats, interval, customFeatures, role })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to apply admin settings');
+
+        showToast(data.message || 'User configuration updated successfully!', 'success');
+        crmAdminForm.reset();
+
+        // Reset credits field
+        document.getElementById('admin-target-ai-credits').value = 50;
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    });
+  }
+
   // Close CRM drawer when close button or overlay is clicked
   const btnCloseCRM = document.getElementById('btn-close-crm-drawer');
   if (btnCloseCRM) {
@@ -2325,6 +3541,86 @@ function setupCRMDashboardEventListeners() {
       closeCRMDrawer();
     });
   });
+
+  // Change Email Action
+  const btnChangeEmail = document.getElementById('btn-change-email');
+  const settingsEmail = document.getElementById('settings-email');
+  const settingsEmailLabel = document.getElementById('settings-email-label');
+  if (btnChangeEmail && settingsEmail && settingsEmailLabel) {
+    btnChangeEmail.addEventListener('click', async () => {
+      const isEditing = btnChangeEmail.textContent === 'Save Change';
+      if (!isEditing) {
+        // Switch to edit mode
+        settingsEmail.disabled = false;
+        settingsEmail.readOnly = false;
+        settingsEmail.style.background = 'var(--bg-secondary)';
+        settingsEmail.style.cursor = 'text';
+        settingsEmail.focus();
+        settingsEmail.select();
+        settingsEmailLabel.textContent = 'Enter your new email address';
+        btnChangeEmail.textContent = 'Save Change';
+        btnChangeEmail.className = 'btn-action';
+        btnChangeEmail.style.background = 'var(--accent-success)';
+        btnChangeEmail.style.color = 'white';
+        btnChangeEmail.style.border = 'none';
+      } else {
+        // Save changes
+        const newEmail = settingsEmail.value.trim();
+        if (!newEmail) {
+          showToast('Email address cannot be empty.', 'error');
+          return;
+        }
+
+        if (newEmail === currentUser.email) {
+          // No change, reset
+          resetChangeEmailUI();
+          return;
+        }
+
+        try {
+          const res = await fetch('/api/auth/change-email', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ newEmail })
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || 'Failed to change email');
+
+          // Update local state
+          safeStorage.setItem('token', data.token);
+          token = data.token;
+          currentUser = data.user;
+
+          showToast('Email address updated successfully!', 'success');
+          
+          // Re-sync display elements
+          updateAuthNav();
+          const settingsEmail = document.getElementById('settings-email');
+          if (settingsEmail) settingsEmail.value = currentUser.email;
+
+          resetChangeEmailUI();
+        } catch (err) {
+          showToast(err.message, 'error');
+        }
+      }
+    });
+
+    function resetChangeEmailUI() {
+      settingsEmail.disabled = true;
+      settingsEmail.readOnly = true;
+      settingsEmail.style.background = 'rgba(0,0,0,0.03)';
+      settingsEmail.style.cursor = 'not-allowed';
+      settingsEmailLabel.textContent = 'Current email address (Read-only)';
+      btnChangeEmail.textContent = 'Change Request';
+      btnChangeEmail.className = 'btn-nav-back';
+      btnChangeEmail.style.background = '';
+      btnChangeEmail.style.color = '';
+      btnChangeEmail.style.border = '';
+    }
+  }
 
   // Handle header triggers for mobile accounts dashboard
   window.addEventListener('resize', updateHeaderTriggers);
@@ -2382,7 +3678,7 @@ function setupCRMDashboardEventListeners() {
       e.preventDefault();
       const selectedLang = btn.getAttribute('data-lang');
       if (!selectedLang) return;
-      
+
       // Update checkmark visibilities
       document.querySelectorAll('.lang-select-btn').forEach(b => {
         const check = b.querySelector('.lang-check');
@@ -2408,7 +3704,7 @@ function setupCRMDashboardEventListeners() {
       }
 
       showToast(`Language changed to ${langNames[selectedLang] || selectedLang}`, 'success');
-      
+
       if (languageModalOverlay) {
         languageModalOverlay.style.display = 'none';
       }
@@ -2438,23 +3734,23 @@ function filterCategoryColumns(category) {
 function toggleSettingsPanels(tool) {
   // Hide all config boxes
   const sections = [
-    'settings-split', 'settings-protect', 'settings-img-to-pdf', 'settings-rotate', 
-    'settings-html', 'settings-compress', 'settings-unlock', 'settings-watermark', 
-    'settings-page-numbers', 'settings-sign', 'settings-redact', 'settings-crop', 
-    'settings-ai-assistant', 'settings-remove-background', 
+    'settings-split', 'settings-protect', 'settings-img-to-pdf', 'settings-rotate',
+    'settings-html', 'settings-compress', 'settings-unlock', 'settings-watermark',
+    'settings-page-numbers', 'settings-sign', 'settings-redact', 'settings-crop',
+    'settings-ai-assistant', 'settings-remove-background',
     'settings-upscale-image', 'settings-edit-pdf', 'settings-generic'
   ];
   sections.forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
-  
+
   if (TOOL_META[tool] && TOOL_META[tool].noUpload) {
     document.getElementById('settings-generic').style.display = 'none';
   } else {
     document.getElementById('settings-generic').style.display = 'block';
   }
-  
+
   if (tool === 'split' || tool === 'extract-pages') {
     document.getElementById('settings-split').style.display = 'block';
   } else if (tool === 'protect') {
@@ -2495,7 +3791,7 @@ async function startWebcamStream() {
   const container = document.getElementById('webcam-workspace');
   container.style.display = 'flex';
   document.getElementById('files-list').style.display = 'none';
-  
+
   try {
     webcamStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
     const video = document.getElementById('webcam-video');
@@ -2519,17 +3815,17 @@ function captureWebcamSnapshot() {
   const canvas = document.createElement('canvas');
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
-  
+
   const ctx = canvas.getContext('2d');
   // mirror context representation
   ctx.translate(canvas.width, 0);
   ctx.scale(-1, 1);
   ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-  
+
   canvas.toBlob(blob => {
     const file = new File([blob], `scan-${Date.now()}.png`, { type: 'image/png' });
     uploadedFiles.push(file);
-    
+
     // Alert the user and update lists
     showToast('Snapshot captured!', 'success');
     document.getElementById('files-list').style.display = 'grid';
@@ -2538,13 +3834,56 @@ function captureWebcamSnapshot() {
   }, 'image/png');
 }
 
+function getBatchLimit(tool, plan) {
+  const isPremium = ['starter', 'base', 'pro', 'premium'].includes(plan);
+  const isBusiness = plan === 'enterprise' || plan === 'business';
+  const tier = isBusiness ? 'business' : (isPremium ? 'premium' : 'free');
+
+  const limits = {
+    merge: { free: 25, premium: 500, business: 500 },
+    split: { free: 1, premium: 1, business: 1 },
+    'extract-pages': { free: 1, premium: 1, business: 1 },
+    'remove-pages': { free: 1, premium: 1, business: 1 },
+    compress: { free: 2, premium: 10, business: 10 },
+    'word-to-pdf': { free: 1, premium: 10, business: 10 },
+    'ppt-to-pdf': { free: 1, premium: 10, business: 10 },
+    'excel-to-pdf': { free: 1, premium: 10, business: 10 },
+    'pdf-to-word': { free: 1, premium: 10, business: 10 },
+    'pdf-to-ppt': { free: 1, premium: 10, business: 10 },
+    'pdf-to-excel': { free: 1, premium: 10, business: 10 },
+    ocr: { free: 1, premium: 10, business: 10 },
+    'pdf-to-img': { free: 2, premium: 10, business: 10 },
+    'img-to-pdf': { free: 20, premium: 80, business: 80 },
+    'page-numbers': { free: 2, premium: 10, business: 10 },
+    watermark: { free: 2, premium: 10, business: 10 },
+    rotate: { free: 20, premium: 80, business: 80 },
+    unlock: { free: 2, premium: 10, business: 10 },
+    protect: { free: 2, premium: 80, business: 80 },
+    'organize-pdf': { free: 5, premium: 20, business: 20 },
+    repair: { free: 1, premium: 10, business: 10 },
+    'edit-pdf': { free: 1, premium: 1, business: 1 },
+    sign: { free: 3, premium: 5, business: 5 },
+    redact: { free: 1, premium: 1, business: 1 },
+    compare: { free: 2, premium: 2, business: 2 },
+    'pdf-forms': { free: 1, premium: 1, business: 1 },
+    crop: { free: 1, premium: 1, business: 1 },
+    'ai-assistant': { free: 1, premium: 1, business: 1 },
+    'remove-background': { free: 1, premium: 10, business: 10 },
+    'upscale-image': { free: 1, premium: 10, business: 10 }
+  };
+
+  const toolLimits = limits[tool];
+  if (!toolLimits) return 1;
+  return toolLimits[tier] || 1;
+}
+
 // Manage uploads selected
 async function handleFilesSelected(fileList) {
   const meta = TOOL_META[currentTool];
   if (!meta) return;
-  
+
   const files = Array.from(fileList);
-  
+
   // File filters
   const filtered = files.filter(file => {
     if (meta.accepts.includes('.pdf') && !file.name.toLowerCase().endsWith('.pdf')) {
@@ -2557,9 +3896,9 @@ async function handleFilesSelected(fileList) {
     }
     return true;
   });
-  
+
   if (filtered.length === 0) return;
-  
+
   // Size validation check
   const totalSize = filtered.reduce((sum, f) => sum + f.size, 0);
   const maxFreeSize = 10 * 1024 * 1024; // 10MB limit
@@ -2577,19 +3916,31 @@ async function handleFilesSelected(fileList) {
       return;
     }
   }
-  
+
+  const userPlan = currentUser ? (currentUser.subscription_plan || 'free') : 'free';
+  const batchLimit = getBatchLimit(currentTool, userPlan);
+  const newTotalCount = (meta.multiple ? uploadedFiles.length : 0) + filtered.length;
+
+  if (newTotalCount > batchLimit) {
+    showToast(`Your current plan limits batch processing to maximum ${batchLimit} files for this tool. Please upgrade.`, 'error');
+    if (!currentUser || currentUser.subscription_plan === 'free') {
+      showAuthModal('upgrade');
+    }
+    return;
+  }
+
   if (meta.multiple) {
     uploadedFiles = [...uploadedFiles, ...filtered];
   } else {
     uploadedFiles = [filtered[0]];
   }
-  
+
   showOperationsArea();
   renderFilesList();
-  
+
   // Interactive preview render modes (split, remove, organize, sign, redact, edit, crop)
   const previewModes = ['split', 'extract-pages', 'remove-pages', 'organize-pdf', 'sign', 'redact', 'edit-pdf', 'crop', 'pdf-forms'];
-  
+
   if (previewModes.includes(currentTool) && uploadedFiles.length > 0) {
     document.getElementById('previews-container').style.display = 'block';
     document.getElementById('files-list').style.display = 'none';
@@ -2604,7 +3955,7 @@ async function handleFilesSelected(fileList) {
     document.getElementById('compare-workspace').style.display = 'none';
     document.getElementById('files-list').style.display = 'grid';
   }
-  
+
   updateProcessButtonState();
 }
 
@@ -2612,28 +3963,28 @@ async function loadPagePreviews(file) {
   const overlay = document.getElementById('loading-overlay');
   const loadingTitle = document.getElementById('loading-title');
   const loadingMessage = document.getElementById('loading-message');
-  
+
   loadingTitle.textContent = 'Generating Page Previews...';
   loadingMessage.textContent = 'Generating preview thumbnails...';
   overlay.classList.add('active');
-  
+
   try {
     const arrayBuffer = await file.arrayBuffer();
     const previews = await generatePagePreviews(arrayBuffer, (current, total) => {
       loadingMessage.textContent = `Rendering page preview ${current} of ${total}...`;
     });
-    
+
     pagePreviews = previews;
     selectedPages.clear();
     pageRotations = {};
     redactionBoxes = [];
     signaturePlacement = null;
-    
+
     // Auto select pages by default
     if (currentTool === 'split' || currentTool === 'extract-pages') {
       previews.forEach((_, idx) => selectedPages.add(idx));
     }
-    
+
     renderPreviewsGrid();
   } catch (error) {
     console.error(error);
@@ -2648,16 +3999,16 @@ async function loadPagePreviews(file) {
 function renderPreviewsGrid() {
   const gridElement = document.getElementById('previews-grid-element');
   gridElement.innerHTML = '';
-  
+
   if (pagePreviews.length === 0) return;
-  
+
   pagePreviews.forEach((preview, index) => {
     const card = document.createElement('div');
     card.className = `preview-card ${selectedPages.has(index) ? 'selected' : ''}`;
     card.dataset.index = index;
-    
+
     const rotationAngle = pageRotations[index] || 0;
-    
+
     card.innerHTML = `
       ${currentTool === 'split' || currentTool === 'extract-pages' || currentTool === 'remove-pages' ? `
         <div class="preview-checkbox-overlay">
@@ -2683,13 +4034,13 @@ function renderPreviewsGrid() {
         ` : ''}
       </div>
     `;
-    
+
     // Page reorder drag bindings for Organize PDF
     if (currentTool === 'organize-pdf') {
       card.setAttribute('draggable', 'true');
       setupDragAndDropEvents(card, index);
     }
-    
+
     // Interactive checklist toggle
     if (currentTool === 'split' || currentTool === 'extract-pages' || currentTool === 'remove-pages') {
       card.addEventListener('click', (e) => {
@@ -2703,20 +4054,20 @@ function renderPreviewsGrid() {
         updateProcessButtonState();
       });
     }
-    
+
     gridElement.appendChild(card);
   });
-  
+
   // Wire up signature placing
   if (currentTool === 'sign') {
     wireSignaturePlacementEvents();
   }
-  
+
   // Wire up redaction box placements
   if (currentTool === 'redact') {
     wireRedactionBoxEvents();
   }
-  
+
   // Wire up edit text overlay placement
   if (currentTool === 'edit-pdf') {
     wireEditTextPlacementEvents();
@@ -2728,21 +4079,21 @@ function setupDragAndDropEvents(card, index) {
   card.addEventListener('dragstart', (e) => {
     e.dataTransfer.setData('text/plain', index);
   });
-  
+
   card.addEventListener('dragover', (e) => {
     e.preventDefault();
     card.classList.add('drag-over');
   });
-  
+
   card.addEventListener('dragleave', () => {
     card.classList.remove('drag-over');
   });
-  
+
   card.addEventListener('drop', (e) => {
     e.preventDefault();
     card.classList.remove('drag-over');
     const dragIndex = parseInt(e.dataTransfer.getData('text/plain'), 10);
-    
+
     if (dragIndex !== index) {
       // Re-order thumbnails
       const temp = pagePreviews[dragIndex];
@@ -2754,6 +4105,40 @@ function setupDragAndDropEvents(card, index) {
   });
 }
 
+// Helper to calculate exact rendered bounds of contained image
+function getContainedImageRect(img) {
+  if (!img) return { width: 1, height: 1, left: 0, top: 0 };
+  const containerWidth = img.clientWidth || img.width || 1;
+  const containerHeight = img.clientHeight || img.height || 1;
+  const naturalWidth = img.naturalWidth || containerWidth;
+  const naturalHeight = img.naturalHeight || containerHeight;
+
+  const containerRatio = containerWidth / containerHeight;
+  const imageRatio = naturalWidth / naturalHeight;
+
+  let renderedWidth = containerWidth;
+  let renderedHeight = containerHeight;
+  let offsetX = 0;
+  let offsetY = 0;
+
+  if (imageRatio > containerRatio) {
+    // Width is the limiting factor (letterboxed vertically)
+    renderedHeight = containerWidth / imageRatio;
+    offsetY = (containerHeight - renderedHeight) / 2;
+  } else {
+    // Height is the limiting factor (pillarboxed horizontally)
+    renderedWidth = containerHeight * imageRatio;
+    offsetX = (containerWidth - renderedWidth) / 2;
+  }
+
+  return {
+    width: renderedWidth,
+    height: renderedHeight,
+    left: offsetX,
+    top: offsetY
+  };
+}
+
 // Drag signature stamps onto PDF previews
 function wireSignaturePlacementEvents() {
   const wrappers = document.querySelectorAll('.signature-drag-wrapper');
@@ -2763,41 +4148,42 @@ function wireSignaturePlacementEvents() {
         showToast('Please draw your signature in the sidebar canvas first!', 'info');
         return;
       }
-      
+
       // Clear existing stamps
       document.querySelectorAll('.signature-stamp-element').forEach(el => el.remove());
-      
+
       const pageIndex = parseInt(wrapper.dataset.page, 10);
       const rect = wrapper.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
-      
+
       const stamp = document.createElement('div');
       stamp.className = 'signature-stamp-element';
       stamp.style.left = `${x - 40}px`;
       stamp.style.top = `${y - 20}px`;
       stamp.innerHTML = `<span>Signature</span>`;
       wrapper.appendChild(stamp);
-      
-      // Record position scaled to standard points (595.28 x 841.89 points)
-      // Height coordinates are bottom-up in pdf-lib!
-      const wrapperWidth = rect.width;
-      const wrapperHeight = rect.height;
-      const pdfWidth = 595.28;
-      const pdfHeight = 841.89;
-      
-      const stampX = ((x - 40) / wrapperWidth) * pdfWidth;
-      // Invert Y coordinate since PDF coordinate space is bottom-left origin
-      const stampY = ((wrapperHeight - (y + 20)) / wrapperHeight) * pdfHeight;
-      
+
+      const imgElement = wrapper.closest('.preview-thumbnail-wrapper').querySelector('img');
+      const imgRect = getContainedImageRect(imgElement);
+      const preview = pagePreviews[pageIndex] || { width: 595.28, height: 841.89 };
+      const pdfWidth = preview.width || 595.28;
+      const pdfHeight = preview.height || 841.89;
+
+      const leftXRel = (x - 40) - imgRect.left;
+      const topYRel = (y - 20) - imgRect.top;
+
+      const stampX = (leftXRel / imgRect.width) * pdfWidth;
+      const stampY = ((imgRect.height - (topYRel + 40)) / imgRect.height) * pdfHeight;
+
       signaturePlacement = {
         page: pageIndex,
         x: stampX,
         y: stampY,
-        w: (80 / wrapperWidth) * pdfWidth,
-        h: (40 / wrapperHeight) * pdfHeight
+        w: (80 / imgRect.width) * pdfWidth,
+        h: (40 / imgRect.height) * pdfHeight
       };
-      
+
       updateProcessButtonState();
     });
   });
@@ -2810,61 +4196,66 @@ function wireRedactionBoxEvents() {
     let startX = 0, startY = 0;
     let redactBox = null;
     const pageIndex = parseInt(overlay.dataset.page, 10);
-    
+
     overlay.addEventListener('mousedown', (e) => {
       const rect = overlay.getBoundingClientRect();
       startX = e.clientX - rect.left;
       startY = e.clientY - rect.top;
-      
+
       redactBox = document.createElement('div');
       redactBox.className = 'redact-box-element';
       redactBox.style.left = `${startX}px`;
       redactBox.style.top = `${startY}px`;
       overlay.appendChild(redactBox);
     });
-    
+
     overlay.addEventListener('mousemove', (e) => {
       if (!redactBox) return;
       const rect = overlay.getBoundingClientRect();
       const currentX = e.clientX - rect.left;
       const currentY = e.clientY - rect.top;
-      
+
       const w = Math.abs(currentX - startX);
       const h = Math.abs(currentY - startY);
-      
+
       redactBox.style.width = `${w}px`;
       redactBox.style.height = `${h}px`;
       redactBox.style.left = `${Math.min(currentX, startX)}px`;
       redactBox.style.top = `${Math.min(currentY, startY)}px`;
     });
-    
+
     overlay.addEventListener('mouseup', (e) => {
       if (!redactBox) return;
-      
+
       const rect = overlay.getBoundingClientRect();
       const finalX = e.clientX - rect.left;
       const finalY = e.clientY - rect.top;
-      
+
       const w = Math.abs(finalX - startX);
       const h = Math.abs(finalY - startY);
-      
+
       const leftX = Math.min(finalX, startX);
       const topY = Math.min(finalY, startY);
-      
+
       if (w > 5 && h > 5) {
-        // Record boundaries in PDF points
-        const pdfWidth = 595.28;
-        const pdfHeight = 841.89;
-        
-        const ptX = (leftX / rect.width) * pdfWidth;
-        const ptY = ((rect.height - (topY + h)) / rect.height) * pdfHeight;
-        
+        const imgElement = overlay.closest('.preview-thumbnail-wrapper').querySelector('img');
+        const imgRect = getContainedImageRect(imgElement);
+        const preview = pagePreviews[pageIndex] || { width: 595.28, height: 841.89 };
+        const pdfWidth = preview.width || 595.28;
+        const pdfHeight = preview.height || 841.89;
+
+        const leftXRel = leftX - imgRect.left;
+        const topYRel = topY - imgRect.top;
+
+        const ptX = (leftXRel / imgRect.width) * pdfWidth;
+        const ptY = ((imgRect.height - (topYRel + h)) / imgRect.height) * pdfHeight;
+
         redactionBoxes.push({
           page: pageIndex,
           x: ptX,
           y: ptY,
-          w: (w / rect.width) * pdfWidth,
-          h: (h / rect.height) * pdfHeight
+          w: (w / imgRect.width) * pdfWidth,
+          h: (h / imgRect.height) * pdfHeight
         });
       } else {
         redactBox.remove();
@@ -2885,40 +4276,45 @@ function wireEditTextPlacementEvents() {
         showToast('Please type some text in the sidebar first!', 'info');
         return;
       }
-      
+
       const fontSizeSelect = document.getElementById('edit-font-size-select');
       const fontSize = fontSizeSelect ? parseInt(fontSizeSelect.value, 10) : 16;
-      
+
       const pageIndex = parseInt(wrapper.dataset.page, 10);
       const rect = wrapper.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
-      
+
+      const preview = pagePreviews[pageIndex] || { width: 595.28, height: 841.89 };
+      const pdfWidth = preview.width || 595.28;
+      const pdfHeight = preview.height || 841.89;
+
       const stamp = document.createElement('div');
       stamp.className = 'text-stamp-element';
       stamp.style.left = `${x}px`;
       stamp.style.top = `${y}px`;
-      stamp.style.fontSize = `${fontSize * (rect.height / 841.89)}px`;
+      stamp.style.fontSize = `${fontSize * (rect.height / pdfHeight)}px`;
       stamp.textContent = text;
       stamp.title = 'Click to remove';
-      
+
       stamp.addEventListener('click', (ev) => {
         ev.stopPropagation();
         stamp.remove();
         editTextBoxes = editTextBoxes.filter(box => box._element !== stamp);
         updateProcessButtonState();
       });
-      
+
       wrapper.appendChild(stamp);
-      
-      const wrapperWidth = rect.width;
-      const wrapperHeight = rect.height;
-      const pdfWidth = 595.28;
-      const pdfHeight = 841.89;
-      
-      const ptX = (x / wrapperWidth) * pdfWidth;
-      const ptY = ((wrapperHeight - y) / wrapperHeight) * pdfHeight;
-      
+
+      const imgElement = wrapper.closest('.preview-thumbnail-wrapper').querySelector('img');
+      const imgRect = getContainedImageRect(imgElement);
+
+      const xRel = x - imgRect.left;
+      const yRel = y - imgRect.top;
+
+      const ptX = (xRel / imgRect.width) * pdfWidth;
+      const ptY = ((imgRect.height - yRel) / imgRect.height) * pdfHeight;
+
       editTextBoxes.push({
         page: pageIndex,
         x: ptX,
@@ -2928,7 +4324,7 @@ function wireEditTextPlacementEvents() {
         type: 'text',
         _element: stamp
       });
-      
+
       updateProcessButtonState();
     });
   });
@@ -2938,10 +4334,10 @@ function wireEditTextPlacementEvents() {
 async function runPDFComparison() {
   const overlay = document.getElementById('loading-overlay');
   overlay.classList.add('active');
-  
+
   try {
     const info = await comparePDFs(uploadedFiles[0], uploadedFiles[1]);
-    
+
     document.getElementById('compare-left-title').textContent = info.fileA.name;
     document.getElementById('compare-left-meta').innerHTML = `
       <tr><td>Pages</td><td>${info.fileA.pages}</td></tr>
@@ -2949,7 +4345,7 @@ async function runPDFComparison() {
       <tr><td>Author</td><td>${info.fileA.author}</td></tr>
       <tr><td>Title</td><td>${info.fileA.title}</td></tr>
     `;
-    
+
     document.getElementById('compare-right-title').textContent = info.fileB.name;
     document.getElementById('compare-right-meta').innerHTML = `
       <tr><td>Pages</td><td>${info.fileB.pages}</td></tr>
@@ -2971,16 +4367,16 @@ function generateMockDocThumbnail(type) {
   canvas.width = 200;
   canvas.height = 280;
   const ctx = canvas.getContext('2d');
-  
+
   // Background
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, 200, 280);
-  
+
   // Border
   ctx.strokeStyle = '#cbd5e1';
   ctx.lineWidth = 4;
   ctx.strokeRect(2, 2, 196, 276);
-  
+
   // Header Accent Strip
   if (type === 'word') {
     ctx.fillStyle = '#2b579a'; // Word Blue
@@ -2995,7 +4391,7 @@ function generateMockDocThumbnail(type) {
     ctx.fillStyle = '#718096'; // Gray
     ctx.fillRect(10, 10, 180, 30);
   }
-  
+
   // Draw lines representing text
   ctx.fillStyle = '#cbd5e1';
   if (type === 'excel') {
@@ -3022,7 +4418,7 @@ function generateMockDocThumbnail(type) {
       y += 26;
     }
   }
-  
+
   // Draw small icon badge at bottom right
   ctx.font = 'bold 24px sans-serif';
   if (type === 'word') {
@@ -3035,7 +4431,7 @@ function generateMockDocThumbnail(type) {
     ctx.fillStyle = '#f40f0f';
     ctx.fillText('PDF', 130, 256);
   }
-  
+
   return canvas.toDataURL();
 }
 
@@ -3043,7 +4439,7 @@ function generateMockDocThumbnail(type) {
 async function generateFileThumbnail(file) {
   const type = file.type;
   const name = file.name.toLowerCase();
-  
+
   if (type.startsWith('image/')) {
     return new Promise((resolve) => {
       const reader = new FileReader();
@@ -3051,21 +4447,21 @@ async function generateFileThumbnail(file) {
       reader.readAsDataURL(file);
     });
   }
-  
+
   if (name.endsWith('.pdf')) {
     const dataUrl = await getPDFFirstPageThumbnail(file);
     if (dataUrl) return dataUrl;
     return generateMockDocThumbnail('pdf');
   }
-  
+
   if (name.endsWith('.docx') || name.endsWith('.doc')) {
     return generateMockDocThumbnail('word');
   }
-  
+
   if (name.endsWith('.xlsx') || name.endsWith('.xls') || name.endsWith('.csv')) {
     return generateMockDocThumbnail('excel');
   }
-  
+
   return generateMockDocThumbnail('generic');
 }
 
@@ -3073,14 +4469,14 @@ async function generateFileThumbnail(file) {
 function renderFilesList() {
   const listElement = document.getElementById('files-list');
   listElement.innerHTML = '';
-  
+
   if (uploadedFiles.length === 0) return;
-  
+
   uploadedFiles.forEach((file, index) => {
     const card = document.createElement('div');
     card.className = 'file-item-card';
     const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
-    
+
     card.innerHTML = `
       <div class="file-actions">
         <button class="btn-icon btn-icon-danger btn-remove-file" data-index="${index}" title="Remove file">✖</button>
@@ -3098,7 +4494,7 @@ function renderFilesList() {
       </div>
     `;
     listElement.appendChild(card);
-    
+
     // Set placeholder thumbnail immediately
     const thumbImg = document.getElementById(`file-thumb-${index}`);
     const name = file.name.toLowerCase();
@@ -3106,11 +4502,11 @@ function renderFilesList() {
     if (name.endsWith('.pdf')) mockType = 'pdf';
     else if (name.endsWith('.docx') || name.endsWith('.doc')) mockType = 'word';
     else if (name.endsWith('.xlsx') || name.endsWith('.xls') || name.endsWith('.csv')) mockType = 'excel';
-    
+
     if (thumbImg) {
       thumbImg.src = generateMockDocThumbnail(mockType);
     }
-    
+
     // Generate real thumbnail asynchronously
     generateFileThumbnail(file).then(dataUrl => {
       const img = document.getElementById(`file-thumb-${index}`);
@@ -3144,35 +4540,35 @@ function clearWorkspace() {
   redactionBoxes = [];
   editTextBoxes = [];
   lastProcessedFile = null;
-  
+
   const fileInput = document.getElementById('file-input-element');
   if (fileInput) fileInput.value = '';
-  
+
   const htmlInput = document.getElementById('html-textarea');
   if (htmlInput) htmlInput.value = '';
-  
+
   const htmlUrl = document.getElementById('html-url-input');
   if (htmlUrl) htmlUrl.value = '';
-  
+
   const pwUnlock = document.getElementById('pdf-unlock-password');
   if (pwUnlock) pwUnlock.value = '';
-  
+
   const pwInput = document.getElementById('pdf-password-input');
   if (pwInput) pwInput.value = '';
-  
+
   const canvas = document.getElementById('signature-pad');
   if (canvas) {
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
   }
   signatureDataUrl = null;
- 
+
   const aiResults = document.getElementById('ai-results-panel');
   if (aiResults) {
     aiResults.style.display = 'none';
     document.getElementById('ai-results-content').textContent = '';
   }
-  
+
   hideOperationsArea();
   updateProcessButtonState();
   setWorkspaceState('upload');
@@ -3180,7 +4576,7 @@ function clearWorkspace() {
 
 function updateProcessButtonState() {
   const btn = document.getElementById('btn-process-action');
-  
+
   if (currentTool === 'html-to-pdf') {
     const mode = document.getElementById('html-input-type').value;
     if (mode === 'code') {
@@ -3190,12 +4586,12 @@ function updateProcessButtonState() {
     }
     return;
   }
-  
+
   if (uploadedFiles.length === 0) {
     btn.disabled = true;
     return;
   }
-  
+
   if (currentTool === 'merge') {
     btn.disabled = uploadedFiles.length < 2;
   } else if (currentTool === 'split' || currentTool === 'extract-pages') {
@@ -3223,25 +4619,207 @@ function updateProcessButtonState() {
 // API Operation Trigger Router
 async function processFiles() {
   if (uploadedFiles.length === 0 && currentTool !== 'html-to-pdf') return;
-  
+
   const overlay = document.getElementById('loading-overlay');
   const loadingTitle = document.getElementById('loading-title');
   const loadingMessage = document.getElementById('loading-message');
-  
+
   loadingTitle.textContent = 'Processing Operation...';
   loadingMessage.textContent = 'Sending files to server-side engine...';
   overlay.classList.add('active');
-  
+
   try {
+    const isMultiFileTool = ['merge', 'img-to-pdf', 'scan-to-pdf', 'compare'].includes(currentTool);
+    if (uploadedFiles.length > 1 && !isMultiFileTool) {
+      const totalFiles = uploadedFiles.length;
+      let successCount = 0;
+      let failCount = 0;
+
+      for (let i = 0; i < totalFiles; i++) {
+        const currentFile = uploadedFiles[i];
+        loadingTitle.textContent = `Batch Processing (${i + 1}/${totalFiles})`;
+        loadingMessage.textContent = `Processing "${currentFile.name}"...`;
+
+        try {
+          let outputBytes = null;
+          let filename = `pixelpdf-${currentTool}-${currentFile.name.replace(/\.[^/.]+$/, "")}.pdf`;
+          let mimeType = 'application/pdf';
+
+          switch (currentTool) {
+            case 'split':
+            case 'extract-pages':
+              const splitMode = document.querySelector('input[name="split-mode"]:checked').value;
+              if (splitMode === 'all-split') {
+                const pages = await splitPDFIntoIndividual(currentFile);
+                for (const page of pages) {
+                  triggerFileDownload(page.bytes, `${currentFile.name.replace(/\.[^/.]+$/, "")}-page-${page.pageNum}.pdf`, 'application/pdf');
+                  await new Promise(r => setTimeout(r, 100));
+                }
+              } else {
+                const selected = Array.from(selectedPages).sort((a, b) => a - b);
+                outputBytes = await splitPDF(currentFile, selected);
+                filename = `${currentFile.name.replace(/\.[^/.]+$/, "")}-extracted.pdf`;
+              }
+              break;
+
+            case 'remove-pages':
+              const toRemove = Array.from(selectedPages).sort((a, b) => a - b);
+              outputBytes = await removePages(currentFile, toRemove);
+              filename = `${currentFile.name.replace(/\.[^/.]+$/, "")}-removed.pdf`;
+              break;
+
+            case 'organize-pdf':
+              const order = pagePreviews.map((p) => parseInt(p.pageNum, 10) - 1);
+              outputBytes = await organizePDF(currentFile, order);
+              filename = `${currentFile.name.replace(/\.[^/.]+$/, "")}-organized.pdf`;
+              break;
+
+            case 'compress':
+              const level = document.querySelector('input[name="compress-level"]:checked').value;
+              outputBytes = await compressPDF(currentFile, level);
+              filename = `${currentFile.name.replace(/\.[^/.]+$/, "")}-compressed.pdf`;
+              break;
+
+            case 'repair':
+              outputBytes = await repairPDF(currentFile);
+              filename = `${currentFile.name.replace(/\.[^/.]+$/, "")}-repaired.pdf`;
+              break;
+
+            case 'ocr':
+              outputBytes = await ocrPDF(currentFile);
+              filename = `${currentFile.name.replace(/\.[^/.]+$/, "")}-ocr.pdf`;
+              break;
+
+            case 'word-to-pdf':
+            case 'ppt-to-pdf':
+            case 'excel-to-pdf':
+              outputBytes = await officeToPDF(currentFile);
+              filename = `${currentFile.name.replace(/\.[^/.]+$/, "")}.pdf`;
+              break;
+
+            case 'pdf-to-img':
+              const images = await pdfToImages(currentFile, (c, t) => {
+                loadingMessage.textContent = `"${currentFile.name}": Converting page ${c} of ${t} to PNG...`;
+              });
+              for (const img of images) {
+                const blob = await fetch(img.dataUrl).then(r => r.blob());
+                triggerBlobDownload(blob, `${currentFile.name.replace(/\.[^/.]+$/, "")}-page-${img.pageNum}.png`);
+                await new Promise(r => setTimeout(r, 100));
+              }
+              addCumulativeUploadSize(currentFile.size);
+              break;
+
+            case 'pdf-to-word':
+            case 'pdf-to-ppt':
+            case 'pdf-to-excel':
+              const formatMap = { 'pdf-to-word': 'docx', 'pdf-to-excel': 'xlsx', 'pdf-to-ppt': 'pptx' };
+              const blobFormat = formatMap[currentTool];
+              const officeBlob = await pdfToOffice(currentFile, blobFormat);
+              triggerBlobDownload(officeBlob, `${currentFile.name.replace(/\.[^/.]+$/, "")}.${blobFormat}`);
+              addCumulativeUploadSize(currentFile.size);
+              break;
+
+            case 'rotate':
+              outputBytes = await rotatePDF(currentFile, pageRotations);
+              filename = `${currentFile.name.replace(/\.[^/.]+$/, "")}-rotated.pdf`;
+              break;
+
+            case 'page-numbers':
+              const numPos = document.getElementById('pagenum-position').value;
+              const numFmt = document.getElementById('pagenum-format').value;
+              outputBytes = await addPageNumbers(currentFile, numPos, numFmt);
+              filename = `${currentFile.name.replace(/\.[^/.]+$/, "")}-numbered.pdf`;
+              break;
+
+            case 'watermark':
+              const wmText = document.getElementById('watermark-text').value;
+              const wmSize = document.getElementById('watermark-size').value;
+              const wmRot = document.getElementById('watermark-rotation').value;
+              const wmOpac = document.getElementById('watermark-opacity').value;
+              outputBytes = await addWatermark(currentFile, wmText, wmSize, wmRot, wmOpac);
+              filename = `${currentFile.name.replace(/\.[^/.]+$/, "")}-watermarked.pdf`;
+              break;
+
+            case 'crop':
+              const cropMargins = {
+                left: parseFloat(document.getElementById('crop-left').value || '0.5'),
+                right: parseFloat(document.getElementById('crop-right').value || '0.5'),
+                top: parseFloat(document.getElementById('crop-top').value || '0.5'),
+                bottom: parseFloat(document.getElementById('crop-bottom').value || '0.5')
+              };
+              outputBytes = await cropPDF(currentFile, cropMargins);
+              filename = `${currentFile.name.replace(/\.[^/.]+$/, "")}-cropped.pdf`;
+              break;
+
+            case 'protect':
+              const pass = document.getElementById('pdf-password-input').value;
+              outputBytes = await protectPDF(currentFile, pass);
+              filename = `${currentFile.name.replace(/\.[^/.]+$/, "")}-protected.pdf`;
+              break;
+
+            case 'unlock':
+              const unlockPass = document.getElementById('pdf-unlock-password').value;
+              outputBytes = await unlockPDF(currentFile, unlockPass);
+              filename = `${currentFile.name.replace(/\.[^/.]+$/, "")}-unlocked.pdf`;
+              break;
+
+            case 'sign':
+              outputBytes = await signPDF(
+                currentFile,
+                signatureDataUrl,
+                signaturePlacement.page,
+                signaturePlacement.x,
+                signaturePlacement.y,
+                signaturePlacement.w,
+                signaturePlacement.h
+              );
+              filename = `${currentFile.name.replace(/\.[^/.]+$/, "")}-signed.pdf`;
+              break;
+
+            case 'remove-background':
+              const bgBlob = await removeBG(currentFile);
+              triggerBlobDownload(bgBlob, `${currentFile.name.replace(/\.[^/.]+$/, "")}-no-bg.png`);
+              addCumulativeUploadSize(currentFile.size);
+              break;
+
+            case 'upscale-image':
+              const upscaleBlob = await upscaleImage(currentFile);
+              triggerBlobDownload(upscaleBlob, `${currentFile.name.replace(/\.[^/.]+$/, "")}-upscaled.png`);
+              addCumulativeUploadSize(currentFile.size);
+              break;
+          }
+
+          if (outputBytes) {
+            triggerFileDownload(outputBytes, filename, mimeType);
+            addCumulativeUploadSize(currentFile.size);
+          }
+          successCount++;
+        } catch (err) {
+          console.error(`Failed to process ${currentFile.name}:`, err);
+          failCount++;
+        }
+        await new Promise(r => setTimeout(r, 300));
+      }
+
+      overlay.classList.remove('active');
+      if (failCount === 0) {
+        showToast(`Processed batch of ${successCount} files successfully!`, 'success');
+        showSuccessView('Batch processed files');
+      } else {
+        showToast(`Batch completed: ${successCount} succeeded, ${failCount} failed.`, 'warning');
+      }
+      return;
+    }
+
     let outputBytes = null;
     let filename = `pixelpdf-${currentTool}.pdf`;
     let mimeType = 'application/pdf';
-    
+
     switch (currentTool) {
       case 'merge':
         outputBytes = await mergePDFs(uploadedFiles);
         break;
-        
+
       case 'split':
       case 'extract-pages':
         const splitMode = document.querySelector('input[name="split-mode"]:checked').value;
@@ -3265,51 +4843,51 @@ async function processFiles() {
           filename = 'extracted-pages.pdf';
         }
         break;
-        
+
       case 'remove-pages':
         const toRemove = Array.from(selectedPages).sort((a, b) => a - b);
         outputBytes = await removePages(uploadedFiles[0], toRemove);
         break;
-        
+
       case 'organize-pdf':
         const order = pagePreviews.map((p, idx) => parseInt(p.pageNum, 10) - 1);
         outputBytes = await organizePDF(uploadedFiles[0], order);
         break;
-        
+
       case 'compress':
         const level = document.querySelector('input[name="compress-level"]:checked').value;
         outputBytes = await compressPDF(uploadedFiles[0], level);
         break;
-        
+
       case 'repair':
         outputBytes = await repairPDF(uploadedFiles[0]);
         break;
-        
+
       case 'ocr':
         outputBytes = await ocrPDF(uploadedFiles[0]);
         break;
-        
+
       case 'img-to-pdf':
       case 'scan-to-pdf':
         const imgSize = document.getElementById('page-size-select').value;
         const imgOrient = document.getElementById('page-orientation-select').value;
         outputBytes = await imagesToPDF(uploadedFiles, imgSize, imgOrient);
         break;
-        
+
       case 'word-to-pdf':
       case 'ppt-to-pdf':
       case 'excel-to-pdf':
         outputBytes = await officeToPDF(uploadedFiles[0]);
         break;
-        
+
       case 'html-to-pdf':
         const htmlMode = document.getElementById('html-input-type').value;
-        const payload = htmlMode === 'code' 
+        const payload = htmlMode === 'code'
           ? { mode: 'code', html: document.getElementById('html-textarea').value }
           : { mode: 'url', url: document.getElementById('html-url-input').value };
         outputBytes = await htmlToPDF(payload);
         break;
-        
+
       case 'pdf-to-img':
         loadingTitle.textContent = 'Rendering PNGs...';
         const images = await pdfToImages(uploadedFiles[0], (c, t) => {
@@ -3325,7 +4903,7 @@ async function processFiles() {
         showToast('All pages extracted successfully!', 'success');
         overlay.classList.remove('active');
         return;
-        
+
       case 'pdf-to-word':
       case 'pdf-to-ppt':
       case 'pdf-to-excel':
@@ -3337,17 +4915,17 @@ async function processFiles() {
         showToast('Extracted document download started!', 'success');
         overlay.classList.remove('active');
         return;
-        
+
       case 'rotate':
         outputBytes = await rotatePDF(uploadedFiles[0], pageRotations);
         break;
-        
+
       case 'page-numbers':
         const numPos = document.getElementById('pagenum-position').value;
         const numFmt = document.getElementById('pagenum-format').value;
         outputBytes = await addPageNumbers(uploadedFiles[0], numPos, numFmt);
         break;
-        
+
       case 'watermark':
         const wmText = document.getElementById('watermark-text').value;
         const wmSize = document.getElementById('watermark-size').value;
@@ -3355,7 +4933,7 @@ async function processFiles() {
         const wmOpac = document.getElementById('watermark-opacity').value;
         outputBytes = await addWatermark(uploadedFiles[0], wmText, wmSize, wmRot, wmOpac);
         break;
-        
+
       case 'crop':
         const cropMargins = {
           left: parseFloat(document.getElementById('crop-left').value || '0.5'),
@@ -3365,33 +4943,33 @@ async function processFiles() {
         };
         outputBytes = await cropPDF(uploadedFiles[0], cropMargins);
         break;
-        
+
       case 'pdf-forms':
         outputBytes = await fillPDFForms(uploadedFiles[0]);
         break;
-        
+
       case 'protect':
         const pass = document.getElementById('pdf-password-input').value;
         outputBytes = await protectPDF(uploadedFiles[0], pass);
         break;
-        
+
       case 'unlock':
         const unlockPass = document.getElementById('pdf-unlock-password').value;
         outputBytes = await unlockPDF(uploadedFiles[0], unlockPass);
         break;
-        
+
       case 'sign':
         outputBytes = await signPDF(
-          uploadedFiles[0], 
-          signatureDataUrl, 
-          signaturePlacement.page, 
-          signaturePlacement.x, 
-          signaturePlacement.y, 
-          signaturePlacement.w, 
+          uploadedFiles[0],
+          signatureDataUrl,
+          signaturePlacement.page,
+          signaturePlacement.x,
+          signaturePlacement.y,
+          signaturePlacement.w,
           signaturePlacement.h
         );
         break;
-        
+
       case 'redact':
         outputBytes = await redactPDF(uploadedFiles[0], redactionBoxes);
         break;
@@ -3410,11 +4988,11 @@ async function processFiles() {
           const resData = await aiAssistantPDF(uploadedFiles[0], aiMode, { targetLanguage: aiLang, question: aiQuestion }, token);
           loadingTitle.textContent = 'Analysis Complete';
           loadingMessage.textContent = 'Rendering content...';
-          
+
           const aiResults = document.getElementById('ai-results-panel');
           const aiContent = document.getElementById('ai-results-content');
           const aiTitle = document.getElementById('ai-results-title');
-          
+
           let titleText = 'AI Assistant Output';
           if (aiMode === 'summarize') titleText = 'AI Document Summary';
           else if (aiMode === 'chat') titleText = `AI Chat: "${aiQuestion.substring(0, 30)}${aiQuestion.length > 30 ? '...' : ''}"`;
@@ -3425,7 +5003,7 @@ async function processFiles() {
           aiContent.textContent = resData.result;
           aiResults.style.display = 'block';
           aiResults.scrollIntoView({ behavior: 'smooth' });
-          
+
           addCumulativeUploadSize(uploadedFiles[0].size);
           showToast('AI analysis completed successfully!', 'success');
         } catch (err) {
@@ -3440,7 +5018,7 @@ async function processFiles() {
         filename = 'bg-removed.png';
         mimeType = 'image/png';
         break;
-        
+
       case 'upscale-image':
         const factor = document.getElementById('upscale-factor-select').value;
         loadingTitle.textContent = 'Upscaling Image...';
@@ -3452,18 +5030,18 @@ async function processFiles() {
         mimeType = uploadedFiles[0].type;
         break;
     }
-    
+
     if (outputBytes) {
       lastProcessedFile = {
         bytes: outputBytes,
         filename: filename,
         mimeType: mimeType
       };
-      
+
       triggerFileDownload(outputBytes, filename, mimeType);
-      
+
       showSuccessView(filename);
-      
+
       showToast('Operation completed successfully!', 'success');
       if (uploadedFiles && uploadedFiles.length > 0) {
         const batchSize = uploadedFiles.reduce((sum, f) => sum + f.size, 0);
@@ -3497,10 +5075,10 @@ function triggerBlobDownload(blob, filename) {
 function showToast(message, type = 'success') {
   const container = document.getElementById('toast-container-element');
   if (!container) return;
-  
+
   const toast = document.createElement('div');
   toast.className = `toast toast-${type}`;
-  
+
   let iconHtml = '';
   if (type === 'success') {
     iconHtml = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent-success)" stroke-width="2.5"><path d="M20 6 9 17 4 12"/></svg>`;
@@ -3509,15 +5087,15 @@ function showToast(message, type = 'success') {
   } else {
     iconHtml = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent-primary)" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="16" y2="12"/><line x1="12" x2="12.01" y1="8" y2="8"/></svg>`;
   }
-  
+
   toast.innerHTML = `
     ${iconHtml}
     <span>${message}</span>
   `;
   container.appendChild(toast);
-  
+
   setTimeout(() => toast.classList.add('show'), 10);
-  
+
   setTimeout(() => {
     toast.classList.remove('show');
     setTimeout(() => toast.remove(), 300);
@@ -3534,14 +5112,14 @@ async function checkAuthSession() {
     updateAuthNav(null);
     return;
   }
-  
+
   try {
     const res = await fetch('/api/auth/me', {
       headers: {
         'Authorization': `Bearer ${token}`
       }
     });
-    
+
     if (res.ok) {
       const data = await res.json();
       currentUser = data.user;
@@ -3574,28 +5152,28 @@ function initProfileDropdown() {
   const wrapper = document.getElementById('profile-nav-wrapper');
   const trigger = document.getElementById('btn-profile-avatar');
   const dropdown = document.getElementById('profile-dropdown');
-  
+
   if (!wrapper || !trigger || !dropdown) return;
-  
+
   let hoverTimeout;
-  
+
   wrapper.addEventListener('mouseenter', () => {
     clearTimeout(hoverTimeout);
     dropdown.style.display = 'flex';
   });
-  
+
   wrapper.addEventListener('mouseleave', () => {
     hoverTimeout = setTimeout(() => {
       dropdown.style.display = 'none';
     }, 150);
   });
-  
+
   trigger.addEventListener('click', (e) => {
     e.stopPropagation();
     const isVisible = dropdown.style.display === 'flex';
     dropdown.style.display = isVisible ? 'none' : 'flex';
   });
-  
+
   // Close on click outside
   document.addEventListener('click', (e) => {
     const bentoBtn = document.getElementById('btn-open-auth-drawer');
@@ -3610,10 +5188,10 @@ function updateAuthNav(user) {
   const authNav = document.getElementById('user-auth-nav');
   const drawerBody = document.getElementById('mobile-auth-drawer-body');
   const openAuthBtn = document.getElementById('btn-open-auth-drawer');
-  
+
   if (user) {
     const badgeClass = user.is_premium ? 'auth-badge-premium' : 'auth-badge-free';
-    
+
     const planNames = {
       free: 'Free',
       starter: 'Starter',
@@ -3622,12 +5200,12 @@ function updateAuthNav(user) {
       enterprise: 'Enterprise',
       collaborator: 'Collaborator'
     };
-    
+
     const currentPlan = user.subscription_plan || (user.is_premium ? 'starter' : 'free');
     const badgeText = planNames[currentPlan] || 'Premium';
-    
-    const userDisplayName = (user.first_name && user.last_name) 
-      ? `${user.first_name} ${user.last_name}` 
+
+    const userDisplayName = (user.first_name && user.last_name)
+      ? `${user.first_name} ${user.last_name}`
       : (user.display_name || user.email);
 
     // Dynamic email truncation for dropdown
@@ -3635,7 +5213,7 @@ function updateAuthNav(user) {
     if (truncatedEmail.length > 22) {
       truncatedEmail = truncatedEmail.substring(0, 19) + '...';
     }
-    
+
     // 1. Desktop Profile Menu Rendering
     if (authNav) {
       authNav.innerHTML = `
@@ -3677,7 +5255,7 @@ function updateAuthNav(user) {
           </div>
         </div>
       `;
-      
+
       // Wire dropdown toggle
       initProfileDropdown();
 
@@ -3763,25 +5341,42 @@ function updateAuthNav(user) {
       updateAuthNav(null);
       showToast('Logged out successfully', 'info');
       closeAuthDrawer();
-      if (document.getElementById('blog-page').style.display === 'block') {
+      if (window.location.pathname !== '/' && window.location.pathname !== '/index.html') {
+        window.location.href = '/';
+        return;
+      }
+      navigateToDashboard();
+      if (document.getElementById('blog-page') && document.getElementById('blog-page').style.display === 'block') {
         renderBlogComposeSection();
       }
     };
 
     const upgradeAction = (e) => {
       if (e) e.preventDefault();
+      if (window.location.pathname !== '/' && window.location.pathname !== '/index.html') {
+        window.location.href = '/?tab=billing';
+        return;
+      }
       navigateToAccountDashboard('billing');
       closeAuthDrawer();
     };
 
     const teamAction = (e) => {
       if (e) e.preventDefault();
+      if (window.location.pathname !== '/' && window.location.pathname !== '/index.html') {
+        window.location.href = '/?tab=teams';
+        return;
+      }
       navigateToAccountDashboard('teams');
       closeAuthDrawer();
     };
 
     const settingsAction = (e) => {
       if (e) e.preventDefault();
+      if (window.location.pathname !== '/' && window.location.pathname !== '/index.html') {
+        window.location.href = '/?tab=profile';
+        return;
+      }
       navigateToAccountDashboard('profile');
       closeAuthDrawer();
     };
@@ -3789,13 +5384,13 @@ function updateAuthNav(user) {
     // Desktop bindings
     const btnProfileSettings = document.getElementById('btn-profile-settings');
     if (btnProfileSettings) btnProfileSettings.addEventListener('click', settingsAction);
-    
+
     const btnProfileTeam = document.getElementById('btn-profile-team');
     if (btnProfileTeam) btnProfileTeam.addEventListener('click', teamAction);
-    
+
     const btnProfileUpgrade = document.getElementById('btn-profile-upgrade');
     if (btnProfileUpgrade) btnProfileUpgrade.addEventListener('click', upgradeAction);
-    
+
     const btnProfileLogout = document.getElementById('btn-profile-logout');
     if (btnProfileLogout) btnProfileLogout.addEventListener('click', logoutAction);
 
@@ -3814,10 +5409,7 @@ function updateAuthNav(user) {
 
     const mobDrawerHeader = document.getElementById('mob-drawer-profile-header');
     if (mobDrawerHeader) {
-      mobDrawerHeader.addEventListener('click', (e) => {
-        navigateToAccountDashboard('profile');
-        closeAuthDrawer();
-      });
+      mobDrawerHeader.addEventListener('click', settingsAction);
     }
 
   } else {
@@ -3851,7 +5443,7 @@ function updateAuthNav(user) {
 
     if (drawerBody) {
       drawerBody.innerHTML = LOGGED_OUT_DRAWER_HTML;
-      
+
       // Wire mobile logged out triggers
       const mobBtnLogin = document.getElementById('mob-btn-login');
       if (mobBtnLogin) {
@@ -3867,7 +5459,7 @@ function updateAuthNav(user) {
           closeAuthDrawer();
         });
       }
-      
+
       // Accordion dropdown toggles
       const accordionIds = [
         { trigger: 'mob-trigger-products', submenu: 'mob-submenu-products' },
@@ -3906,7 +5498,7 @@ function updateAuthNav(user) {
           if (cat) {
             closeAuthDrawer();
             navigateToDashboard();
-            
+
             // Set category tab active state
             document.querySelectorAll('.category-tab').forEach(t => {
               if (t.getAttribute('data-category') === cat) {
@@ -3999,7 +5591,7 @@ function updateAuthNav(user) {
       }
     }
   }
-  
+
   if (document.getElementById('blog-page').style.display === 'block') {
     renderBlogComposeSection();
   }
@@ -4012,16 +5604,16 @@ function showAuthModal(type) {
   const upgrade = document.getElementById('upgrade-modal');
   const team = document.getElementById('team-modal');
   const forgot = document.getElementById('forgot-password-modal');
-  
-  overlay.classList.add('active');
-  login.style.display = 'none';
-  signup.style.display = 'none';
-  upgrade.style.display = 'none';
+
+  if (overlay) overlay.classList.add('active');
+  if (login) login.style.display = 'none';
+  if (signup) signup.style.display = 'none';
+  if (upgrade) upgrade.style.display = 'none';
   if (team) team.style.display = 'none';
   if (forgot) forgot.style.display = 'none';
   const settings = document.getElementById('settings-modal');
   if (settings) settings.style.display = 'none';
-  
+
   if (type === 'login') {
     login.style.display = 'flex';
     renderGoogleButtons();
@@ -4039,7 +5631,7 @@ function showAuthModal(type) {
     upgrade.style.display = 'flex';
     const loggedOutActions = document.getElementById('upgrade-logged-out-actions');
     const cardButtons = document.querySelectorAll('.btn-plan-choose');
-    
+
     if (token) {
       if (loggedOutActions) loggedOutActions.style.display = 'none';
       cardButtons.forEach(btn => {
@@ -4062,7 +5654,7 @@ function showAuthModal(type) {
         btn.style.opacity = '1';
       });
     }
-    
+
     // Set initial active plan based on slider
     updateActivePricingCard();
   }
@@ -4074,35 +5666,11 @@ function hideAuthModal() {
 }
 
 function updateActivePricingCard() {
-  const slider = document.getElementById('pricing-seats-slider');
-  if (!slider) return;
-  const seats = parseInt(slider.value, 10);
-  const seatsCount = document.getElementById('pricing-seats-count');
-  
-  if (seatsCount) {
-    if (seats >= 30) {
-      seatsCount.textContent = '30+ users (Enterprise)';
-    } else {
-      seatsCount.textContent = `${seats} user${seats > 1 ? 's' : ''}`;
-    }
-  }
-  
-  // Remove active-plan from all cards
+  const plan = (currentUser && currentUser.subscription_plan) || 'free';
   const cards = document.querySelectorAll('.pricing-card');
   cards.forEach(c => c.classList.remove('active-plan'));
-  
-  let targetPlan = 'starter';
-  if (seats === 1) {
-    targetPlan = 'starter';
-  } else if (seats >= 2 && seats <= 5) {
-    targetPlan = 'base';
-  } else if (seats >= 6 && seats <= 15) {
-    targetPlan = 'pro';
-  } else {
-    targetPlan = 'enterprise';
-  }
-  
-  const targetCard = document.getElementById(`card-plan-${targetPlan}`);
+
+  const targetCard = document.getElementById(`card-plan-${plan}`);
   if (targetCard) {
     targetCard.classList.add('active-plan');
   }
@@ -4117,21 +5685,24 @@ function showSettingsModal() {
   const forgot = document.getElementById('forgot-password-modal');
   const googleSelector = document.getElementById('google-selector-modal');
   const settings = document.getElementById('settings-modal');
-  
-  overlay.classList.add('active');
-  login.style.display = 'none';
-  signup.style.display = 'none';
-  upgrade.style.display = 'none';
+
+  if (overlay) overlay.classList.add('active');
+  if (login) login.style.display = 'none';
+  if (signup) signup.style.display = 'none';
+  if (upgrade) upgrade.style.display = 'none';
   if (team) team.style.display = 'none';
   if (forgot) forgot.style.display = 'none';
   if (googleSelector) googleSelector.style.display = 'none';
   if (settings) settings.style.display = 'flex';
-  
+
   if (currentUser) {
-    document.getElementById('settings-first-name').value = currentUser.first_name || '';
-    document.getElementById('settings-last-name').value = currentUser.last_name || '';
-    document.getElementById('settings-email').value = currentUser.email || '';
-    
+    const modalFirstName = document.getElementById('modal-settings-first-name');
+    if (modalFirstName) modalFirstName.value = currentUser.first_name || '';
+    const modalLastName = document.getElementById('modal-settings-last-name');
+    if (modalLastName) modalLastName.value = currentUser.last_name || '';
+    const modalEmail = document.getElementById('modal-settings-email');
+    if (modalEmail) modalEmail.value = currentUser.email || '';
+
     const settingsAvatarWrapper = document.querySelector('.settings-avatar-wrapper');
     if (settingsAvatarWrapper) {
       settingsAvatarWrapper.innerHTML = getAvatarHtml(currentUser.profile_pic, "100%", "18%");
@@ -4152,13 +5723,13 @@ function showTeamModal() {
   const signup = document.getElementById('signup-modal');
   const upgrade = document.getElementById('upgrade-modal');
   const team = document.getElementById('team-modal');
-  
-  overlay.classList.add('active');
-  login.style.display = 'none';
-  signup.style.display = 'none';
-  upgrade.style.display = 'none';
+
+  if (overlay) overlay.classList.add('active');
+  if (login) login.style.display = 'none';
+  if (signup) signup.style.display = 'none';
+  if (upgrade) upgrade.style.display = 'none';
   if (team) team.style.display = 'flex';
-  
+
   fetchTeamMembers();
 }
 
@@ -4169,7 +5740,7 @@ function hideTeamModal() {
 
 async function fetchTeamMembers() {
   if (!token) return;
-  
+
   try {
     const res = await fetch('/api/collaboration/list', {
       headers: {
@@ -4178,11 +5749,11 @@ async function fetchTeamMembers() {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Failed to fetch team list');
-    
+
     const inviteForm = document.getElementById('team-invite-form');
     const seatUsage = document.getElementById('team-seat-usage');
     const listContainer = document.getElementById('team-members-list');
-    
+
     // Clear any existing upgrade CTA banner from previous modal opens
     const existingCta = document.getElementById('team-upgrade-cta-container');
     if (existingCta) existingCta.remove();
@@ -4190,18 +5761,18 @@ async function fetchTeamMembers() {
     if (!data.canCollaborate) {
       if (inviteForm) inviteForm.style.display = 'none';
       if (seatUsage) seatUsage.textContent = '1 / 1 seat (Only you)';
-      
+
       const userEmail = currentUser ? currentUser.email : 'you';
       const userName = currentUser ? ((currentUser.first_name && currentUser.last_name) ? `${currentUser.first_name} ${currentUser.last_name}` : (currentUser.display_name || '')) : '';
       const displayLabel = userName ? `${userName} (${userEmail})` : userEmail;
-      
+
       listContainer.innerHTML = `
         <div class="team-member-row" style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0.75rem; background: rgba(0,0,0,0.02); border-radius: 0.375rem; width: 100%;">
           <span style="font-size: 0.9rem; font-weight: 500;">${escapeHTML(displayLabel)}</span>
           <span style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); background: rgba(0,0,0,0.05); padding: 0.15rem 0.4rem; border-radius: 4px;">Owner</span>
         </div>
       `;
-      
+
       // Inject Upgrade CTA banner
       const ctaContainer = document.createElement('div');
       ctaContainer.id = 'team-upgrade-cta-container';
@@ -4215,7 +5786,7 @@ async function fetchTeamMembers() {
         </button>
       `;
       listContainer.parentNode.appendChild(ctaContainer);
-      
+
       document.getElementById('btn-team-upgrade-cta').addEventListener('click', () => {
         hideTeamModal();
         showAuthModal('upgrade');
@@ -4223,13 +5794,13 @@ async function fetchTeamMembers() {
     } else {
       if (inviteForm) inviteForm.style.display = 'flex';
       if (seatUsage) seatUsage.textContent = `${data.seatsUsed} / ${data.maxSeats} used`;
-      
+
       listContainer.innerHTML = '';
       if (data.collaborators.length === 0) {
         listContainer.innerHTML = `<p style="font-size: 0.85rem; color: var(--text-muted); text-align: center; padding: 1rem 0;">No team members invited yet.</p>`;
         return;
       }
-      
+
       data.collaborators.forEach(c => {
         const row = document.createElement('div');
         row.className = 'team-member-row';
@@ -4239,7 +5810,7 @@ async function fetchTeamMembers() {
         `;
         listContainer.appendChild(row);
       });
-      
+
       listContainer.querySelectorAll('.btn-remove-member').forEach(btn => {
         btn.addEventListener('click', async (e) => {
           const email = e.currentTarget.getAttribute('data-email');
@@ -4266,7 +5837,7 @@ async function removeTeamMember(email) {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Failed to remove member');
-    
+
     showToast(data.message || 'Collaborator removed', 'success');
     fetchTeamMembers();
   } catch (err) {
@@ -4278,12 +5849,12 @@ function setupAuthEventListeners() {
   document.getElementById('btn-close-login').addEventListener('click', hideAuthModal);
   document.getElementById('btn-close-signup').addEventListener('click', hideAuthModal);
   document.getElementById('btn-close-upgrade').addEventListener('click', hideAuthModal);
-  
+
   const btnCloseForgot = document.getElementById('btn-close-forgot');
   if (btnCloseForgot) btnCloseForgot.addEventListener('click', hideAuthModal);
-  
 
-  
+
+
   document.getElementById('link-goto-signup').addEventListener('click', (e) => {
     e.preventDefault();
     showAuthModal('signup');
@@ -4292,7 +5863,7 @@ function setupAuthEventListeners() {
     e.preventDefault();
     showAuthModal('login');
   });
-  
+
   const linkForgot = document.getElementById('link-forgot-password');
   if (linkForgot) {
     linkForgot.addEventListener('click', (e) => {
@@ -4300,7 +5871,7 @@ function setupAuthEventListeners() {
       showAuthModal('forgot');
     });
   }
-  
+
   const linkGotoLoginFromForgot = document.getElementById('link-goto-login-from-forgot');
   if (linkGotoLoginFromForgot) {
     linkGotoLoginFromForgot.addEventListener('click', (e) => {
@@ -4308,7 +5879,7 @@ function setupAuthEventListeners() {
       showAuthModal('login');
     });
   }
-  
+
   document.getElementById('btn-upgrade-login').addEventListener('click', () => {
     showAuthModal('login');
   });
@@ -4316,7 +5887,7 @@ function setupAuthEventListeners() {
     e.preventDefault();
     showAuthModal('signup');
   });
-  
+
   // Google Sign-In Actions
   let googleClientId = null;
 
@@ -4330,7 +5901,7 @@ function setupAuthEventListeners() {
     }
   }
 
-  window.renderGoogleButtons = async function() {
+  window.renderGoogleButtons = async function () {
     if (googleClientId === null) {
       await checkGoogleConfig();
     }
@@ -4370,7 +5941,7 @@ function setupAuthEventListeners() {
               loginContainer.parentNode.insertBefore(warn, loginContainer.nextSibling);
             }
           }
-          
+
           if (signupContainer) {
             signupContainer.innerHTML = '';
             google.accounts.id.renderButton(signupContainer, {
@@ -4402,11 +5973,11 @@ function setupAuthEventListeners() {
 
     checkAndRender();
   };
-  
+
   async function handleGoogleAuth(credential, email, first_name, last_name) {
     try {
-      const payload = credential 
-        ? { credential } 
+      const payload = credential
+        ? { credential }
         : { email, first_name, last_name };
 
       const res = await fetch('/api/auth/google', {
@@ -4416,7 +5987,7 @@ function setupAuthEventListeners() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Google Login failed');
-      
+
       safeStorage.setItem('token', data.token);
       token = data.token;
       currentUser = data.user;
@@ -4442,7 +6013,7 @@ function setupAuthEventListeners() {
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Password reset request failed');
-        
+
         showToast(data.message || 'Verification code sent!', 'success');
         forgotStep1.style.display = 'none';
         document.getElementById('forgot-password-step2-form').style.display = 'flex';
@@ -4451,7 +6022,7 @@ function setupAuthEventListeners() {
       }
     });
   }
-  
+
   const forgotStep2 = document.getElementById('forgot-password-step2-form');
   if (forgotStep2) {
     forgotStep2.addEventListener('submit', async (e) => {
@@ -4467,7 +6038,7 @@ function setupAuthEventListeners() {
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Password reset failed');
-        
+
         showToast(data.message || 'Password reset successful!', 'success');
         showAuthModal('login');
       } catch (err) {
@@ -4475,60 +6046,70 @@ function setupAuthEventListeners() {
       }
     });
   }
-  
+
   document.getElementById('login-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const email = document.getElementById('login-email').value;
     const password = document.getElementById('login-password').value;
-    
+
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
       });
-      
+
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Login failed');
-      
+
       safeStorage.setItem('token', data.token);
       token = data.token;
       currentUser = data.user;
       updateAuthNav(currentUser);
       hideAuthModal();
       showToast('Logged in successfully', 'success');
-      
+
+      if (window.location.pathname !== '/' && window.location.pathname !== '/index.html') {
+        window.location.reload();
+        return;
+      }
+
       document.getElementById('login-email').value = '';
       document.getElementById('login-password').value = '';
     } catch (err) {
       showToast(err.message, 'error');
     }
   });
-  
+
   document.getElementById('signup-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const email = document.getElementById('signup-email').value;
     const password = document.getElementById('signup-password').value;
     const first_name = document.getElementById('signup-first-name').value;
     const last_name = document.getElementById('signup-last-name').value;
-    
+
     try {
       const res = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password, first_name, last_name })
       });
-      
+
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Signup failed');
-      
+
       safeStorage.setItem('token', data.token);
       token = data.token;
       currentUser = data.user;
       updateAuthNav(currentUser);
       hideAuthModal();
       showToast('Account created successfully!', 'success');
-      
+
+      if (window.location.pathname !== '/' && window.location.pathname !== '/index.html') {
+        window.location.reload();
+        return;
+      }
+
       document.getElementById('signup-email').value = '';
       document.getElementById('signup-password').value = '';
       document.getElementById('signup-first-name').value = '';
@@ -4537,24 +6118,17 @@ function setupAuthEventListeners() {
       showToast(err.message, 'error');
     }
   });
-  
-  // Seats range slider event listener
-  const pricingSlider = document.getElementById('pricing-seats-slider');
-  if (pricingSlider) {
-    pricingSlider.addEventListener('input', updateActivePricingCard);
-  }
-
   // Choose pricing plan button event listeners
   document.querySelectorAll('.btn-plan-choose').forEach(btn => {
     btn.addEventListener('click', async (e) => {
       const plan = e.currentTarget.getAttribute('data-plan');
-      
+
       if (!token) {
         showToast('Please login first to upgrade', 'error');
         showAuthModal('login');
         return;
       }
-      
+
       try {
         const res = await fetch('/api/stripe/checkout', {
           method: 'POST',
@@ -4562,11 +6136,15 @@ function setupAuthEventListeners() {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
           },
-          body: JSON.stringify({ plan })
+          body: JSON.stringify({
+            plan: plan,
+            seats: pricingSeats,
+            interval: pricingInterval
+          })
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Checkout redirect failed');
-        
+
         showToast('Redirecting to secure Stripe billing portal...', 'info');
         performCheckoutRedirect(data.url);
       } catch (err) {
@@ -4587,7 +6165,7 @@ function setupAuthEventListeners() {
       e.preventDefault();
       const emailInput = document.getElementById('team-invite-email');
       const email = emailInput.value.trim();
-      
+
       try {
         const res = await fetch('/api/collaboration/add', {
           method: 'POST',
@@ -4599,7 +6177,7 @@ function setupAuthEventListeners() {
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Failed to invite collaborator');
-        
+
         showToast(data.message || 'Collaborator invited successfully!', 'success');
         emailInput.value = '';
         fetchTeamMembers();
@@ -4615,103 +6193,122 @@ function setupAuthEventListeners() {
     settingsCloseBtn.addEventListener('click', hideSettingsModal);
   }
 
-  const inputProfilePic = document.getElementById('input-profile-pic');
-  if (inputProfilePic) {
-    inputProfilePic.addEventListener('change', async (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      
-      const formData = new FormData();
-      formData.append('profile_pic', file);
-      
-      try {
-        const res = await fetch('/api/user/profile-pic', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          },
-          body: formData
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Failed to upload profile picture');
-        
-        currentUser.profile_pic = data.profilePicUrl;
-        
-        showToast('Profile picture updated successfully', 'success');
-        updateAuthNav(currentUser);
-        
-        document.querySelectorAll('.settings-avatar-wrapper').forEach(w => {
-          w.innerHTML = getAvatarHtml(currentUser.profile_pic, "100%", "18%");
-        });
-        
-        if (document.getElementById('blog-page').style.display === 'block') {
-          renderBlogList();
-        }
-      } catch (err) {
-        showToast(err.message, 'error');
-      }
-    });
-  }
+  const handleProfilePicChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
 
-  const settingsForm = document.getElementById('settings-form');
-  if (settingsForm) {
-    settingsForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      
-      const firstName = document.getElementById('settings-first-name').value.trim();
-      const lastName = document.getElementById('settings-last-name').value.trim();
-      
-      const countrySelect = document.getElementById('settings-country');
-      const timezoneInput = document.getElementById('settings-timezone');
-      const country = countrySelect ? countrySelect.value : 'Pakistan';
-      const timezone = timezoneInput ? timezoneInput.value : 'Asia/Karachi';
-      
-      try {
-        const res = await fetch('/api/user/display-name', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            first_name: firstName,
-            last_name: lastName
-          })
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Failed to update settings');
-        
-        currentUser.first_name = data.user.first_name;
-        currentUser.last_name = data.user.last_name;
-        currentUser.display_name = data.user.display_name;
-        
-        // Save local country & timezone
-        const profileData = { country, timezone };
-        safeStorage.setItem(`pixelpdf_profile_${currentUser.email}`, JSON.stringify(profileData));
-        
-        showToast('Account settings saved successfully', 'success');
-        updateAuthNav(currentUser);
-        
-        // Conditional hide for old modal only
-        const overlay = document.getElementById('auth-modal-overlay');
-        const settingsModal = document.getElementById('settings-modal');
-        if (overlay && overlay.classList.contains('active') && settingsModal && settingsModal.style.display === 'flex') {
-          hideSettingsModal();
-        }
-        
-        // Refresh sidebar name
-        const nameLabel = document.getElementById('account-sidebar-name');
-        if (nameLabel) {
-          nameLabel.textContent = currentUser.display_name || `${currentUser.first_name || ''} ${currentUser.last_name || ''}`.trim() || currentUser.email;
-        }
-        
-        if (document.getElementById('blog-page').style.display === 'block') {
-          renderBlogList();
-        }
-      } catch (err) {
-        showToast(err.message, 'error');
+    const formData = new FormData();
+    formData.append('profile_pic', file);
+
+    try {
+      const res = await fetch('/api/user/profile-pic', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to upload profile picture');
+
+      currentUser.profile_pic = data.profilePicUrl;
+
+      showToast('Profile picture updated successfully', 'success');
+      updateAuthNav(currentUser);
+
+      document.querySelectorAll('.settings-avatar-wrapper').forEach(w => {
+        w.innerHTML = getAvatarHtml(currentUser.profile_pic, "100%", "18%");
+      });
+
+      if (document.getElementById('blog-page').style.display === 'block') {
+        renderBlogList();
       }
-    });
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  };
+
+  const modalPic = document.getElementById('modal-input-profile-pic');
+  if (modalPic) modalPic.addEventListener('change', handleProfilePicChange);
+  const dashboardPic = document.getElementById('dashboard-input-profile-pic');
+  if (dashboardPic) dashboardPic.addEventListener('change', handleProfilePicChange);
+
+  const handleSettingsSubmit = async (e, prefix) => {
+    e.preventDefault();
+
+    const firstName = document.getElementById(`${prefix}-settings-first-name`).value.trim();
+    const lastName = document.getElementById(`${prefix}-settings-last-name`).value.trim();
+
+    const countrySelect = document.getElementById(`${prefix}-settings-country`);
+    const timezoneInput = document.getElementById(`${prefix}-settings-timezone`);
+    const country = countrySelect ? countrySelect.value : 'Pakistan';
+    const timezone = timezoneInput ? timezoneInput.value : 'Asia/Karachi';
+
+    try {
+      const res = await fetch('/api/user/display-name', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          first_name: firstName,
+          last_name: lastName
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to update settings');
+
+      currentUser.first_name = data.user.first_name;
+      currentUser.last_name = data.user.last_name;
+      currentUser.display_name = data.user.display_name;
+
+      // Save local country & timezone
+      const profileData = { country, timezone };
+      safeStorage.setItem(`pixelpdf_profile_${currentUser.email}`, JSON.stringify(profileData));
+
+      showToast('Account settings saved successfully', 'success');
+      updateAuthNav(currentUser);
+
+      // Sync the other form fields to match!
+      const syncPrefix = prefix === 'modal' ? 'dashboard' : 'modal';
+      const otherFirstName = document.getElementById(`${syncPrefix}-settings-first-name`);
+      if (otherFirstName) otherFirstName.value = currentUser.first_name;
+      const otherLastName = document.getElementById(`${syncPrefix}-settings-last-name`);
+      if (otherLastName) otherLastName.value = currentUser.last_name;
+      const otherCountry = document.getElementById(`${syncPrefix}-settings-country`);
+      if (otherCountry) otherCountry.value = country;
+      const otherTimezone = document.getElementById(`${syncPrefix}-settings-timezone`);
+      if (otherTimezone) otherTimezone.value = timezone;
+
+      // Conditional hide for modal only
+      const overlay = document.getElementById('auth-modal-overlay');
+      const settingsModal = document.getElementById('settings-modal');
+      if (overlay && overlay.classList.contains('active') && settingsModal && settingsModal.style.display === 'flex') {
+        hideSettingsModal();
+      }
+
+      // Refresh sidebar name
+      const nameLabel = document.getElementById('account-sidebar-name');
+      if (nameLabel) {
+        nameLabel.textContent = currentUser.display_name || `${currentUser.first_name || ''} ${currentUser.last_name || ''}`.trim() || currentUser.email;
+      }
+
+      if (document.getElementById('blog-page').style.display === 'block') {
+        renderBlogList();
+      }
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  };
+
+  const modalForm = document.getElementById('modal-settings-form');
+  if (modalForm) {
+    modalForm.addEventListener('submit', (e) => handleSettingsSubmit(e, 'modal'));
+  }
+  const dashboardForm = document.getElementById('dashboard-settings-form');
+  if (dashboardForm) {
+    dashboardForm.addEventListener('submit', (e) => handleSettingsSubmit(e, 'dashboard'));
   }
 
   // Prefetch Google Client ID configuration
@@ -4845,16 +6442,16 @@ function navigateToBlog() {
   currentTool = null;
   stopWebcamStream();
   clearWorkspace();
-  
+
   document.getElementById('workspace-page').style.display = 'none';
   document.getElementById('dashboard-page').style.display = 'none';
-  
+
   const accDash = document.getElementById('account-dashboard-page');
   if (accDash) accDash.style.display = 'none';
 
   document.getElementById('blog-page').style.display = 'block';
   document.getElementById('btn-back-to-dashboard').style.display = 'flex';
-  
+
   loadBlogPosts();
   renderBlogComposeSection();
   updateHeaderTriggers();
@@ -4863,19 +6460,19 @@ function navigateToBlog() {
 async function loadBlogPosts() {
   const container = document.getElementById('blog-posts-list');
   if (!container) return;
-  
+
   container.innerHTML = `
     <div class="loading-container" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 0.75rem; padding: 3rem; text-align: center; width: 100%;">
       <div class="spinner" style="margin: 0 auto 1rem auto; width: 2.5rem; height: 2.5rem;"></div>
       <div>Loading articles...</div>
     </div>
   `;
-  
+
   try {
     const res = await fetch('/api/blog');
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Failed to fetch blogs');
-    
+
     if (!data.posts || data.posts.length === 0) {
       container.innerHTML = `
         <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 0.75rem; padding: 3rem; text-align: center; color: var(--text-secondary); width: 100%;">
@@ -4885,7 +6482,7 @@ async function loadBlogPosts() {
       `;
       return;
     }
-    
+
     container.innerHTML = data.posts.map(post => {
       const dateStr = new Date(post.createdAt).toLocaleDateString(undefined, {
         year: 'numeric', month: 'long', day: 'numeric'
@@ -4923,7 +6520,7 @@ async function loadFeaturedLandingBlogs() {
   try {
     const res = await fetch('/api/blog');
     const data = await res.json();
-    
+
     if (res.ok && data.posts && data.posts.length > 0) {
       const featured = data.posts.slice(0, 3);
       container.innerHTML = featured.map(post => {
@@ -5012,7 +6609,7 @@ async function loadFeaturedLandingBlogs() {
 function renderBlogComposeSection() {
   const container = document.getElementById('blog-compose-container');
   if (!container) return;
-  
+
   if (!token) {
     container.innerHTML = `
       <div style="display: flex; flex-direction: column; gap: 1rem; align-items: center; text-align: center; padding: 1rem 0;">
@@ -5020,11 +6617,11 @@ function renderBlogComposeSection() {
         <button id="btn-blog-login" class="btn-action" style="width: 100%;">Login to Continue</button>
       </div>
     `;
-    
+
     document.getElementById('btn-blog-login').addEventListener('click', () => showAuthModal('login'));
     return;
   }
-  
+
   const displayNamePlaceholder = currentUser?.display_name || currentUser?.email || 'Your Author Name';
   const displayNameValue = currentUser?.display_name || '';
 
@@ -5101,7 +6698,7 @@ function renderBlogComposeSection() {
         const res = await fetch('/api/stripe/blog-checkout', { method: 'POST' });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Stripe redirect failed');
-        
+
         showToast('Redirecting to Stripe payment page...', 'info');
         performCheckoutRedirect(data.url);
       } catch (err) {
@@ -5111,7 +6708,7 @@ function renderBlogComposeSection() {
   } else {
     document.getElementById('btn-open-compose').addEventListener('click', () => {
       document.getElementById('blog-compose-overlay').classList.add('active');
-      
+
       // Initialize Quill if not already done
       if (!blogQuill) {
         blogQuill = new Quill('#blog-editor-quill', {
@@ -5121,7 +6718,7 @@ function renderBlogComposeSection() {
             toolbar: [
               [{ 'header': [1, 2, 3, false] }],
               ['bold', 'italic', 'underline', 'strike'],
-              [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+              [{ 'list': 'ordered' }, { 'list': 'bullet' }],
               ['link', 'blockquote', 'code-block'],
               [{ 'align': [] }],
               ['clean']
@@ -5134,7 +6731,7 @@ function renderBlogComposeSection() {
 }
 
 function escapeHTML(str) {
-  return str.replace(/[&<>'"]/g, 
+  return str.replace(/[&<>'"]/g,
     tag => ({
       '&': '&amp;',
       '<': '&lt;',
@@ -5199,7 +6796,7 @@ async function downloadInvoicePDF(invoiceId, date, period, amount) {
     // Customer / Billed To details
     let yPos = 690;
     page.drawText('BILLED TO:', { x: 50, y: yPos, size: 10, font: fontBold, color: rgb(0.5, 0.5, 0.5) });
-    
+
     yPos -= 20;
     const userName = currentUser ? `${currentUser.first_name || ''} ${currentUser.last_name || ''}`.trim() : 'Customer';
     const clientHeaderName = companyName !== 'PixelPDF Customer' ? companyName : (userName || 'Customer');
@@ -5225,7 +6822,7 @@ async function downloadInvoicePDF(invoiceId, date, period, amount) {
     // Provider / Billed From details
     let yPosFrom = 690;
     page.drawText('BILLED FROM:', { x: 350, y: yPosFrom, size: 10, font: fontBold, color: rgb(0.5, 0.5, 0.5) });
-    
+
     yPosFrom -= 20;
     page.drawText(VENDOR_BILLING_INFO.companyName, { x: 350, y: yPosFrom, size: 11, font: fontBold, color: rgb(0.1, 0.1, 0.1) });
 
@@ -5351,12 +6948,12 @@ function updateHeaderTriggers() {
   const crmBtn = document.getElementById('btn-trigger-crm');
   const hamBtn = document.getElementById('btn-open-tools-drawer');
   const accDash = document.getElementById('account-dashboard-page');
-  
+
   if (!crmBtn || !hamBtn) return;
-  
+
   const isMobile = window.innerWidth <= 768;
   const isAccDashActive = accDash && accDash.style.display === 'block';
-  
+
   if (isMobile && isAccDashActive) {
     crmBtn.style.display = 'flex';
   } else {
