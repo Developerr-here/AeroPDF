@@ -23,10 +23,10 @@ if (connectionString) {
     logging: false
   });
 } else {
-  console.log('Database: DATABASE_URL not set. Falling back to local SQLite database (pixelpdf_dev.sqlite) for local development...');
+  console.log('Database: DATABASE_URL not set. Falling back to local SQLite database (pdfbundles_dev.sqlite) for local development...');
   sequelize = new Sequelize({
     dialect: 'sqlite',
-    storage: './pixelpdf_dev.sqlite',
+    storage: './pdfbundles_dev.sqlite',
     logging: false
   });
 }
@@ -225,7 +225,7 @@ export async function syncDatabase() {
     console.log('Database: Synchronized tables successfully.');
 
     // Seed default admin user
-    const adminEmail = 'admin@pixelpdf.com';
+    const adminEmail = 'admin@pdfbundles.com';
     const adminUser = await User.findOne({ where: { email: adminEmail } });
     if (!adminUser) {
       const hashedPassword = await bcrypt.hash('admin123', 10);
@@ -234,13 +234,13 @@ export async function syncDatabase() {
         password: hashedPassword,
         first_name: 'System',
         last_name: 'Administrator',
-        display_name: 'PixelPDF Admin',
+        display_name: 'pdfbundles Admin',
         role: 'admin',
         subscription_plan: 'premium',
         subscription_seats: 999,
         is_premium: true
       });
-      console.log('Database Seeding: Created default administrator account (admin@pixelpdf.com / admin123).');
+      console.log('Database Seeding: Created default administrator account (admin@pdfbundles.com / admin123).');
     }
   } catch (error) {
     console.error('Database: Failed to connect or sync tables:', error);

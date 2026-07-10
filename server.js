@@ -30,7 +30,7 @@ const app = express();
 app.set('trust proxy', 1);
 const port = process.env.PORT || 3000;
 
-const JWT_SECRET = process.env.JWT_SECRET || 'pixelpdf-enterprise-security-secret-passphrase';
+const JWT_SECRET = process.env.JWT_SECRET || 'pdfbundles-enterprise-security-secret-passphrase';
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || 'sk_test_mockstripekey';
 const stripe = new Stripe(STRIPE_SECRET_KEY);
 
@@ -749,7 +749,7 @@ app.post('/api/stripe/checkout', authenticateToken, async (req, res) => {
     const interval = intervalInput === 'year' ? 'year' : 'month';
 
     const unitAmount = interval === 'year' ? 4800 : 700; // $48.00/year ($4.00/mo) vs $7.00/month
-    const planName = `PixelPDF Premium Plan (${seats} Seat${seats > 1 ? 's' : ''})`;
+    const planName = `pdfbundles Premium Plan (${seats} Seat${seats > 1 ? 's' : ''})`;
 
     const isMock = STRIPE_SECRET_KEY === 'sk_test_mockstripekey';
     if (isMock) {
@@ -826,8 +826,8 @@ app.post('/api/stripe/blog-checkout', authenticateToken, async (req, res) => {
         price_data: {
           currency: 'usd',
           product_data: {
-            name: 'PixelPDF Single Blog Post Publishing Pass',
-            description: 'Allows you to publish a single article on the PixelPDF Blog page'
+            name: 'pdfbundles Single Blog Post Publishing Pass',
+            description: 'Allows you to publish a single article on the pdfbundles Blog page'
           },
           unit_amount: 1200 // $12.00
         },
@@ -876,7 +876,7 @@ app.post('/api/stripe/newsletter-checkout', async (req, res) => {
         price_data: {
           currency: 'usd',
           product_data: {
-            name: 'PixelPDF Premium Newsletter Subscription',
+            name: 'pdfbundles Premium Newsletter Subscription',
             description: 'Stay ahead with weekly PDF tool guides, updates, and templates.'
           },
           unit_amount: 500, // $5.00 USD
@@ -1199,10 +1199,10 @@ app.post('/api/contact-sales', async (req, res) => {
     return res.status(400).json({ error: 'All fields are required.' });
   }
 
-  const adminEmail = process.env.ADMIN_EMAIL || 'admin@pixelpdf.com';
+  const adminEmail = process.env.ADMIN_EMAIL || 'admin@pdfbundles.com';
 
   const mailOptions = {
-    from: `"PixelPDF Contact Sales" <${process.env.SMTP_USER || 'sales@pixelpdf.com'}>`,
+    from: `"pdfbundles Contact Sales" <${process.env.SMTP_USER || 'sales@pdfbundles.com'}>`,
     to: adminEmail,
     subject: `New Enterprise Inquiry from ${firstName} ${lastName} (${companyName})`,
     text: `New contact sales inquiry received:
@@ -2108,7 +2108,7 @@ app.post('/api/ocr', upload.single('file'), checkUploadLimit, apiLimiter, async 
     const pages = pdf.getPages();
     
     pages.forEach((page, i) => {
-      page.drawText(`PixelPDF OCR Text Layer (Page ${i+1})`, {
+      page.drawText(`pdfbundles OCR Text Layer (Page ${i+1})`, {
         x: 50, y: 20, size: 8, font, color: rgb(0.7, 0.7, 0.7), opacity: 0.15
       });
     });
@@ -2416,7 +2416,7 @@ app.post('/api/pdf-to-office', upload.single('file'), checkUploadLimit, apiLimit
       const rawText = pdfData.text || '';
 
       const csvLines = [
-        `"PixelPDF Table Extraction","${title.replace(/"/g, '""')}"`,
+        `"pdfbundles Table Extraction","${title.replace(/"/g, '""')}"`,
         `"Page Count","${pageCount}"`,
         `"Exported On","${new Date().toLocaleString().replace(/"/g, '""')}"`,
         `""`
@@ -2640,7 +2640,7 @@ app.post('/api/pdf-forms', upload.single('file'), checkUploadLimit, apiLimiter, 
     fields.forEach(field => {
       try {
         if (field instanceof PDFTextField) {
-          field.setText('PixelPDF Autocomplete');
+          field.setText('pdfbundles Autocomplete');
         }
       } catch (e) {}
     });

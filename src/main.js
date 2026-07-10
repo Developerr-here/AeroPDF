@@ -36,11 +36,11 @@ import {
 
 // Corporate Billing Details for Invoices (Billed From)
 const VENDOR_BILLING_INFO = {
-  companyName: 'PixelPDF Technologies LLC',
+  companyName: 'pdfbundles Technologies LLC',
   address: '100 Pine Street, Suite 1200',
   cityStateZip: 'San Francisco, CA 94111',
   country: 'United States',
-  email: 'finance@pixelpdf.com'
+  email: 'finance@pdfbundles.com'
 };
 
 // Application State
@@ -894,7 +894,7 @@ function populateToolLandingDetails(tool, meta) {
 
 document.addEventListener('DOMContentLoaded', async () => {
   // Retrieve persisted theme and update UI
-  const savedTheme = safeStorage.getItem('pixelpdf_theme') || 'light';
+  const savedTheme = safeStorage.getItem('pdfbundles_theme') || 'light';
   updateThemeUI(savedTheme === 'dark');
 
   window.navigateToTool = navigateToTool;
@@ -2291,7 +2291,7 @@ function setupEventListeners() {
     mobLinkAbout.addEventListener('click', (e) => {
       e.preventDefault();
       closeAuthDrawer();
-      showToast('PixelPDF - Developed by Advanced Agentic Coding team.', 'info');
+      showToast('pdfbundles - Developed by Advanced Agentic Coding team.', 'info');
     });
   }
 
@@ -2300,7 +2300,7 @@ function setupEventListeners() {
     mobLinkHelp.addEventListener('click', (e) => {
       e.preventDefault();
       closeAuthDrawer();
-      showToast('Need help? Contact support at support@pixelpdf.com', 'info');
+      showToast('Need help? Contact support at support@pdfbundles.com', 'info');
     });
   }
 
@@ -2337,7 +2337,7 @@ function setupEventListeners() {
     toggleDark.addEventListener('click', () => {
       const isDarkNow = !document.body.classList.contains('dark-theme');
       updateThemeUI(isDarkNow);
-      safeStorage.setItem('pixelpdf_theme', isDarkNow ? 'dark' : 'light');
+      safeStorage.setItem('pdfbundles_theme', isDarkNow ? 'dark' : 'light');
       showToast(isDarkNow ? 'Night mode enabled!' : 'Light mode enabled!', 'info');
     });
   }
@@ -2875,7 +2875,7 @@ function navigateToAccountDashboard(tabName = 'profile') {
   const countrySelect = document.getElementById('dashboard-settings-country');
   const timezoneInput = document.getElementById('dashboard-settings-timezone');
   if (countrySelect || timezoneInput) {
-    const localProfile = safeStorage.getItem(`pixelpdf_profile_${currentUser.email}`);
+    const localProfile = safeStorage.getItem(`pdfbundles_profile_${currentUser.email}`);
     if (localProfile) {
       try {
         const parsed = JSON.parse(localProfile);
@@ -3348,12 +3348,12 @@ function saveCRMBusinessDetails() {
   const country = document.getElementById('business-country').value;
 
   const bizProfile = { companyName, taxId, billingEmail, address1, city, zip, state, country };
-  safeStorage.setItem('pixelpdf_business_profile', JSON.stringify(bizProfile));
+  safeStorage.setItem('pdfbundles_business_profile', JSON.stringify(bizProfile));
   showToast('Business profile and billing address saved successfully.', 'success');
 }
 
 function loadCRMBusinessDetails() {
-  const data = safeStorage.getItem('pixelpdf_business_profile');
+  const data = safeStorage.getItem('pdfbundles_business_profile');
   if (!data) return;
   try {
     const biz = JSON.parse(data);
@@ -4642,7 +4642,7 @@ async function processFiles() {
 
         try {
           let outputBytes = null;
-          let filename = `pixelpdf-${currentTool}-${currentFile.name.replace(/\.[^/.]+$/, "")}.pdf`;
+          let filename = `pdfbundles-${currentTool}-${currentFile.name.replace(/\.[^/.]+$/, "")}.pdf`;
           let mimeType = 'application/pdf';
 
           switch (currentTool) {
@@ -4812,7 +4812,7 @@ async function processFiles() {
     }
 
     let outputBytes = null;
-    let filename = `pixelpdf-${currentTool}.pdf`;
+    let filename = `pdfbundles-${currentTool}.pdf`;
     let mimeType = 'application/pdf';
 
     switch (currentTool) {
@@ -6265,7 +6265,7 @@ function setupAuthEventListeners() {
 
       // Save local country & timezone
       const profileData = { country, timezone };
-      safeStorage.setItem(`pixelpdf_profile_${currentUser.email}`, JSON.stringify(profileData));
+      safeStorage.setItem(`pdfbundles_profile_${currentUser.email}`, JSON.stringify(profileData));
 
       showToast('Account settings saved successfully', 'success');
       updateAuthNav(currentUser);
@@ -6477,7 +6477,7 @@ async function loadBlogPosts() {
       container.innerHTML = `
         <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 0.75rem; padding: 3rem; text-align: center; color: var(--text-secondary); width: 100%;">
           <h3>No articles published yet</h3>
-          <p style="margin-top: 0.5rem;">Be the first to publish an article on PixelPDF!</p>
+          <p style="margin-top: 0.5rem;">Be the first to publish an article on pdfbundles!</p>
         </div>
       `;
       return;
@@ -6568,7 +6568,7 @@ async function loadFeaturedLandingBlogs() {
       <div class="testimonial-user" style="margin-top: 1.25rem;">
         <div class="user-avatar-silhouette" style="background: var(--grad-primary); width: 2.2rem; height: 2.2rem; min-width: 2.2rem;">PP</div>
         <div class="user-info-text">
-          <h4 style="font-size: 0.85rem;">PixelPDF Editorial</h4>
+          <h4 style="font-size: 0.85rem;">pdfbundles Editorial</h4>
           <p style="font-size: 0.7rem;">June 25, 2026</p>
         </div>
       </div>
@@ -6757,7 +6757,7 @@ async function downloadInvoicePDF(invoiceId, date, period, amount) {
 
     // Retrieve saved corporate details
     let bizProfile = {};
-    const localBizProfile = safeStorage.getItem('pixelpdf_business_profile');
+    const localBizProfile = safeStorage.getItem('pdfbundles_business_profile');
     if (localBizProfile) {
       try {
         bizProfile = JSON.parse(localBizProfile);
@@ -6766,9 +6766,9 @@ async function downloadInvoicePDF(invoiceId, date, period, amount) {
       }
     }
 
-    const companyName = bizProfile.companyName || 'PixelPDF Customer';
+    const companyName = bizProfile.companyName || 'pdfbundles Customer';
     const taxId = bizProfile.taxId || 'N/A';
-    const billingEmail = bizProfile.billingEmail || (currentUser ? currentUser.email : 'customer@pixelpdf.com');
+    const billingEmail = bizProfile.billingEmail || (currentUser ? currentUser.email : 'customer@pdfbundles.com');
     const address1 = bizProfile.address1 || '123 Main Street';
     const city = bizProfile.city || 'New York';
     const zip = bizProfile.zip || '10001';
@@ -6787,8 +6787,8 @@ async function downloadInvoicePDF(invoiceId, date, period, amount) {
     });
 
     // Draw Header Text
-    page.drawText('PIXELPDF', { x: 50, y: 785, size: 24, font: fontBold, color: rgb(1, 1, 1) });
-    page.drawText('The Complete PDF Tools Platform', { x: 50, y: 765, size: 10, font: fontRegular, color: rgb(0.7, 0.7, 0.8) });
+    page.drawText('PDFBUNDLES', { x: 50, y: 785, size: 24, font: fontBold, color: rgb(1, 1, 1) });
+    page.drawText('Free Online PDF Tools', { x: 50, y: 765, size: 10, font: fontRegular, color: rgb(0.7, 0.7, 0.8) });
 
     page.drawText('INVOICE', { x: 450, y: 785, size: 24, font: fontBold, color: rgb(1, 1, 1) });
     page.drawText(invoiceId, { x: 450, y: 765, size: 12, font: fontBold, color: rgb(0.39, 0.4, 0.95) });
@@ -6799,7 +6799,7 @@ async function downloadInvoicePDF(invoiceId, date, period, amount) {
 
     yPos -= 20;
     const userName = currentUser ? `${currentUser.first_name || ''} ${currentUser.last_name || ''}`.trim() : 'Customer';
-    const clientHeaderName = companyName !== 'PixelPDF Customer' ? companyName : (userName || 'Customer');
+    const clientHeaderName = companyName !== 'pdfbundles Customer' ? companyName : (userName || 'Customer');
     page.drawText(clientHeaderName, { x: 50, y: yPos, size: 11, font: fontBold, color: rgb(0.1, 0.1, 0.1) });
 
     yPos -= 15;
@@ -6871,7 +6871,7 @@ async function downloadInvoicePDF(invoiceId, date, period, amount) {
     // Item line
     midY -= 30;
     const planName = amount === '$9.00' ? 'Starter' : 'Premium';
-    page.drawText(`PixelPDF ${planName} Plan Subscription`, { x: 60, y: midY + 8, size: 9, font: fontRegular, color: rgb(0.1, 0.1, 0.1) });
+    page.drawText(`pdfbundles ${planName} Plan Subscription`, { x: 60, y: midY + 8, size: 9, font: fontRegular, color: rgb(0.1, 0.1, 0.1) });
     page.drawText(period, { x: 260, y: midY + 8, size: 8, font: fontRegular, color: rgb(0.3, 0.3, 0.3) });
     page.drawText('1', { x: 395, y: midY + 8, size: 9, font: fontRegular, color: rgb(0.1, 0.1, 0.1) });
     page.drawText(amount, { x: 430, y: midY + 8, size: 9, font: fontRegular, color: rgb(0.1, 0.1, 0.1) });
@@ -6921,7 +6921,7 @@ async function downloadInvoicePDF(invoiceId, date, period, amount) {
       color: rgb(0.95, 0.95, 0.95)
     });
     page.drawText('Terms & Conditions: Service is active for the duration of the billing period. All fees are in USD.', { x: 50, y: 100, size: 8, font: fontRegular, color: rgb(0.6, 0.6, 0.6) });
-    page.drawText('PixelPDF - Thank you for your subscription. For support, contact support@pixelpdf.com.', { x: 50, y: 85, size: 8, font: fontRegular, color: rgb(0.6, 0.6, 0.6) });
+    page.drawText('pdfbundles - Thank you for your subscription. For support, contact support@pdfbundles.com.', { x: 50, y: 85, size: 8, font: fontRegular, color: rgb(0.6, 0.6, 0.6) });
 
     // Compile & Download
     const pdfBytes = await pdfDoc.save();
@@ -6929,7 +6929,7 @@ async function downloadInvoicePDF(invoiceId, date, period, amount) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `PixelPDF_Invoice_${invoiceId}.pdf`;
+    a.download = `pdfbundles_Invoice_${invoiceId}.pdf`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
