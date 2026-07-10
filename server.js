@@ -1292,7 +1292,7 @@ app.delete('/api/admin/inquiries/:id', authenticateToken, async (req, res) => {
 });
 
 // Admin manual account plan override configuration API
-app.post('/api/admin/set-plan', async (req, res) => {
+app.post('/api/admin/set-plan', authenticateToken, async (req, res) => {
   const { email, plan, seats, interval, customFeatures, features, role } = req.body;
   const finalFeatures = customFeatures !== undefined ? customFeatures : features;
   if (!email || !plan) {
@@ -1300,6 +1300,11 @@ app.post('/api/admin/set-plan', async (req, res) => {
   }
   
   try {
+    const adminUser = await User.findByPk(req.user.id);
+    if (!adminUser || adminUser.role !== 'admin') {
+      return res.status(403).json({ error: 'Access denied. Administrator privileges required.' });
+    }
+
     const user = await User.findOne({ where: { email: email.toLowerCase().trim() } });
     if (!user) return res.status(404).json({ error: 'User not found.' });
     
@@ -2803,8 +2808,61 @@ app.post('/api/compare', upload.array('files'), checkUploadLimit, apiLimiter, as
 });
 
 /* ==========================================
-   PRODUCTION SPA ASSETS ROUTING
+   SEO SITEMAP FOR SPA
    ========================================== */
+app.get('/sitemap.xml', (req, res) => {
+  const host = req.get('host');
+  const protocol = req.protocol;
+  const baseUrl = `${protocol}://${host}`;
+
+  const pages = [
+    '',
+    '?tab=blog',
+    '?tab=features',
+    '?tab=documentation',
+    '?tab=faq',
+    '?tab=security',
+    '?tab=press',
+    '?tab=privacy',
+    '?tab=terms',
+    '?tab=about'
+  ];
+
+  const tools = [
+    'merge', 'split', 'compress', 'pdf-to-word', 'word-to-pdf', 
+    'pdf-to-img', 'img-to-pdf', 'organize-pdf', 'edit-pdf', 
+    'rotate', 'crop', 'page-numbers', 'watermark', 'protect', 
+    'unlock', 'sign', 'pdf-to-excel', 'excel-to-pdf', 
+    'pdf-to-ppt', 'ppt-to-pdf', 'repair', 'ocr', 
+    'ai-assistant', 'remove-background', 'upscale-image'
+  ];
+
+  let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+  xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
+
+  // Add pages
+  pages.forEach(p => {
+    xml += '  <url>\n';
+    xml += `    <loc>${baseUrl}/${p}</loc>\n`;
+    xml += '    <changefreq>weekly</changefreq>\n';
+    xml += '    <priority>0.8</priority>\n';
+    xml += '  </url>\n';
+  });
+
+  // Add tools
+  tools.forEach(t => {
+    xml += '  <url>\n';
+    xml += `    <loc>${baseUrl}/?tool=${t}</loc>\n`;
+    xml += '    <changefreq>monthly</changefreq>\n';
+    xml += '    <priority>0.9</priority>\n';
+    xml += '  </url>\n';
+  });
+
+  xml += '</urlset>';
+
+  res.header('Content-Type', 'application/xml');
+  res.send(xml);
+});
 
 app.use(express.static(path.join(__dirname, 'dist')));
 

@@ -3389,18 +3389,52 @@ body.dark-theme .ai-tool-card-link:hover {
   position: absolute;
   top: calc(100% + 10px);
   right: 0;
-  width: 250px;
+  width: 620px;
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: 0.75rem;
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-premium);
   z-index: 1000;
-  padding: 1rem;
   display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+  flex-direction: row;
+  overflow: hidden;
   transform-origin: top right;
   animation: dropdownFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.profile-dropdown-left {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  padding: 1.25rem;
+  background: rgba(248, 250, 252, 0.65);
+}
+
+.profile-dropdown-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.profile-dropdown-col-title {
+  font-size: 0.7rem;
+  font-weight: 750;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+  padding-left: 0.65rem;
+}
+
+.profile-dropdown-right {
+  width: 240px;
+  border-left: 1px solid var(--border-color);
+  padding: 1.25rem;
+  background: var(--bg-card);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 @keyframes dropdownFadeIn {
@@ -3485,6 +3519,8 @@ body.dark-theme .ai-tool-card-link:hover {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+  max-height: 480px;
+  overflow-y: auto;
 }
 
 .profile-dropdown-item {
@@ -5150,7 +5186,19 @@ body.dark-theme .role-tab.active {
   .account-dashboard-wrapper {
     flex-direction: column !important;
     gap: 1.25rem !important;
+    align-items: stretch !important;
   }
+
+  .account-content-pane {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .crm-card {
+    padding: 1.25rem !important;
+  }
+
 
   .account-sidebar {
     position: fixed !important;
@@ -5333,4 +5381,74 @@ body.dark-theme .role-tab.active {
   -webkit-appearance: none;
   margin: 0;
 }
+
+/* Admin panel responsive layout helpers */
+.hidden-tab {
+  display: none !important;
+}
+
+.admin-grid-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 600px) {
+  .admin-grid-row {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  #crm-admin-set-plan-form div[style*="grid-template-columns"] {
+    grid-template-columns: 1fr !important;
+    gap: 0.5rem 1rem !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .back-to-dashboard-text {
+    display: none !important;
+  }
+}
+
+/* Features dropdown menu styles */
+.features-dropdown-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 0.5rem;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 550;
+  text-decoration: none;
+  transition: var(--transition-smooth);
+}
+
+.features-dropdown-link:hover {
+  background: var(--bg-primary);
+  color: var(--accent-secondary);
+  padding-left: 1rem;
+}
+
+/* Info page content multi-column panel */
+.info-page-panel {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 2rem;
+  align-items: start;
+  margin-top: 1.5rem;
+}
+
+@media (max-width: 900px) {
+  .info-page-panel {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+}
+
+
+
 

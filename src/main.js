@@ -2113,16 +2113,23 @@ function setupEventListeners() {
   // Header Nav Menu & Mega Menu Hover Logic
   const allToolsBtn = document.getElementById('nav-link-all-tools');
   const aiToolsBtn = document.getElementById('nav-link-ai-tools');
+  const featuresDropdownBtn = document.getElementById('nav-link-features-dropdown');
   const megaMenu = document.getElementById('desktop-mega-menu');
   const aiToolsMenu = document.getElementById('desktop-ai-tools-menu');
+  const featuresDropdownMenu = document.getElementById('desktop-features-menu');
   let menuTimeout;
 
   const showMenu = (menu) => {
     clearTimeout(menuTimeout);
     if (menu === megaMenu) {
       if (aiToolsMenu) aiToolsMenu.classList.remove('active');
+      if (featuresDropdownMenu) featuresDropdownMenu.classList.remove('active');
+    } else if (menu === aiToolsMenu) {
+      if (megaMenu) megaMenu.classList.remove('active');
+      if (featuresDropdownMenu) featuresDropdownMenu.classList.remove('active');
     } else {
       if (megaMenu) megaMenu.classList.remove('active');
+      if (aiToolsMenu) aiToolsMenu.classList.remove('active');
     }
     if (menu) menu.classList.add('active');
   };
@@ -2155,6 +2162,13 @@ function setupEventListeners() {
     });
     aiToolsMenu.addEventListener('mouseenter', () => showMenu(aiToolsMenu));
     aiToolsMenu.addEventListener('mouseleave', () => hideMenu(aiToolsMenu));
+  }
+
+  if (featuresDropdownBtn && featuresDropdownMenu) {
+    featuresDropdownBtn.addEventListener('mouseenter', () => showMenu(featuresDropdownMenu));
+    featuresDropdownBtn.addEventListener('mouseleave', () => hideMenu(featuresDropdownMenu));
+    featuresDropdownMenu.addEventListener('mouseenter', () => showMenu(featuresDropdownMenu));
+    featuresDropdownMenu.addEventListener('mouseleave', () => hideMenu(featuresDropdownMenu));
   }
 
   // Mega menu click routing
@@ -2274,44 +2288,43 @@ function setupEventListeners() {
     });
   }
 
-  // Mobile auth drawer links click handling
-  const mobLinkFeatures = document.getElementById('mob-link-features');
-  if (mobLinkFeatures) {
-    mobLinkFeatures.addEventListener('click', (e) => {
-      e.preventDefault();
-      closeAuthDrawer();
-      navigateToDashboard();
-      const premiumStatsGrid = document.querySelector('.premium-stats-grid');
-      if (premiumStatsGrid) premiumStatsGrid.scrollIntoView({ behavior: 'smooth' });
+  // Routing listeners for new Info/SEO Pages
+  const bindInfoPageLinks = () => {
+    // Desktop dropdown
+    document.querySelectorAll('.features-dropdown-link').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (featuresDropdownMenu) featuresDropdownMenu.classList.remove('active');
+        navigateToInfoPage(link.getAttribute('data-page'));
+      });
     });
-  }
 
-  const mobLinkAbout = document.getElementById('mob-link-about');
-  if (mobLinkAbout) {
-    mobLinkAbout.addEventListener('click', (e) => {
-      e.preventDefault();
-      closeAuthDrawer();
-      showToast('pdfbundles - Developed by Advanced Agentic Coding team.', 'info');
+    // Mobile drawer
+    document.querySelectorAll('.mob-info-page-link').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        closeAuthDrawer();
+        navigateToInfoPage(link.getAttribute('data-page'));
+      });
     });
-  }
 
-  const mobLinkHelp = document.getElementById('mob-link-help');
-  if (mobLinkHelp) {
-    mobLinkHelp.addEventListener('click', (e) => {
-      e.preventDefault();
-      closeAuthDrawer();
-      showToast('Need help? Contact support at support@pdfbundles.com', 'info');
+    // Footer links
+    document.querySelectorAll('.footer-info-page-link').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        navigateToInfoPage(link.getAttribute('data-page'));
+      });
     });
-  }
 
-  const mobLinkLanguage = document.getElementById('mob-link-language');
-  if (mobLinkLanguage) {
-    mobLinkLanguage.addEventListener('click', (e) => {
-      e.preventDefault();
-      closeAuthDrawer();
-      showToast('English language selected.', 'info');
+    // Sidebar navigation
+    document.querySelectorAll('.info-nav-link').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        navigateToInfoPage(link.getAttribute('data-page'));
+      });
     });
-  }
+  };
+  bindInfoPageLinks();
 
   const navPricing = document.getElementById('nav-link-pricing');
   if (navPricing) {
@@ -2908,10 +2921,10 @@ function navigateToAccountDashboard(tabName = 'profile') {
   // Handle Admin Control tab visibility
   const adminTab = document.getElementById('crm-sidebar-admin');
   if (adminTab) {
-    if (currentUser.role === 'admin') {
-      adminTab.style.display = 'flex';
+    if (currentUser.email === 'admin@pdfbundles.com') {
+      adminTab.classList.remove('hidden-tab');
     } else {
-      adminTab.style.display = 'none';
+      adminTab.classList.add('hidden-tab');
       if (tabName === 'admin') tabName = 'profile'; // fallback
     }
   }
@@ -5223,34 +5236,71 @@ function updateAuthNav(user) {
           </button>
           
           <div id="profile-dropdown" class="profile-dropdown" style="display: none;">
-            <div class="profile-dropdown-header">
-              <div class="profile-dropdown-avatar-wrapper">
-                ${getAvatarHtml(user.profile_pic, "100%", "18%")}
+            <!-- Left Side: Resources Columns -->
+            <div class="profile-dropdown-left">
+              <div class="profile-dropdown-col">
+                <div class="profile-dropdown-col-title">Features & Docs</div>
+                <button class="profile-dropdown-item profile-dropdown-page-item" data-page="features">
+                  <span>✨ Features</span>
+                </button>
+                <button class="profile-dropdown-item profile-dropdown-page-item" data-page="documentation">
+                  <span>📚 Documentation</span>
+                </button>
+                <button class="profile-dropdown-item profile-dropdown-page-item" data-page="faq">
+                  <span>❓ FAQ</span>
+                </button>
+                <button class="profile-dropdown-item profile-dropdown-page-item" data-page="security">
+                  <span>🔒 Security</span>
+                </button>
               </div>
-              <div class="profile-dropdown-info">
-                <span class="profile-dropdown-name">${escapeHTML(userDisplayName)}</span>
-                <span class="profile-dropdown-email" title="${escapeHTML(user.email)}">${escapeHTML(truncatedEmail)}</span>
-                <span class="profile-dropdown-plan-badge ${user.is_premium ? 'premium' : 'free'}">${badgeText}</span>
+              <div class="profile-dropdown-col">
+                <div class="profile-dropdown-col-title">Company & Legal</div>
+                <button class="profile-dropdown-item profile-dropdown-page-item" data-page="press">
+                  <span>📰 Press Room</span>
+                </button>
+                <button class="profile-dropdown-item profile-dropdown-page-item" data-page="privacy">
+                  <span>🛡️ Privacy Policy</span>
+                </button>
+                <button class="profile-dropdown-item profile-dropdown-page-item" data-page="terms">
+                  <span>📄 Terms & Conditions</span>
+                </button>
+                <button class="profile-dropdown-item profile-dropdown-page-item" data-page="about">
+                  <span>👥 About Us</span>
+                </button>
               </div>
             </div>
-            <div class="profile-dropdown-menu">
-              <button class="profile-dropdown-item" id="btn-profile-settings">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                <span>Account settings</span>
-              </button>
-              <button class="profile-dropdown-item" id="btn-profile-team">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                <span>Team</span>
-              </button>
-              <button class="profile-dropdown-item" id="btn-profile-upgrade">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-                <span>Upgrade to Premium</span>
-              </button>
-              <hr class="profile-dropdown-divider" />
-              <button class="profile-dropdown-item profile-dropdown-item-logout" id="btn-profile-logout">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                <span>Log out</span>
-              </button>
+
+            <!-- Right Side: Account Actions -->
+            <div class="profile-dropdown-right">
+              <div class="profile-dropdown-header">
+                <div class="profile-dropdown-avatar-wrapper">
+                  ${getAvatarHtml(user.profile_pic, "100%", "18%")}
+                </div>
+                <div class="profile-dropdown-info">
+                  <span class="profile-dropdown-name">${escapeHTML(userDisplayName)}</span>
+                  <span class="profile-dropdown-email" title="${escapeHTML(user.email)}">${escapeHTML(truncatedEmail)}</span>
+                  <span class="profile-dropdown-plan-badge ${user.is_premium ? 'premium' : 'free'}">${badgeText}</span>
+                </div>
+              </div>
+              <div class="profile-dropdown-menu">
+                <button class="profile-dropdown-item" id="btn-profile-settings">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                  <span>Account settings</span>
+                </button>
+                <button class="profile-dropdown-item" id="btn-profile-team">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                  <span>Team</span>
+                </button>
+                <button class="profile-dropdown-item" id="btn-profile-upgrade">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                  <span>Upgrade to Premium</span>
+                </button>
+                <hr class="profile-dropdown-divider" />
+                <button class="profile-dropdown-item profile-dropdown-item-logout" id="btn-profile-logout">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                  <span>Log out</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -5393,6 +5443,16 @@ function updateAuthNav(user) {
 
     const btnProfileLogout = document.getElementById('btn-profile-logout');
     if (btnProfileLogout) btnProfileLogout.addEventListener('click', logoutAction);
+
+    // Bind profile dropdown resource page links
+    document.querySelectorAll('.profile-dropdown-page-item').forEach(item => {
+      item.addEventListener('click', (e) => {
+        e.preventDefault();
+        const dropdown = document.getElementById('profile-dropdown');
+        if (dropdown) dropdown.style.display = 'none';
+        navigateToInfoPage(item.getAttribute('data-page'));
+      });
+    });
 
     // Mobile bindings
     const mobBtnSettings = document.getElementById('mob-btn-settings');
@@ -6943,7 +7003,7 @@ async function downloadInvoicePDF(invoiceId, date, period, amount) {
 }
 window.downloadInvoicePDF = downloadInvoicePDF;
 
-// Update visible header buttons (hamburger for tools, chevron button for CRM navigation) on mobile
+// Update visible header buttons (hamburger for tools) on mobile
 function updateHeaderTriggers() {
   const crmBtn = document.getElementById('btn-trigger-crm');
   const hamBtn = document.getElementById('btn-open-tools-drawer');
@@ -6951,13 +7011,351 @@ function updateHeaderTriggers() {
 
   if (!crmBtn || !hamBtn) return;
 
-  const isMobile = window.innerWidth <= 768;
-  const isAccDashActive = accDash && accDash.style.display === 'block';
-
-  if (isMobile && isAccDashActive) {
-    crmBtn.style.display = 'flex';
-  } else {
-    crmBtn.style.display = 'none';
-  }
+  // Never show the redundant header CRM button - the blue floating toggle handles sidebar drawer
+  crmBtn.style.display = 'none';
 }
 window.updateHeaderTriggers = updateHeaderTriggers;
+
+// Dynamic Information/SEO Pages content configuration
+// Dynamic Information/SEO Pages content configuration
+const INFO_PAGES_DATA = {
+  features: {
+    content: `
+      <!-- Hero Section -->
+      <div style="text-align: center; margin-bottom: 3.5rem; padding: 2rem 0; animation: fadeIn 0.8s ease-out;">
+        <span style="background: rgba(99, 102, 241, 0.1); color: var(--accent-secondary); font-size: 0.8rem; font-weight: 700; padding: 0.4rem 1rem; border-radius: 2rem; text-transform: uppercase; letter-spacing: 0.05em; display: inline-block; margin-bottom: 1rem;">✨ SUITE CAPABILITIES</span>
+        <h1 style="font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; color: var(--text-primary); line-height: 1.25; margin-bottom: 1rem; background: linear-gradient(135deg, var(--text-primary), var(--accent-secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Work Smarter with High-Performance PDF Bundles</h1>
+        <p style="font-size: 1.15rem; color: var(--text-secondary); max-width: 750px; margin: 0 auto; line-height: 1.6;">
+          Managing documents shouldn't feel like a chore. Whether you are packaging monthly client reports, compiling legal discoveries, or organizing e-commerce invoices, PDF Bundles gives you a highly intuitive, lightning-fast suite of tools to process multiple files simultaneously.
+        </p>
+        <p style="font-size: 1.2rem; font-weight: 600; color: var(--accent-primary); margin-top: 1.25rem;">
+          No complex training required—just drag, drop, and bundle.
+        </p>
+      </div>
+
+      <!-- Core Capabilities Grid -->
+      <div style="margin-bottom: 4rem;">
+        <h2 style="font-size: 1.75rem; font-weight: 750; color: var(--text-primary); text-align: center; margin-bottom: 2rem;">Core Product Capabilities</h2>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
+          <!-- Card 1 -->
+          <div class="crm-card" style="padding: 2rem; border: 1px solid var(--border-color); border-radius: 1rem; background: var(--bg-card); display: flex; flex-direction: column; justify-content: space-between; height: 100%; transition: transform 0.25s ease, box-shadow 0.25s ease; box-shadow: var(--shadow-soft);">
+            <div>
+              <div style="background: rgba(244, 63, 94, 0.1); color: #f43f5e; font-size: 1.5rem; width: 3.5rem; height: 3.5rem; border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; margin-bottom: 1.25rem;">📁</div>
+              <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.75rem;">Smart Bundling & Organization</h3>
+              <p style="font-size: 0.925rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 1.5rem;">Merge hundreds of files into unified master documents, extract targeted pages, or split large bundles back into individual assets.</p>
+            </div>
+            <div style="background: var(--bg-primary); border-radius: 0.5rem; padding: 0.75rem 1rem; font-size: 0.8rem; font-style: italic; color: var(--text-muted); border-left: 3.5px solid #f43f5e;">
+              <strong>SEO Focus:</strong> Merge PDF bundles, Split document sets
+            </div>
+          </div>
+
+          <!-- Card 2 -->
+          <div class="crm-card" style="padding: 2rem; border: 1px solid var(--border-color); border-radius: 1rem; background: var(--bg-card); display: flex; flex-direction: column; justify-content: space-between; height: 100%; transition: transform 0.25s ease, box-shadow 0.25s ease; box-shadow: var(--shadow-soft);">
+            <div>
+              <div style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; font-size: 1.5rem; width: 3.5rem; height: 3.5rem; border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; margin-bottom: 1.25rem;">🔄</div>
+              <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.75rem;">High-Fidelity Conversion</h3>
+              <p style="font-size: 0.925rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 1.5rem;">Move seamlessly between PDF and formats like Word, Excel, PowerPoint, and high-res JPG without losing structural formatting.</p>
+            </div>
+            <div style="background: var(--bg-primary); border-radius: 0.5rem; padding: 0.75rem 1rem; font-size: 0.8rem; font-style: italic; color: var(--text-muted); border-left: 3.5px solid #3b82f6;">
+              <strong>SEO Focus:</strong> Batch PDF converter, Office to PDF
+            </div>
+          </div>
+
+          <!-- Card 3 -->
+          <div class="crm-card" style="padding: 2rem; border: 1px solid var(--border-color); border-radius: 1rem; background: var(--bg-card); display: flex; flex-direction: column; justify-content: space-between; height: 100%; transition: transform 0.25s ease, box-shadow 0.25s ease; box-shadow: var(--shadow-soft);">
+            <div>
+              <div style="background: rgba(16, 185, 129, 0.1); color: #10b981; font-size: 1.5rem; width: 3.5rem; height: 3.5rem; border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; margin-bottom: 1.25rem;">📉</div>
+              <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.75rem;">Enterprise-Grade Optimization</h3>
+              <p style="font-size: 0.925rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 1.5rem;">Shrink heavy document bundles to email-friendly sizes while maintaining crystal-clear text sharpness.</p>
+            </div>
+            <div style="background: var(--bg-primary); border-radius: 0.5rem; padding: 0.75rem 1rem; font-size: 0.8rem; font-style: italic; color: var(--text-muted); border-left: 3.5px solid #10b981;">
+              <strong>SEO Focus:</strong> Compress PDF bundle, Optimize documents
+            </div>
+          </div>
+
+          <!-- Card 4 -->
+          <div class="crm-card" style="padding: 2rem; border: 1px solid var(--border-color); border-radius: 1rem; background: var(--bg-card); display: flex; flex-direction: column; justify-content: space-between; height: 100%; transition: transform 0.25s ease, box-shadow 0.25s ease; box-shadow: var(--shadow-soft);">
+            <div>
+              <div style="background: rgba(139, 92, 246, 0.1); color: #8b5cf6; font-size: 1.5rem; width: 3.5rem; height: 3.5rem; border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; margin-bottom: 1.25rem;">🔒</div>
+              <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.75rem;">Bundle Intelligence & Security</h3>
+              <p style="font-size: 0.925rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 1.5rem;">Instantly lock entire sets with AES encryption, apply digital signatures, or generate automated AI summaries of massive document pools.</p>
+            </div>
+            <div style="background: var(--bg-primary); border-radius: 0.5rem; padding: 0.75rem 1rem; font-size: 0.8rem; font-style: italic; color: var(--text-muted); border-left: 3.5px solid #8b5cf6;">
+              <strong>SEO Focus:</strong> Secure PDF bundles, AI PDF summary
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Why Choose Us Cards -->
+      <div style="margin-bottom: 4rem; padding: 3.5rem 2rem; background: rgba(99, 102, 241, 0.02); border: 1px solid var(--border-color); border-radius: 1.5rem;">
+        <h2 style="font-size: 1.75rem; font-weight: 750; color: var(--text-primary); text-align: center; margin-bottom: 3rem;">Why Modern Teams Choose PDF Bundles</h2>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 2rem;">
+          <div style="text-align: left;">
+            <div style="font-size: 1.75rem; margin-bottom: 0.75rem;">⚡</div>
+            <h4 style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">True Batch Processing Power</h4>
+            <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.5;">Stop handling documents one by one. Our infrastructure is built specifically to process complex, multi-file batches at maximum speed. Upload entire folders, apply your edits, and download your ready-to-go bundle in seconds.</p>
+          </div>
+          
+          <div style="text-align: left;">
+            <div style="font-size: 1.75rem; margin-bottom: 0.75rem;">🛡️</div>
+            <h4 style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">Ironclad Privacy & Data Security</h4>
+            <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.5;">Your document security is non-negotiable. To ensure your private records remain entirely yours, PDF Bundles utilizes localized browser processing and strict server-side cleanup protocols—automatically deleting all processed archives from our systems within two hours.</p>
+          </div>
+
+          <div style="text-align: left;">
+            <div style="font-size: 1.75rem; margin-bottom: 0.75rem;">🔄</div>
+            <h4 style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">Seamless Cloud Integrations</h4>
+            <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.5;">Keep your workflow continuous without burning local storage or mobile data. Import your document batches directly from Google Drive or Dropbox, build your bundles on our cloud servers, and save them straight back to your shared team drives.</p>
+          </div>
+
+          <div style="text-align: left;">
+            <div style="font-size: 1.75rem; margin-bottom: 0.75rem;">🎨</div>
+            <h4 style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">Total Control Over Layouts</h4>
+            <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.5;">Organizing document sets can get messy. Our interactive dashboard lets you instantly reorder files alphabetically, inject missing pages on the fly, remove unwanted sheets, or rotate skewed scans before you compile the final master bundle.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Premium Callout -->
+      <div style="padding: 3rem; background: linear-gradient(135deg, rgba(79, 70, 229, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%); border: 1px solid rgba(79, 70, 229, 0.15); border-radius: 1.5rem; text-align: center; max-width: 900px; margin: 0 auto;">
+        <h3 style="font-size: 1.65rem; font-weight: 800; color: var(--accent-primary); margin-bottom: 0.75rem;">Scale Your Operations with PDF Bundles Premium</h3>
+        <p style="font-size: 1.05rem; color: var(--text-secondary); margin-bottom: 2rem; max-width: 600px; margin-left: auto; margin-right: auto; line-height: 1.5;">When individual document limits stand in the way of your business growth, our Premium tiers are designed to lift the barriers.</p>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; text-align: left; max-width: 800px; margin: 0 auto;">
+          <div style="background: var(--bg-card); padding: 1.25rem; border-radius: 0.75rem; border: 1px solid var(--border-color);">
+            <strong style="color: var(--text-primary); display: block; margin-bottom: 0.25rem; font-size: 0.95rem;">⚡ Expanded Limits</strong>
+            <span style="font-size: 0.85rem; color: var(--text-secondary);">Upload heavier gigabyte-scale datasets and increase file processing capacity.</span>
+          </div>
+          <div style="background: var(--bg-card); padding: 1.25rem; border-radius: 0.75rem; border: 1px solid var(--border-color);">
+            <strong style="color: var(--text-primary); display: block; margin-bottom: 0.25rem; font-size: 0.95rem;">👥 Team Management</strong>
+            <span style="font-size: 0.85rem; color: var(--text-secondary);">Create a shared workspace. Standardize custom branding or watermarking architecture.</span>
+          </div>
+          <div style="background: var(--bg-card); padding: 1.25rem; border-radius: 0.75rem; border: 1px solid var(--border-color);">
+            <strong style="color: var(--text-primary); display: block; margin-bottom: 0.25rem; font-size: 0.95rem;">🚀 prioritized Pipelines</strong>
+            <span style="font-size: 0.85rem; color: var(--text-secondary);">Enjoy prioritized server pipelines to bypass high-traffic queue waiting times.</span>
+          </div>
+        </div>
+      </div>
+    `
+  },
+  documentation: {
+    content: `
+      <div style="text-align: center; margin-bottom: 3.5rem; padding: 2rem 0; animation: fadeIn 0.8s ease-out;">
+        <span style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; font-size: 0.8rem; font-weight: 700; padding: 0.4rem 1rem; border-radius: 2rem; text-transform: uppercase; letter-spacing: 0.05em; display: inline-block; margin-bottom: 1rem;">📚 PLATFORM DOCUMENTATION</span>
+        <h1 style="font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; color: var(--text-primary); margin-bottom: 1rem;">Guides & API References</h1>
+        <p style="font-size: 1.15rem; color: var(--text-secondary); max-width: 650px; margin: 0 auto; line-height: 1.6;">Learn how to configure upload sizing thresholds, use individual tools, and manage subscription seats.</p>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin-bottom: 3rem;">
+        <div class="crm-card" style="padding: 2rem; border: 1px solid var(--border-color); border-radius: 1rem; background: var(--bg-card);">
+          <h3 style="font-size: 1.35rem; font-weight: 700; color: var(--text-primary); margin-bottom: 1rem;">Upload Sizing & File Limits</h3>
+          <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1.5rem;">The platform features specific file boundaries depending on your active user role and billing tiers:</p>
+          
+          <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border-color); padding-bottom: 0.5rem; font-size: 0.875rem;">
+              <span style="color: var(--text-secondary);">Guest Plan</span>
+              <strong style="color: var(--text-primary);">Up to 10MB per task</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border-color); padding-bottom: 0.5rem; font-size: 0.875rem;">
+              <span style="color: var(--text-secondary);">Starter Plan</span>
+              <strong style="color: var(--text-primary);">Up to 100MB per task</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border-color); padding-bottom: 0.5rem; font-size: 0.875rem;">
+              <span style="color: var(--text-secondary);">Premium Plan</span>
+              <strong style="color: var(--text-primary);">Up to 4.5GB per task</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="crm-card" style="padding: 2rem; border: 1px solid var(--border-color); border-radius: 1rem; background: var(--bg-card);">
+          <h3 style="font-size: 1.35rem; font-weight: 700; color: var(--text-primary); margin-bottom: 1rem;">REST API Examples</h3>
+          <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1rem;">Process your document batches programmatically using our endpoint hooks:</p>
+          <pre style="background: var(--bg-primary); padding: 1rem; border-radius: 0.5rem; font-family: monospace; font-size: 0.8rem; color: var(--accent-secondary); overflow-x: auto; text-align: left; border: 1px solid var(--border-color);">
+curl -X POST https://api.pdfbundles.com/v1/merge \\
+  -H "Authorization: Bearer YOUR_API_TOKEN" \\
+  -F "files=@report1.pdf" \\
+  -F "files=@report2.pdf"</pre>
+        </div>
+      </div>
+    `
+  },
+  faq: {
+    content: `
+      <div style="text-align: center; margin-bottom: 3.5rem; padding: 2rem 0; animation: fadeIn 0.8s ease-out;">
+        <span style="background: rgba(139, 92, 246, 0.1); color: #8b5cf6; font-size: 0.8rem; font-weight: 700; padding: 0.4rem 1rem; border-radius: 2rem; text-transform: uppercase; letter-spacing: 0.05em; display: inline-block; margin-bottom: 1rem;">❓ FAQ HELP CENTER</span>
+        <h1 style="font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; color: var(--text-primary); margin-bottom: 1rem;">Frequently Asked Questions</h1>
+        <p style="font-size: 1.15rem; color: var(--text-secondary); max-width: 650px; margin: 0 auto; line-height: 1.6;">Quick, direct answers regarding security configurations, invoices, cancellations, and collaboration seats.</p>
+      </div>
+
+      <div style="max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.25rem; text-align: left;">
+        <div class="crm-card" style="padding: 1.5rem; border: 1px solid var(--border-color); border-radius: 0.75rem; background: var(--bg-card); transition: box-shadow 0.25s ease;">
+          <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">🔒 Is my file data secure?</h3>
+          <p style="font-size: 0.925rem; color: var(--text-secondary); line-height: 1.5;">Absolutely. All uploads utilize SSL/TLS 1.3 transmission pipelines. Files are isolated in private container sandboxes during processing and are completely purged from servers exactly 60 minutes after task completion.</p>
+        </div>
+
+        <div class="crm-card" style="padding: 1.5rem; border: 1px solid var(--border-color); border-radius: 0.75rem; background: var(--bg-card); transition: box-shadow 0.25s ease;">
+          <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">👥 How do team seats work?</h3>
+          <p style="font-size: 0.925rem; color: var(--text-secondary); line-height: 1.5;">When subscribing to Pro or Custom tiers, you can add teammate emails from your account dashboard. Teammates instantly inherit premium conversion caps and share limits from the master corporate pool.</p>
+        </div>
+
+        <div class="crm-card" style="padding: 1.5rem; border: 1px solid var(--border-color); border-radius: 0.75rem; background: var(--bg-card); transition: box-shadow 0.25s ease;">
+          <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">🤖 What happens if I exhaust AI assistant limits?</h3>
+          <p style="font-size: 0.925rem; color: var(--text-secondary); line-height: 1.5;">AI helper credits (background removal, upsizing, translations) automatically reset at the start of each billing month. If you need higher volumes sooner, team administrators can configure custom credits from settings.</p>
+        </div>
+      </div>
+    `
+  },
+  security: {
+    content: `
+      <div style="text-align: center; margin-bottom: 3.5rem; padding: 2rem 0; animation: fadeIn 0.8s ease-out;">
+        <span style="background: rgba(16, 185, 129, 0.1); color: #10b981; font-size: 0.8rem; font-weight: 700; padding: 0.4rem 1rem; border-radius: 2rem; text-transform: uppercase; letter-spacing: 0.05em; display: inline-block; margin-bottom: 1rem;">🔒 ENTERPRISE COMPLIANCE</span>
+        <h1 style="font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; color: var(--text-primary); margin-bottom: 1rem;">Security & Privacy Compliance</h1>
+        <p style="font-size: 1.15rem; color: var(--text-secondary); max-width: 650px; margin: 0 auto; line-height: 1.6;">How we protect your confidential documents, process files, and satisfy international data standards.</p>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.5rem; margin-bottom: 3rem;">
+        <div class="crm-card" style="padding: 1.75rem; border: 1px solid var(--border-color); border-radius: 0.75rem; background: var(--bg-card); text-align: left;">
+          <div style="font-size: 1.75rem; margin-bottom: 0.5rem;">🛡️</div>
+          <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">GDPR Compliance</h3>
+          <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.5;">Complete data ownership control. European region users have rights to view, cancel, or trigger complete deletion of account profiles instantly.</p>
+        </div>
+
+        <div class="crm-card" style="padding: 1.75rem; border: 1px solid var(--border-color); border-radius: 0.75rem; background: var(--bg-card); text-align: left;">
+          <div style="font-size: 1.75rem; margin-bottom: 0.5rem;">⚡</div>
+          <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">Transmission Encryption</h3>
+          <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.5;">All server transmissions utilize secure SSL/TLS 1.3 wrappers to prevent packet intercepts or network eavesdropping.</p>
+        </div>
+
+        <div class="crm-card" style="padding: 1.75rem; border: 1px solid var(--border-color); border-radius: 0.75rem; background: var(--bg-card); text-align: left;">
+          <div style="font-size: 1.75rem; margin-bottom: 0.5rem;">🗑️</div>
+          <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">Automatic Deletion</h3>
+          <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.5;">Processed files are completely destroyed from physical servers exactly 60 minutes after generation. We save no duplicates.</p>
+        </div>
+      </div>
+    `
+  },
+  press: {
+    content: `
+      <div style="text-align: center; margin-bottom: 3.5rem; padding: 2rem 0; animation: fadeIn 0.8s ease-out;">
+        <span style="background: rgba(245, 158, 11, 0.1); color: #f59e0b; font-size: 0.8rem; font-weight: 700; padding: 0.4rem 1rem; border-radius: 2rem; text-transform: uppercase; letter-spacing: 0.05em; display: inline-block; margin-bottom: 1rem;">📰 PRESS & BRAND NEWS</span>
+        <h1 style="font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; color: var(--text-primary); margin-bottom: 1rem;">Media Kit & Press Releases</h1>
+        <p style="font-size: 1.15rem; color: var(--text-secondary); max-width: 650px; margin: 0 auto; line-height: 1.6;">Follow our updates, access platform logo assets, or check our media contact directory.</p>
+      </div>
+
+      <div class="crm-card" style="padding: 2.5rem; border: 1px solid var(--border-color); border-radius: 1rem; background: var(--bg-card); text-align: left; max-width: 800px; margin: 0 auto;">
+        <h3 style="font-size: 1.35rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.75rem;">Identity Guidelines</h3>
+        <p style="font-size: 0.95rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 1.5rem;">Please refer to our platform as <strong>pdfbundles</strong> in lowercase. Do not manipulate color schemes, shapes, or aspect dimensions of vector logo marks.</p>
+        
+        <div style="background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 0.75rem; padding: 1.5rem; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem;">
+          <div>
+            <strong style="color: var(--text-primary); font-size: 0.95rem;">Download Assets Pack (.zip)</strong>
+            <span style="display: block; font-size: 0.8rem; color: var(--text-muted);">Includes high-res PNG logos and vector SVG brand marks.</span>
+          </div>
+          <button class="btn-action" style="padding: 0.6rem 1.25rem; font-size: 0.85rem;" onclick="showToast('Branding package download initiated.', 'info')">Download Kit</button>
+        </div>
+      </div>
+    `
+  },
+  privacy: {
+    content: `
+      <div style="text-align: center; margin-bottom: 3rem; padding: 1.5rem 0;">
+        <h1 style="font-size: 2.25rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.75rem;">Privacy Policy</h1>
+        <p style="font-size: 1.05rem; color: var(--text-secondary);">Last updated: July 2026. How we manage and store user profile records.</p>
+      </div>
+
+      <div class="crm-card" style="padding: 2.5rem; border: 1px solid var(--border-color); border-radius: 1rem; background: var(--bg-card); text-align: left; max-width: 900px; margin: 0 auto; line-height: 1.7; color: var(--text-secondary);">
+        <h3 style="color: var(--text-primary); font-size: 1.25rem; font-weight: 700; margin-bottom: 0.75rem;">1. Information We Collect</h3>
+        <p style="margin-bottom: 1.5rem; font-size: 0.95rem;">We only request basic configuration records necessary to manage subscriptions and team seats (names, email addresses, payment tokens). We save no record of individual conversion text layers.</p>
+
+        <h3 style="color: var(--text-primary); font-size: 1.25rem; font-weight: 700; margin-bottom: 0.75rem;">2. Cookies & Tracker Disclaimers</h3>
+        <p style="margin-bottom: 1.5rem; font-size: 0.95rem;">We use only essential session cookies required to verify user tokens. No third-party advertisements or background analytics trackers are active inside the user workspace.</p>
+      </div>
+    `
+  },
+  terms: {
+    content: `
+      <div style="text-align: center; margin-bottom: 3rem; padding: 1.5rem 0;">
+        <h1 style="font-size: 2.25rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.75rem;">Terms & Conditions</h1>
+        <p style="font-size: 1.05rem; color: var(--text-secondary);">Terms of usage, platform service SLA bounds, and billings cancellation policies.</p>
+      </div>
+
+      <div class="crm-card" style="padding: 2.5rem; border: 1px solid var(--border-color); border-radius: 1rem; background: var(--bg-card); text-align: left; max-width: 900px; margin: 0 auto; line-height: 1.7; color: var(--text-secondary);">
+        <h3 style="color: var(--text-primary); font-size: 1.25rem; font-weight: 700; margin-bottom: 0.75rem;">1. Platform SLA Disclaimers</h3>
+        <p style="margin-bottom: 1.5rem; font-size: 0.95rem;">pdfbundles conversions are provided as-is without any warranties of uptime, layout mapping precision, or complete security duration guarantees.</p>
+
+        <h3 style="color: var(--text-primary); font-size: 1.25rem; font-weight: 700; margin-bottom: 0.75rem;">2. Billing & Seat Cancellations</h3>
+        <p style="margin-bottom: 1.5rem; font-size: 0.95rem;">Subscriptions automatically renew monthly. Users can disable auto-renew settings at any time directly from the account dashboard settings module. Payments are non-refundable.</p>
+      </div>
+    `
+  },
+  about: {
+    content: `
+      <!-- Hero Section -->
+      <div style="text-align: center; margin-bottom: 3.5rem; padding: 2rem 0; animation: fadeIn 0.8s ease-out;">
+        <span style="background: rgba(99, 102, 241, 0.1); color: var(--accent-secondary); font-size: 0.8rem; font-weight: 700; padding: 0.4rem 1rem; border-radius: 2rem; text-transform: uppercase; letter-spacing: 0.05em; display: inline-block; margin-bottom: 1rem;">👥 ABOUT THE COMPANY</span>
+        <h1 style="font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; color: var(--text-primary); margin-bottom: 1rem;">Fast, Secure, & Modern PDF Editor</h1>
+        <p style="font-size: 1.15rem; color: var(--text-secondary); max-width: 700px; margin: 0 auto; line-height: 1.6;">
+          Our mission is to build highly performant browser tools that help professionals process document bundles efficiently without compromising on design or user privacy.
+        </p>
+      </div>
+
+      <!-- Company Contacts Grid -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2rem; margin-bottom: 3rem; text-align: left;">
+        <div class="crm-card" style="padding: 2rem; border: 1px solid var(--border-color); border-radius: 1rem; background: var(--bg-card); display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.75rem;">Platform Mission</h3>
+            <p style="font-size: 0.925rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 1rem;">We build lightweight, ad-free utilities running directly in modern browsers. Process sensitive files locally without server-side leaks.</p>
+          </div>
+        </div>
+
+        <div class="crm-card" style="padding: 2rem; border: 1px solid var(--border-color); border-radius: 1rem; background: var(--bg-card); display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.75rem;">Support Directory</h3>
+            <p style="font-size: 0.925rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 1rem;">Need help with subscriptions or billing? Reach out to support:</p>
+            <span style="display: block; font-size: 0.9rem; color: var(--accent-primary); font-weight: 600;">support@pdfbundles.com</span>
+            <span style="display: block; font-size: 0.9rem; color: var(--accent-primary); font-weight: 600; margin-top: 0.25rem;">info@pdfbundles.com</span>
+          </div>
+        </div>
+      </div>
+    `
+  }
+};
+
+function navigateToInfoPage(pageKey) {
+  currentTool = null;
+  stopWebcamStream();
+  clearWorkspace();
+
+  document.getElementById('workspace-page').style.display = 'none';
+  document.getElementById('dashboard-page').style.display = 'none';
+
+  const accDash = document.getElementById('account-dashboard-page');
+  if (accDash) accDash.style.display = 'none';
+
+  const blogPage = document.getElementById('blog-page');
+  if (blogPage) blogPage.style.display = 'none';
+
+  const infoPage = document.getElementById('info-page');
+  if (infoPage) infoPage.style.display = 'block';
+
+  document.getElementById('btn-back-to-dashboard').style.display = 'flex';
+
+  loadInfoPageContent(pageKey);
+  updateHeaderTriggers();
+}
+window.navigateToInfoPage = navigateToInfoPage;
+
+function loadInfoPageContent(pageKey) {
+  const data = INFO_PAGES_DATA[pageKey] || INFO_PAGES_DATA['features'];
+  const contentCard = document.getElementById('info-page-content-card');
+  if (contentCard) contentCard.innerHTML = data.content;
+
+  // Scroll to top
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+window.loadInfoPageContent = loadInfoPageContent;
+
+

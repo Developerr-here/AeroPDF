@@ -65,7 +65,7 @@
         <div class="nav-links">
           <button id="btn-back-to-dashboard" class="btn-nav-back" style="display: none; border-radius: 2rem;">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
-            Back to Dashboard
+            <span class="back-to-dashboard-text">Back to Dashboard</span>
           </button>
           <div class="header-right-actions">
             <button id="btn-toggle-dark" class="btn-theme-toggle" title="Toggle Night Mode">
@@ -428,21 +428,31 @@
           <button class="btn-close-drawer" id="btn-close-auth-drawer" style="font-size: 1.5rem;">&times;</button>
         </div>
         <div id="mobile-auth-drawer-body" class="drawer-body" style="display: flex; flex-direction: column; justify-content: space-between; height: calc(100% - 60px); padding-bottom: 2rem; padding-top: 0;">
-          <div class="drawer-menu-links">
-            <a href="#" class="drawer-menu-link" id="mob-link-features">
-              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                <rect x="3" y="3" width="7" height="9" rx="1" />
-                <rect x="14" y="3" width="7" height="5" rx="1" />
-                <rect x="14" y="12" width="7" height="9" rx="1" />
-                <rect x="3" y="16" width="7" height="5" rx="1" />
-              </svg>
-              <span>Features</span>
+          <div class="drawer-menu-links" style="overflow-y: auto; max-height: 70vh;">
+            <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em; padding-left: 0.75rem;">Resources</div>
+            <a href="#" class="drawer-menu-link mob-info-page-link" data-page="features">
+              <span>✨ Features</span>
             </a>
-            <a href="#" class="drawer-menu-link" id="mob-link-about">
-              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
-              </svg>
-              <span>About us</span>
+            <a href="#" class="drawer-menu-link mob-info-page-link" data-page="documentation">
+              <span>📚 Tools/documentation</span>
+            </a>
+            <a href="#" class="drawer-menu-link mob-info-page-link" data-page="faq">
+              <span>❓ Frequently Asked Questions</span>
+            </a>
+            <a href="#" class="drawer-menu-link mob-info-page-link" data-page="security">
+              <span>🔒 Security</span>
+            </a>
+            <a href="#" class="drawer-menu-link mob-info-page-link" data-page="press">
+              <span>📰 Press</span>
+            </a>
+            <a href="#" class="drawer-menu-link mob-info-page-link" data-page="privacy">
+              <span>🛡️ Privacy Policy</span>
+            </a>
+            <a href="#" class="drawer-menu-link mob-info-page-link" data-page="terms">
+              <span>📄 Terms & Conditions</span>
+            </a>
+            <a href="#" class="drawer-menu-link mob-info-page-link" data-page="about">
+              <span>👥 About Us</span>
             </a>
           </div>
           
@@ -2142,7 +2152,7 @@
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
                 <span>Invoices</span>
               </a>
-              <a href="#" class="account-sidebar-link" id="crm-sidebar-admin" data-tab="admin" style="display: none;">
+              <a href="#" class="account-sidebar-link hidden-tab" id="crm-sidebar-admin" data-tab="admin">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                 <span>Admin Control</span>
               </a>
@@ -2505,7 +2515,7 @@
                     <input type="email" id="admin-target-email" class="text-input" placeholder="user@example.com" required style="padding: 0.65rem 0.85rem;" />
                   </div>
 
-                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                  <div class="admin-grid-row">
                     <div class="input-group" style="margin: 0;">
                       <label class="input-label" for="admin-target-plan">Plan Package*</label>
                       <select id="admin-target-plan" class="text-input" style="background: var(--bg-secondary); color: var(--text-primary); cursor: pointer; padding: 0.65rem 0.85rem; height: 38px;">
@@ -2522,7 +2532,7 @@
                     </div>
                   </div>
 
-                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                  <div class="admin-grid-row">
                     <div class="input-group" style="margin: 0;">
                       <label class="input-label" for="admin-target-seats">Purchased Seats count</label>
                       <input type="number" id="admin-target-seats" class="text-input" value="1" min="1" max="9999" style="padding: 0.65rem 0.85rem;" />
@@ -2707,7 +2717,7 @@
               <div class="crm-card" style="padding: 2rem; margin-top: 2rem;">
                 <div class="crm-card-title" style="text-align: left; margin-bottom: 1rem;">Enterprise Sales Inquiries</div>
                 <div style="overflow-x: auto; width: 100%;">
-                  <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: left;">
+                  <table style="width: 100%; min-width: 650px; border-collapse: collapse; font-size: 0.85rem; text-align: left;">
                     <thead>
                       <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-secondary); font-weight: 700;">
                         <th style="padding: 0.75rem 1rem;">Name</th>
@@ -2729,6 +2739,13 @@
             </div>
 
           </div>
+        </div>
+      </section>
+
+      <!-- INFO CONTENT PAGES (Features, Docs, FAQ, Security, Press, Privacy, Terms, About) -->
+      <section id="info-page" style="display: none; animation: fadeIn 0.4s ease-out; margin-top: 1.5rem; width: 100%;">
+        <div id="info-page-content-card" style="width: 100%;">
+          <!-- Dynamic HTML loaded here via javascript -->
         </div>
       </section>
 
@@ -2783,46 +2800,30 @@
             <li><a href="#" class="footer-tool-link" data-tool="compress">Compress PDF</a></li>
             <li><a href="#" class="footer-tool-link" data-tool="img-to-pdf">JPG to PDF</a></li>
             <li><a href="#" class="footer-tool-link" data-tool="pdf-to-img">PDF to JPG</a></li>
-            <li><a href="#" class="footer-tool-link" data-tool="scan-to-pdf">Scan to PDF</a></li>
           </ul>
         </div>
 
-        <!-- Column 3: Edit & Organize -->
+        <!-- Column 3: Company & Legal -->
         <div class="footer-col">
-          <h4>Edit & Organize</h4>
+          <h4>Company & Legal</h4>
           <ul>
-            <li><a href="#" class="footer-tool-link" data-tool="edit-pdf">Edit PDF</a></li>
-            <li><a href="#" class="footer-tool-link" data-tool="organize-pdf">Organize PDF</a></li>
-            <li><a href="#" class="footer-tool-link" data-tool="rotate">Rotate PDF</a></li>
-            <li><a href="#" class="footer-tool-link" data-tool="crop">Crop PDF</a></li>
-            <li><a href="#" class="footer-tool-link" data-tool="page-numbers">Page Numbers</a></li>
-            <li><a href="#" class="footer-tool-link" data-tool="watermark">Watermark PDF</a></li>
+            <li><a href="#" class="footer-info-page-link" data-page="about">About Us</a></li>
+            <li><a href="#" class="footer-info-page-link" data-page="press">Press</a></li>
+            <li><a href="#" class="footer-info-page-link" data-page="security">Security</a></li>
+            <li><a href="#" class="footer-info-page-link" data-page="privacy">Privacy Policy</a></li>
+            <li><a href="#" class="footer-info-page-link" data-page="terms">Terms & Conditions</a></li>
           </ul>
         </div>
 
-        <!-- Column 4: Convert & Secure -->
+        <!-- Column 4: Resources & More -->
         <div class="footer-col">
-          <h4>Convert & Secure</h4>
+          <h4>Resources & More</h4>
           <ul>
-            <li><a href="#" class="footer-tool-link" data-tool="word-to-pdf">Word to PDF</a></li>
-            <li><a href="#" class="footer-tool-link" data-tool="excel-to-pdf">Excel to PDF</a></li>
-            <li><a href="#" class="footer-tool-link" data-tool="ppt-to-pdf">PPT to PDF</a></li>
-            <li><a href="#" class="footer-tool-link" data-tool="protect">Protect PDF</a></li>
-            <li><a href="#" class="footer-tool-link" data-tool="unlock">Unlock PDF</a></li>
-            <li><a href="#" class="footer-tool-link" data-tool="sign">Sign PDF</a></li>
-          </ul>
-        </div>
-
-        <!-- Column 5: Advanced & Resources -->
-        <div class="footer-col">
-          <h4>Advanced & More</h4>
-          <ul>
-            <li><a href="#" class="footer-tool-link" data-tool="ai-assistant">🤖 AI PDF Assistant</a></li>
-            <li><a href="#" class="footer-tool-link" data-tool="remove-background">🖼 Remove BG</a></li>
-            <li><a href="#" class="footer-tool-link" data-tool="upscale-image">🚀 Upscale Image</a></li>
-            <li><a href="#" id="footer-link-blog" class="footer-nav-link">📝 Tech Blog</a></li>
-            <li><a href="#" id="footer-link-pricing" class="footer-nav-link">💎 Upgrade to Premium</a></li>
-            <li><a href="#" id="footer-link-settings" class="footer-nav-link">⚙️ Account Settings</a></li>
+            <li><a href="#" class="footer-info-page-link" data-page="features">Features</a></li>
+            <li><a href="#" class="footer-info-page-link" data-page="documentation">Tools/documentation</a></li>
+            <li><a href="#" class="footer-info-page-link" data-page="faq">Frequently Asked Questions</a></li>
+            <li><a href="#" id="footer-link-blog" class="footer-nav-link">Tech Blog</a></li>
+            <li><a href="#" id="footer-link-pricing" class="footer-nav-link">Upgrade to Premium</a></li>
           </ul>
         </div>
       </div>
