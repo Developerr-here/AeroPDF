@@ -181,11 +181,18 @@ async function getPremiumStatus(user) {
 // Helper: Serialize user responses consistently with dynamic premium and plan information
 async function formatUserResponse(user) {
   if (!user) return null;
+  let plan = user.subscription_plan || 'free';
+  if (plan === 'free') {
+    const isCollab = await CollaborationEmail.findOne({ where: { email: user.email } });
+    if (isCollab) {
+      plan = 'collaborator';
+    }
+  }
   return {
     id: user.id,
     email: user.email,
     is_premium: await getPremiumStatus(user),
-    subscription_plan: user.subscription_plan,
+    subscription_plan: plan,
     subscription_seats: user.subscription_seats,
     subscription_interval: user.subscription_interval,
     role: user.role,
