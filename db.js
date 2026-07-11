@@ -50,6 +50,14 @@ export const User = sequelize.define('User', {
     type: DataTypes.STRING,
     allowNull: true
   },
+  reset_code: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  reset_code_expires: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
   first_name: {
     type: DataTypes.STRING,
     allowNull: true

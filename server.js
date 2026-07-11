@@ -700,7 +700,50 @@ app.post('/api/auth/forgot-password', authLimiter, async (req, res) => {
     const user = await User.findOne({ where: { email } });
     if (!user) return res.status(400).json({ error: 'No account found with this email address.' });
 
-    res.json({ message: 'Reset code generated successfully.' });
+    // Generate a random 6-digit code
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    user.reset_code = code;
+    user.reset_code_expires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes expiry
+    await user.save();
+
+    // Send reset code via email
+    try {
+      const mailOptions = {
+        from: `"pdfbundles Support" <${process.env.SMTP_USER || 'no-reply@pdfbundles.com'}>`,
+        to: email,
+        subject: 'Your Password Reset Verification Code',
+        html: `
+          <div style="font-family: sans-serif; padding: 2rem; max-width: 600px; margin: auto; border: 1px solid #e2e8f0; border-radius: 0.75rem; background: #ffffff;">
+            <h2 style="color: #0f172a; margin-top: 0; font-size: 1.5rem; font-weight: 700; text-align: center;">Password Reset Request</h2>
+            <p style="color: #475569; font-size: 0.95rem; line-height: 1.6; margin-top: 1rem; text-align: center;">
+              We received a request to reset the password for your pdfbundles account. Use the verification code below to set a new password:
+            </p>
+            <div style="margin: 2rem 0; text-align: center;">
+              <span style="font-family: monospace; font-size: 2.25rem; font-weight: 800; letter-spacing: 0.1em; color: #0066ff; background: #f1f5f9; padding: 0.75rem 1.5rem; border-radius: 0.5rem; display: inline-block;">
+                ${code}
+              </span>
+            </div>
+            <p style="color: #ef4444; font-size: 0.85rem; font-weight: 600; text-align: center; margin-bottom: 2rem;">
+              This code is valid for 15 minutes. If you did not request a password reset, please ignore this email.
+            </p>
+            <hr style="border: none; border-top: 1px solid #e2e8f0; margin-bottom: 1.5rem;" />
+            <p style="color: #94a3b8; font-size: 0.8rem; margin: 0; text-align: center;">
+              &copy; 2026 pdfbundles. All rights reserved.
+            </p>
+          </div>
+        `
+      };
+      await transporter.sendMail(mailOptions);
+    } catch (mailErr) {
+      console.warn('Mail delivery skipped or failed. Continuing with local code availability. Detail:', mailErr.message);
+    }
+
+    // Log the code to the server console for secure local development visibility
+    console.log(`[PASSWORD_RESET_CODE] Verification code for ${email} is: ${code}`);
+
+    res.json({ 
+      message: 'Verification code sent! Please check your email inbox.' 
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Forgot password processing failed.' });
@@ -713,14 +756,23 @@ app.post('/api/auth/reset-password', authLimiter, async (req, res) => {
     const { email, code, newPassword } = req.body;
     if (!email || !code || !newPassword) return res.status(400).json({ error: 'All fields are required.' });
 
-    if (code !== '123456') return res.status(400).json({ error: 'Invalid verification code. Use code 123456.' });
-    if (newPassword.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters.' });
-
     const user = await User.findOne({ where: { email } });
     if (!user) return res.status(404).json({ error: 'User not found.' });
 
+    if (!user.reset_code || user.reset_code !== code) {
+      return res.status(400).json({ error: 'Invalid verification code.' });
+    }
+
+    if (new Date() > new Date(user.reset_code_expires)) {
+      return res.status(400).json({ error: 'Verification code has expired. Please request a new one.' });
+    }
+
+    if (newPassword.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters.' });
+
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     user.password = hashedPassword;
+    user.reset_code = null;
+    user.reset_code_expires = null;
     await user.save();
 
     res.json({ message: 'Password reset successful! You can now login.' });
