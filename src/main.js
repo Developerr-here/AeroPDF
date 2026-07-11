@@ -2757,6 +2757,13 @@ function navigateToTool(tool) {
   const meta = TOOL_META[tool];
   if (!meta) return;
 
+  // Set the document title and description dynamically for SEO
+  document.title = `${meta.title} - Free PDF Tool Online | pdfbundles`;
+  const metaDesc = document.querySelector('meta[name="description"]');
+  if (metaDesc) {
+    metaDesc.setAttribute('content', `${meta.desc} Free online web-based PDF utility from pdfbundles.`);
+  }
+
   clearWorkspace();
 
   document.getElementById('current-tool-title').textContent = meta.title;
@@ -2807,6 +2814,14 @@ function navigateToDashboard() {
   currentTool = null;
   stopWebcamStream();
   clearWorkspace();
+
+  // Reset Document Title and Meta Description for SEO
+  document.title = 'pdfbundles | Free Online PDF Editor, Converter & Tools';
+  const metaDesc = document.querySelector('meta[name="description"]');
+  if (metaDesc) {
+    metaDesc.setAttribute('content', 'pdfbundles | Free Online PDF Editor, Converter & Tools. Merge, split, compress, convert, edit, and secure PDFs with 24 complete tools. 100% private and secure.');
+  }
+
   const workPage = document.getElementById('workspace-page');
   if (workPage) workPage.style.display = 'none';
   const blogPage = document.getElementById('blog-page');
@@ -6503,6 +6518,13 @@ function navigateToBlog() {
   stopWebcamStream();
   clearWorkspace();
 
+  // Dynamically update page title & meta description for SEO
+  document.title = 'Official Blog - Latest News & Guides | pdfbundles';
+  const metaDesc = document.querySelector('meta[name="description"]');
+  if (metaDesc) {
+    metaDesc.setAttribute('content', 'Explore the official pdfbundles blog. Discover PDF tips, productivity hacks, feature releases, and document management guides.');
+  }
+
   document.getElementById('workspace-page').style.display = 'none';
   document.getElementById('dashboard-page').style.display = 'none';
 
@@ -7724,6 +7746,16 @@ function navigateToInfoPage(pageKey) {
   currentTool = null;
   stopWebcamStream();
   clearWorkspace();
+
+  // Dynamically update page title & meta description for SEO
+  const data = INFO_PAGES_DATA[pageKey] || INFO_PAGES_DATA['features'];
+  if (data) {
+    document.title = `${data.title} - pdfbundles`;
+    const metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) {
+      metaDesc.setAttribute('content', `${data.subtitle || data.title}. Read details on pdfbundles.`);
+    }
+  }
 
   document.getElementById('workspace-page').style.display = 'none';
   document.getElementById('dashboard-page').style.display = 'none';
