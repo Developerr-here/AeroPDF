@@ -5433,20 +5433,35 @@ body.dark-theme .role-tab.active {
   padding-left: 1rem;
 }
 
-/* Info page content multi-column panel */
-.info-page-panel {
-  display: grid;
-  grid-template-columns: 240px 1fr;
-  gap: 2rem;
-  align-items: start;
-  margin-top: 1.5rem;
+/* Dynamic Info Page Card Styles & Transitions */
+@keyframes floatAnim {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
 }
 
-@media (max-width: 900px) {
-  .info-page-panel {
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
   }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.info-page-card .crm-card {
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.info-page-card .crm-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(79, 70, 229, 0.3) !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
 

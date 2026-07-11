@@ -7017,308 +7017,704 @@ function updateHeaderTriggers() {
 window.updateHeaderTriggers = updateHeaderTriggers;
 
 // Dynamic Information/SEO Pages content configuration
-// Dynamic Information/SEO Pages content configuration
 const INFO_PAGES_DATA = {
   features: {
+    title: "✨ Platform Features",
+    subtitle: "Work Smarter with High-Performance PDF Bundles",
     content: `
-      <!-- Hero Section -->
-      <div style="text-align: center; margin-bottom: 3.5rem; padding: 2rem 0; animation: fadeIn 0.8s ease-out;">
-        <span style="background: rgba(99, 102, 241, 0.1); color: var(--accent-secondary); font-size: 0.8rem; font-weight: 700; padding: 0.4rem 1rem; border-radius: 2rem; text-transform: uppercase; letter-spacing: 0.05em; display: inline-block; margin-bottom: 1rem;">✨ SUITE CAPABILITIES</span>
-        <h1 style="font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; color: var(--text-primary); line-height: 1.25; margin-bottom: 1rem; background: linear-gradient(135deg, var(--text-primary), var(--accent-secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Work Smarter with High-Performance PDF Bundles</h1>
-        <p style="font-size: 1.15rem; color: var(--text-secondary); max-width: 750px; margin: 0 auto; line-height: 1.6;">
+      <div style="margin-bottom: 2.5rem; text-align: left;">
+        <p style="font-size: 1.1rem; color: var(--text-secondary); line-height: 1.6;">
           Managing documents shouldn't feel like a chore. Whether you are packaging monthly client reports, compiling legal discoveries, or organizing e-commerce invoices, PDF Bundles gives you a highly intuitive, lightning-fast suite of tools to process multiple files simultaneously.
         </p>
-        <p style="font-size: 1.2rem; font-weight: 600; color: var(--accent-primary); margin-top: 1.25rem;">
+        <p style="font-size: 1.15rem; font-weight: 600; color: var(--accent-secondary); margin-top: 1rem;">
           No complex training required—just drag, drop, and bundle.
         </p>
       </div>
 
-      <!-- Core Capabilities Grid -->
-      <div style="margin-bottom: 4rem;">
-        <h2 style="font-size: 1.75rem; font-weight: 750; color: var(--text-primary); text-align: center; margin-bottom: 2rem;">Core Product Capabilities</h2>
-        
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
-          <!-- Card 1 -->
-          <div class="crm-card" style="padding: 2rem; border: 1px solid var(--border-color); border-radius: 1rem; background: var(--bg-card); display: flex; flex-direction: column; justify-content: space-between; height: 100%; transition: transform 0.25s ease, box-shadow 0.25s ease; box-shadow: var(--shadow-soft);">
-            <div>
-              <div style="background: rgba(244, 63, 94, 0.1); color: #f43f5e; font-size: 1.5rem; width: 3.5rem; height: 3.5rem; border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; margin-bottom: 1.25rem;">📁</div>
-              <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.75rem;">Smart Bundling & Organization</h3>
-              <p style="font-size: 0.925rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 1.5rem;">Merge hundreds of files into unified master documents, extract targeted pages, or split large bundles back into individual assets.</p>
-            </div>
-            <div style="background: var(--bg-primary); border-radius: 0.5rem; padding: 0.75rem 1rem; font-size: 0.8rem; font-style: italic; color: var(--text-muted); border-left: 3.5px solid #f43f5e;">
-              <strong>SEO Focus:</strong> Merge PDF bundles, Split document sets
-            </div>
-          </div>
+      <h3 style="font-size: 1.35rem; font-weight: 700; color: var(--text-primary); margin-bottom: 1rem; text-align: left;">Core Product Capabilities</h3>
+      <div style="overflow-x: auto; width: 100%; margin-bottom: 2.5rem; border: 1px solid var(--border-color); border-radius: 0.75rem; box-shadow: var(--shadow-soft);">
+        <table style="width: 100%; border-collapse: collapse; text-align: left; min-width: 600px; background: var(--bg-secondary);">
+          <thead>
+            <tr style="background: var(--bg-primary); border-bottom: 1px solid var(--border-color);">
+              <th style="padding: 1rem; font-size: 0.85rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; width: 30%;">Feature Group</th>
+              <th style="padding: 1rem; font-size: 0.85rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; width: 45%;">What You Can Do</th>
+              <th style="padding: 1rem; font-size: 0.85rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; width: 25%;">SEO Focus</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom: 1px solid var(--border-color);">
+              <td style="padding: 1.25rem 1rem; font-size: 0.95rem; font-weight: 700; color: var(--text-primary);">Smart Bundling & Organization</td>
+              <td style="padding: 1.25rem 1rem; font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5;">Merge hundreds of files into unified master documents, extract targeted pages, or split large bundles back into individual assets.</td>
+              <td style="padding: 1.25rem 1rem; font-size: 0.85rem; font-style: italic; color: var(--text-muted);">Merge PDF bundles, Split document sets</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border-color);">
+              <td style="padding: 1.25rem 1rem; font-size: 0.95rem; font-weight: 700; color: var(--text-primary);">High-Fidelity Conversion</td>
+              <td style="padding: 1.25rem 1rem; font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5;">Move seamlessly between PDF and formats like Word, Excel, PowerPoint, and high-res JPG without losing structural formatting.</td>
+              <td style="padding: 1.25rem 1rem; font-size: 0.85rem; font-style: italic; color: var(--text-muted);">Batch PDF converter, Office to PDF</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border-color);">
+              <td style="padding: 1.25rem 1rem; font-size: 0.95rem; font-weight: 700; color: var(--text-primary);">Enterprise-Grade Optimization</td>
+              <td style="padding: 1.25rem 1rem; font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5;">Shrink heavy document bundles to email-friendly sizes while maintaining crystal-clear text sharpness.</td>
+              <td style="padding: 1.25rem 1rem; font-size: 0.85rem; font-style: italic; color: var(--text-muted);">Compress PDF bundle, Optimize documents</td>
+            </tr>
+            <tr style="border-bottom: none;">
+              <td style="padding: 1.25rem 1rem; font-size: 0.95rem; font-weight: 700; color: var(--text-primary);">Bundle Intelligence & Security</td>
+              <td style="padding: 1.25rem 1rem; font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5;">Instantly lock entire sets with AES encryption, apply digital signatures, or generate automated AI summaries of massive document pools.</td>
+              <td style="padding: 1.25rem 1rem; font-size: 0.85rem; font-style: italic; color: var(--text-muted);">Secure PDF bundles, AI PDF summary</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
-          <!-- Card 2 -->
-          <div class="crm-card" style="padding: 2rem; border: 1px solid var(--border-color); border-radius: 1rem; background: var(--bg-card); display: flex; flex-direction: column; justify-content: space-between; height: 100%; transition: transform 0.25s ease, box-shadow 0.25s ease; box-shadow: var(--shadow-soft);">
-            <div>
-              <div style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; font-size: 1.5rem; width: 3.5rem; height: 3.5rem; border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; margin-bottom: 1.25rem;">🔄</div>
-              <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.75rem;">High-Fidelity Conversion</h3>
-              <p style="font-size: 0.925rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 1.5rem;">Move seamlessly between PDF and formats like Word, Excel, PowerPoint, and high-res JPG without losing structural formatting.</p>
-            </div>
-            <div style="background: var(--bg-primary); border-radius: 0.5rem; padding: 0.75rem 1rem; font-size: 0.8rem; font-style: italic; color: var(--text-muted); border-left: 3.5px solid #3b82f6;">
-              <strong>SEO Focus:</strong> Batch PDF converter, Office to PDF
-            </div>
-          </div>
-
-          <!-- Card 3 -->
-          <div class="crm-card" style="padding: 2rem; border: 1px solid var(--border-color); border-radius: 1rem; background: var(--bg-card); display: flex; flex-direction: column; justify-content: space-between; height: 100%; transition: transform 0.25s ease, box-shadow 0.25s ease; box-shadow: var(--shadow-soft);">
-            <div>
-              <div style="background: rgba(16, 185, 129, 0.1); color: #10b981; font-size: 1.5rem; width: 3.5rem; height: 3.5rem; border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; margin-bottom: 1.25rem;">📉</div>
-              <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.75rem;">Enterprise-Grade Optimization</h3>
-              <p style="font-size: 0.925rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 1.5rem;">Shrink heavy document bundles to email-friendly sizes while maintaining crystal-clear text sharpness.</p>
-            </div>
-            <div style="background: var(--bg-primary); border-radius: 0.5rem; padding: 0.75rem 1rem; font-size: 0.8rem; font-style: italic; color: var(--text-muted); border-left: 3.5px solid #10b981;">
-              <strong>SEO Focus:</strong> Compress PDF bundle, Optimize documents
-            </div>
-          </div>
-
-          <!-- Card 4 -->
-          <div class="crm-card" style="padding: 2rem; border: 1px solid var(--border-color); border-radius: 1rem; background: var(--bg-card); display: flex; flex-direction: column; justify-content: space-between; height: 100%; transition: transform 0.25s ease, box-shadow 0.25s ease; box-shadow: var(--shadow-soft);">
-            <div>
-              <div style="background: rgba(139, 92, 246, 0.1); color: #8b5cf6; font-size: 1.5rem; width: 3.5rem; height: 3.5rem; border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; margin-bottom: 1.25rem;">🔒</div>
-              <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.75rem;">Bundle Intelligence & Security</h3>
-              <p style="font-size: 0.925rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 1.5rem;">Instantly lock entire sets with AES encryption, apply digital signatures, or generate automated AI summaries of massive document pools.</p>
-            </div>
-            <div style="background: var(--bg-primary); border-radius: 0.5rem; padding: 0.75rem 1rem; font-size: 0.8rem; font-style: italic; color: var(--text-muted); border-left: 3.5px solid #8b5cf6;">
-              <strong>SEO Focus:</strong> Secure PDF bundles, AI PDF summary
-            </div>
-          </div>
+      <h3 style="font-size: 1.35rem; font-weight: 700; color: var(--text-primary); margin-bottom: 1.25rem; text-align: left; margin-top: 1.5rem;">Why Modern Teams Choose PDF Bundles</h3>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2.5rem; text-align: left;">
+        <div class="crm-card" style="padding: 1.5rem; border: 1px solid var(--border-color); border-radius: 0.75rem; background: var(--bg-card);">
+          <div style="font-size: 1.5rem; margin-bottom: 0.75rem;">⚡</div>
+          <h4 style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">True Batch Processing Power</h4>
+          <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.5;">Stop handling documents one by one. Our infrastructure is built specifically to process complex, multi-file batches at maximum speed. Upload entire folders, apply your edits, and download your ready-to-go bundle in seconds.</p>
+        </div>
+        <div class="crm-card" style="padding: 1.5rem; border: 1px solid var(--border-color); border-radius: 0.75rem; background: var(--bg-card);">
+          <div style="font-size: 1.5rem; margin-bottom: 0.75rem;">🛡️</div>
+          <h4 style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">Ironclad Privacy & Data Security</h4>
+          <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.5;">Your document security is non-negotiable. To ensure your private records remain entirely yours, PDF Bundles utilizes localized browser processing and strict server-side cleanup protocols—automatically deleting all processed archives from our systems within two hours.</p>
+        </div>
+        <div class="crm-card" style="padding: 1.5rem; border: 1px solid var(--border-color); border-radius: 0.75rem; background: var(--bg-card);">
+          <div style="font-size: 1.5rem; margin-bottom: 0.75rem;">🔄</div>
+          <h4 style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">Seamless Cloud Integrations</h4>
+          <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.5;">Keep your workflow continuous without burning local storage or mobile data. Import your document batches directly from Google Drive or Dropbox, build your bundles on our cloud servers, and save them straight back to your shared team drives.</p>
+        </div>
+        <div class="crm-card" style="padding: 1.5rem; border: 1px solid var(--border-color); border-radius: 0.75rem; background: var(--bg-card);">
+          <div style="font-size: 1.5rem; margin-bottom: 0.75rem;">🎨</div>
+          <h4 style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">Total Control Over Layouts</h4>
+          <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.5;">Organizing document sets can get messy. Our interactive dashboard lets you instantly reorder files alphabetically, inject missing pages on the fly, remove unwanted sheets, or rotate skewed scans before you compile the final master bundle.</p>
         </div>
       </div>
 
-      <!-- Why Choose Us Cards -->
-      <div style="margin-bottom: 4rem; padding: 3.5rem 2rem; background: rgba(99, 102, 241, 0.02); border: 1px solid var(--border-color); border-radius: 1.5rem;">
-        <h2 style="font-size: 1.75rem; font-weight: 750; color: var(--text-primary); text-align: center; margin-bottom: 3rem;">Why Modern Teams Choose PDF Bundles</h2>
-        
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 2rem;">
-          <div style="text-align: left;">
-            <div style="font-size: 1.75rem; margin-bottom: 0.75rem;">⚡</div>
-            <h4 style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">True Batch Processing Power</h4>
-            <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.5;">Stop handling documents one by one. Our infrastructure is built specifically to process complex, multi-file batches at maximum speed. Upload entire folders, apply your edits, and download your ready-to-go bundle in seconds.</p>
-          </div>
-          
-          <div style="text-align: left;">
-            <div style="font-size: 1.75rem; margin-bottom: 0.75rem;">🛡️</div>
-            <h4 style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">Ironclad Privacy & Data Security</h4>
-            <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.5;">Your document security is non-negotiable. To ensure your private records remain entirely yours, PDF Bundles utilizes localized browser processing and strict server-side cleanup protocols—automatically deleting all processed archives from our systems within two hours.</p>
-          </div>
-
-          <div style="text-align: left;">
-            <div style="font-size: 1.75rem; margin-bottom: 0.75rem;">🔄</div>
-            <h4 style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">Seamless Cloud Integrations</h4>
-            <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.5;">Keep your workflow continuous without burning local storage or mobile data. Import your document batches directly from Google Drive or Dropbox, build your bundles on our cloud servers, and save them straight back to your shared team drives.</p>
-          </div>
-
-          <div style="text-align: left;">
-            <div style="font-size: 1.75rem; margin-bottom: 0.75rem;">🎨</div>
-            <h4 style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">Total Control Over Layouts</h4>
-            <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.5;">Organizing document sets can get messy. Our interactive dashboard lets you instantly reorder files alphabetically, inject missing pages on the fly, remove unwanted sheets, or rotate skewed scans before you compile the final master bundle.</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Premium Callout -->
-      <div style="padding: 3rem; background: linear-gradient(135deg, rgba(79, 70, 229, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%); border: 1px solid rgba(79, 70, 229, 0.15); border-radius: 1.5rem; text-align: center; max-width: 900px; margin: 0 auto;">
-        <h3 style="font-size: 1.65rem; font-weight: 800; color: var(--accent-primary); margin-bottom: 0.75rem;">Scale Your Operations with PDF Bundles Premium</h3>
-        <p style="font-size: 1.05rem; color: var(--text-secondary); margin-bottom: 2rem; max-width: 600px; margin-left: auto; margin-right: auto; line-height: 1.5;">When individual document limits stand in the way of your business growth, our Premium tiers are designed to lift the barriers.</p>
-        
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; text-align: left; max-width: 800px; margin: 0 auto;">
-          <div style="background: var(--bg-card); padding: 1.25rem; border-radius: 0.75rem; border: 1px solid var(--border-color);">
-            <strong style="color: var(--text-primary); display: block; margin-bottom: 0.25rem; font-size: 0.95rem;">⚡ Expanded Limits</strong>
-            <span style="font-size: 0.85rem; color: var(--text-secondary);">Upload heavier gigabyte-scale datasets and increase file processing capacity.</span>
-          </div>
-          <div style="background: var(--bg-card); padding: 1.25rem; border-radius: 0.75rem; border: 1px solid var(--border-color);">
-            <strong style="color: var(--text-primary); display: block; margin-bottom: 0.25rem; font-size: 0.95rem;">👥 Team Management</strong>
-            <span style="font-size: 0.85rem; color: var(--text-secondary);">Create a shared workspace. Standardize custom branding or watermarking architecture.</span>
-          </div>
-          <div style="background: var(--bg-card); padding: 1.25rem; border-radius: 0.75rem; border: 1px solid var(--border-color);">
-            <strong style="color: var(--text-primary); display: block; margin-bottom: 0.25rem; font-size: 0.95rem;">🚀 prioritized Pipelines</strong>
-            <span style="font-size: 0.85rem; color: var(--text-secondary);">Enjoy prioritized server pipelines to bypass high-traffic queue waiting times.</span>
-          </div>
-        </div>
+      <div class="crm-card" style="padding: 2rem; background: rgba(79, 70, 229, 0.03); border: 1.5px dashed rgba(79, 70, 229, 0.2); border-radius: 1rem; text-align: left; margin-top: 1rem;">
+        <h3 style="font-size: 1.35rem; font-weight: 700; color: var(--accent-primary); margin-bottom: 0.75rem;">Scale Your Operations with PDF Bundles Premium</h3>
+        <p style="font-size: 0.95rem; color: var(--text-secondary); margin-bottom: 1.5rem; line-height: 1.5;">When individual document limits stand in the way of your business growth, our Premium tiers are designed to lift the barriers.</p>
+        <ul style="padding-left: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem; color: var(--text-secondary); font-size: 0.9rem;">
+          <li><strong>Expanded File Thresholds:</strong> Upload heavier gigabyte-scale datasets and increase the number of files you can process in a single batch.</li>
+          <li><strong>Centralized Team Management:</strong> Create a shared corporate workspace. Standardize default branding actions, like automatically stamping every page in a bundle with your company logo or a custom page-numbering architecture.</li>
+          <li><strong>Zero Distractions:</strong> Enjoy an ad-free workspace and prioritized server pipelines to bypass high-traffic queue times.</li>
+        </ul>
       </div>
     `
   },
   documentation: {
+    title: "📚 Platform Documentation",
+    subtitle: "Welcome to the PDF Bundles User Guide",
     content: `
-      <div style="text-align: center; margin-bottom: 3.5rem; padding: 2rem 0; animation: fadeIn 0.8s ease-out;">
-        <span style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; font-size: 0.8rem; font-weight: 700; padding: 0.4rem 1rem; border-radius: 2rem; text-transform: uppercase; letter-spacing: 0.05em; display: inline-block; margin-bottom: 1rem;">📚 PLATFORM DOCUMENTATION</span>
-        <h1 style="font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; color: var(--text-primary); margin-bottom: 1rem;">Guides & API References</h1>
-        <p style="font-size: 1.15rem; color: var(--text-secondary); max-width: 650px; margin: 0 auto; line-height: 1.6;">Learn how to configure upload sizing thresholds, use individual tools, and manage subscription seats.</p>
+      <div style="margin-bottom: 2.5rem; text-align: left;">
+        <p style="font-size: 1.1rem; color: var(--text-secondary); line-height: 1.6;">
+          Our platform is designed to make multi-file document management completely effortless. While we have built our dashboard to be completely intuitive, this comprehensive documentation guide will show you exactly how to optimize, convert, and organize your document bundles at scale.
+        </p>
       </div>
 
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin-bottom: 3rem;">
-        <div class="crm-card" style="padding: 2rem; border: 1px solid var(--border-color); border-radius: 1rem; background: var(--bg-card);">
-          <h3 style="font-size: 1.35rem; font-weight: 700; color: var(--text-primary); margin-bottom: 1rem;">Upload Sizing & File Limits</h3>
-          <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1.5rem;">The platform features specific file boundaries depending on your active user role and billing tiers:</p>
+      <!-- Section 1 -->
+      <h3 style="font-size: 1.35rem; font-weight: 800; color: var(--text-primary); border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 1.5rem; text-align: left;">1. Organizing & Creating Bundles</h3>
+      <div style="display: flex; flex-direction: column; gap: 1.5rem; margin-bottom: 3rem; text-align: left;">
+        <div class="crm-card" style="padding: 1.5rem; border: 1px solid var(--border-color); border-radius: 0.75rem; background: var(--bg-card);">
+          <h4 style="font-size: 1.1rem; font-weight: 700; color: var(--accent-primary); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">📥 Creating a Master Bundle (Merge PDF)</h4>
+          <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 0.75rem;">To combine two or more files into a single, cohesive document bundle, select your target documents from your local machine.</p>
+          <ul style="padding-left: 1.25rem; font-size: 0.875rem; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.35rem;">
+            <li><strong>Custom Arrangements:</strong> Drag and drop file thumbnails to establish the exact reading order you want before compiling.</li>
+            <li><strong>Secured Files:</strong> You can introduce password-protected documents into the mix. Simply enter the credential when prompted, and our engine will smoothly integrate them into your final unsecured master bundle.</li>
+          </ul>
+        </div>
+
+        <div class="crm-card" style="padding: 1.5rem; border: 1px solid var(--border-color); border-radius: 0.75rem; background: var(--bg-card);">
+          <h4 style="font-size: 1.1rem; font-weight: 700; color: var(--accent-primary); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">📤 Extracting & Splitting Bundles</h4>
+          <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 0.75rem;">If you have a massive master document that needs to be broken down, use our extraction engine.</p>
+          <ul style="padding-left: 1.25rem; font-size: 0.875rem; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.35rem;">
+            <li><strong>Split by Range:</strong> Define explicit page blocks (e.g., Pages 1–10, 15–20) to output separate, focused sub-bundles.</li>
+            <li><strong>Total Extraction:</strong> Pull every individual page out into its own distinct file. Choose to download them all as a single organized .zip file or merge only the extracted pages into a brand new standalone layout.</li>
+          </ul>
+        </div>
+
+        <div class="crm-card" style="padding: 1.5rem; border: 1px solid var(--border-color); border-radius: 0.75rem; background: var(--bg-card);">
+          <h4 style="font-size: 1.1rem; font-weight: 700; color: var(--accent-primary); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">✂️ Bulk Page Removal & Sorting</h4>
+          <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 0.75rem;">When uploading a vast set of documents, accidental duplicates or blank trailing pages can clutter the project.</p>
+          <ul style="padding-left: 1.25rem; font-size: 0.875rem; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.35rem;">
+            <li><strong>Visual Color-Coding:</strong> When you upload multiple files into the workspace, thumbnails for each distinct source file are framed in matching color boundaries so you can see where one document ends and another begins.</li>
+            <li><strong>One-Click Purging:</strong> Simply click on any page thumbnail to mark it for deletion. A clear cross marker will appear, and those pages will be permanently stripped when your bundle is generated.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Section 2 -->
+      <h3 style="font-size: 1.35rem; font-weight: 800; color: var(--text-primary); border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 1.5rem; text-align: left;">2. Optimizing & Editing Asset Sets</h3>
+      <div style="display: flex; flex-direction: column; gap: 1.5rem; margin-bottom: 3rem; text-align: left;">
+        <div class="crm-card" style="padding: 1.5rem; border: 1px solid var(--border-color); border-radius: 0.75rem; background: var(--bg-card);">
+          <h4 style="font-size: 1.1rem; font-weight: 700; color: var(--accent-primary); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">🗜️ High-Performance Bundle Compression</h4>
+          <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 1rem;">Heavy multi-file documents can easily fail email attachment size thresholds. Use our compression engine to scale down file sizes without sacrificing text clarity.</p>
           
-          <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-            <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border-color); padding-bottom: 0.5rem; font-size: 0.875rem;">
-              <span style="color: var(--text-secondary);">Guest Plan</span>
-              <strong style="color: var(--text-primary);">Up to 10MB per task</strong>
-            </div>
-            <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border-color); padding-bottom: 0.5rem; font-size: 0.875rem;">
-              <span style="color: var(--text-secondary);">Starter Plan</span>
-              <strong style="color: var(--text-primary);">Up to 100MB per task</strong>
-            </div>
-            <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border-color); padding-bottom: 0.5rem; font-size: 0.875rem;">
-              <span style="color: var(--text-secondary);">Premium Plan</span>
-              <strong style="color: var(--text-primary);">Up to 4.5GB per task</strong>
-            </div>
+          <div style="overflow-x: auto; width: 100%; border: 1px solid var(--border-color); border-radius: 0.5rem; margin-bottom: 0.5rem;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left; background: var(--bg-secondary); min-width: 500px;">
+              <thead>
+                <tr style="background: var(--bg-primary); border-bottom: 1px solid var(--border-color); font-size: 0.8rem; text-transform: uppercase;">
+                  <th style="padding: 0.75rem 1rem; font-weight: 700; color: var(--text-secondary);">Compression Level</th>
+                  <th style="padding: 0.75rem 1rem; font-weight: 700; color: var(--text-secondary);">Target Use Case</th>
+                  <th style="padding: 0.75rem 1rem; font-weight: 700; color: var(--text-secondary);">File Size Outcome</th>
+                  <th style="padding: 0.75rem 1rem; font-weight: 700; color: var(--text-secondary);">Quality Retention</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style="border-bottom: 1px solid var(--border-color); font-size: 0.85rem;">
+                  <td style="padding: 0.75rem 1rem; font-weight: 600; color: var(--text-primary);">Extreme Compression</td>
+                  <td style="padding: 0.75rem 1rem; color: var(--text-secondary);">Quick internal reviews, archiving</td>
+                  <td style="padding: 0.75rem 1rem; color: var(--text-secondary);">Maximum reduction</td>
+                  <td style="padding: 0.75rem 1rem; color: var(--text-secondary);">Low image resolution</td>
+                </tr>
+                <tr style="border-bottom: 1px solid var(--border-color); font-size: 0.85rem;">
+                  <td style="padding: 0.75rem 1rem; font-weight: 600; color: var(--text-primary);">Recommended Optimization</td>
+                  <td style="padding: 0.75rem 1rem; color: var(--text-secondary);">Client delivery, formal uploads</td>
+                  <td style="padding: 0.75rem 1rem; color: var(--text-secondary);">Balanced reduction</td>
+                  <td style="padding: 0.75rem 1rem; color: var(--text-primary); font-weight: 600;">High clarity (Default)</td>
+                </tr>
+                <tr style="font-size: 0.85rem;">
+                  <td style="padding: 0.75rem 1rem; font-weight: 600; color: var(--text-primary);">Low Compression</td>
+                  <td style="padding: 0.75rem 1rem; color: var(--text-secondary);">High-res printing, design portfolios</td>
+                  <td style="padding: 0.75rem 1rem; color: var(--text-secondary);">Minimal reduction</td>
+                  <td style="padding: 0.75rem 1rem; color: var(--text-secondary);">Original pixel perfection</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
 
-        <div class="crm-card" style="padding: 2rem; border: 1px solid var(--border-color); border-radius: 1rem; background: var(--bg-card);">
-          <h3 style="font-size: 1.35rem; font-weight: 700; color: var(--text-primary); margin-bottom: 1rem;">REST API Examples</h3>
-          <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1rem;">Process your document batches programmatically using our endpoint hooks:</p>
-          <pre style="background: var(--bg-primary); padding: 1rem; border-radius: 0.5rem; font-family: monospace; font-size: 0.8rem; color: var(--accent-secondary); overflow-x: auto; text-align: left; border: 1px solid var(--border-color);">
-curl -X POST https://api.pdfbundles.com/v1/merge \\
-  -H "Authorization: Bearer YOUR_API_TOKEN" \\
-  -F "files=@report1.pdf" \\
-  -F "files=@report2.pdf"</pre>
+        <div class="crm-card" style="padding: 1.5rem; border: 1px solid var(--border-color); border-radius: 0.75rem; background: var(--bg-card);">
+          <h4 style="font-size: 1.1rem; font-weight: 700; color: var(--accent-primary); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">📝 Watermarking & Corporate Layout Stamping</h4>
+          <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 0.75rem;">Protect your intellectual property across entire collections simultaneously.</p>
+          <ul style="padding-left: 1.25rem; font-size: 0.875rem; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.35rem;">
+            <li><strong>Unified Placement:</strong> Upload an image logo or construct a custom text string. Our engine stamps the watermark in the exact designated coordinates across every single sheet within the compiled bundle.</li>
+            <li><strong>Mass Page Numbering:</strong> Automatically calculate and stamp sequence numbers across complex file mergers. Customize typography style, size, shading, opacity, and positioning margins from the main dashboard toolbar.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Section 3 -->
+      <h3 style="font-size: 1.35rem; font-weight: 800; color: var(--text-primary); border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 1.5rem; text-align: left;">3. Advanced Integrations & Requirements</h3>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; text-align: left;">
+        <div class="crm-card" style="padding: 1.5rem; border: 1px solid var(--border-color); border-radius: 0.75rem; background: var(--bg-card);">
+          <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">☁️</div>
+          <h4 style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">Dynamic Cloud Pipelines</h4>
+          <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 0.5rem;">You don't need to manually download individual files to your device before creating a bundle.</p>
+          <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.4;"><strong>Direct Cloud Links:</strong> Ingest from Google Drive or Dropbox. Processing occurs entirely on our high-speed remote servers to save substantial local bandwidth.</p>
+        </div>
+
+        <div class="crm-card" style="padding: 1.5rem; border: 1px solid var(--border-color); border-radius: 0.75rem; background: var(--bg-card);">
+          <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">💻</div>
+          <h4 style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">System & Browser Requirements</h4>
+          <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 0.5rem;">To maintain rapid rendering and flawless dashboard drag-and-drop actions, verify your environment:</p>
+          <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.4;"><strong>Supported Browsers:</strong> Google Chrome, Mozilla Firefox, Apple Safari, or Microsoft Edge (latest versions) with JavaScript enabled.</p>
         </div>
       </div>
     `
   },
   faq: {
+    title: "❓ FAQ",
+    subtitle: "Frequently Asked Questions",
     content: `
-      <div style="text-align: center; margin-bottom: 3.5rem; padding: 2rem 0; animation: fadeIn 0.8s ease-out;">
-        <span style="background: rgba(139, 92, 246, 0.1); color: #8b5cf6; font-size: 0.8rem; font-weight: 700; padding: 0.4rem 1rem; border-radius: 2rem; text-transform: uppercase; letter-spacing: 0.05em; display: inline-block; margin-bottom: 1rem;">❓ FAQ HELP CENTER</span>
-        <h1 style="font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; color: var(--text-primary); margin-bottom: 1rem;">Frequently Asked Questions</h1>
-        <p style="font-size: 1.15rem; color: var(--text-secondary); max-width: 650px; margin: 0 auto; line-height: 1.6;">Quick, direct answers regarding security configurations, invoices, cancellations, and collaboration seats.</p>
+      <div style="margin-bottom: 2.5rem; text-align: left;">
+        <p style="font-size: 1.1rem; color: var(--text-secondary); line-height: 1.6;">
+          Have a question about managing your document batches? Explore our frequently asked questions below to see how PDF Bundles streamlines high-volume workflows safely and efficiently.
+        </p>
       </div>
 
-      <div style="max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.25rem; text-align: left;">
-        <div class="crm-card" style="padding: 1.5rem; border: 1px solid var(--border-color); border-radius: 0.75rem; background: var(--bg-card); transition: box-shadow 0.25s ease;">
-          <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">🔒 Is my file data secure?</h3>
-          <p style="font-size: 0.925rem; color: var(--text-secondary); line-height: 1.5;">Absolutely. All uploads utilize SSL/TLS 1.3 transmission pipelines. Files are isolated in private container sandboxes during processing and are completely purged from servers exactly 60 minutes after task completion.</p>
+      <!-- Category 1 -->
+      <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary); border-left: 3px solid var(--accent-primary); padding-left: 0.75rem; margin-bottom: 1.5rem; text-align: left;">🛡️ Security & Privacy</h3>
+      <div style="display: flex; flex-direction: column; gap: 1.25rem; margin-bottom: 2.5rem; text-align: left;">
+        <div class="crm-card" style="padding: 1.5rem; border: 1px solid var(--border-color); border-radius: 0.75rem; background: var(--bg-card);">
+          <strong style="color: var(--text-primary); font-size: 1.05rem; display: block; margin-bottom: 0.5rem;">Do you keep a copy of my processed document bundles?</strong>
+          <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.5; margin: 0;">
+            Absolutely not. Your documents belong exclusively to you. While your files are processing on our high-speed architecture, they are deeply isolated and locked. We temporarily hold the compiled bundles for a maximum of two hours so you have plenty of time to download them. After that window closes, they are permanently and completely wiped from our storage servers forever.
+          </p>
+          <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.4; margin-top: 0.75rem; border-top: 1px solid var(--border-color); padding-top: 0.5rem; font-style: italic;">
+            <strong>Pro Tip:</strong> If you want them gone immediately, you can manually click the "Delete Instantly" icon on the download page to purge them right away. We never inspect, copy, or read your files.
+          </p>
         </div>
 
-        <div class="crm-card" style="padding: 1.5rem; border: 1px solid var(--border-color); border-radius: 0.75rem; background: var(--bg-card); transition: box-shadow 0.25s ease;">
-          <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">👥 How do team seats work?</h3>
-          <p style="font-size: 0.925rem; color: var(--text-secondary); line-height: 1.5;">When subscribing to Pro or Custom tiers, you can add teammate emails from your account dashboard. Teammates instantly inherit premium conversion caps and share limits from the master corporate pool.</p>
+        <div class="crm-card" style="padding: 1.5rem; border: 1px solid var(--border-color); border-radius: 0.75rem; background: var(--bg-card);">
+          <strong style="color: var(--text-primary); font-size: 1.05rem; display: block; margin-bottom: 0.5rem;">Are our sensitive corporate files safe with your service?</strong>
+          <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.5; margin: 0;">
+            Yes. Every single upload and download pipeline uses encrypted HTTPS/SSL protocols alongside rigid end-to-end encryption. These workflows are architected to satisfy strict corporate data privacy policies. We continuously align our data storage mechanics with global data compliance standards (including GDPR compliance) to ensure enterprise-level document protection.
+          </p>
+        </div>
+      </div>
+
+      <!-- Category 2 -->
+      <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary); border-left: 3px solid var(--accent-secondary); padding-left: 0.75rem; margin-bottom: 1.5rem; text-align: left;">⚡ Batch Processing & Workflows</h3>
+      <div style="display: flex; flex-direction: column; gap: 1.25rem; margin-bottom: 2.5rem; text-align: left;">
+        <div class="crm-card" style="padding: 1.5rem; border: 1px solid var(--border-color); border-radius: 0.75rem; background: var(--bg-card);">
+          <strong style="color: var(--text-primary); font-size: 1.05rem; display: block; margin-bottom: 0.5rem;">How many files can I compile into a single bundle?</strong>
+          <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.5; margin: 0;">
+            Free accounts can effortlessly batch up to 20 files at a time. If your workflow demands heavier document compiling, upgrading to a PDF Bundles Premium account removes these restrictions, allowing you to merge hundreds of high-res files into large master bundles simultaneously.
+          </p>
         </div>
 
-        <div class="crm-card" style="padding: 1.5rem; border: 1px solid var(--border-color); border-radius: 0.75rem; background: var(--bg-card); transition: box-shadow 0.25s ease;">
-          <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">🤖 What happens if I exhaust AI assistant limits?</h3>
-          <p style="font-size: 0.925rem; color: var(--text-secondary); line-height: 1.5;">AI helper credits (background removal, upsizing, translations) automatically reset at the start of each billing month. If you need higher volumes sooner, team administrators can configure custom credits from settings.</p>
+        <div class="crm-card" style="padding: 1.5rem; border: 1px solid var(--border-color); border-radius: 0.75rem; background: var(--bg-card);">
+          <strong style="color: var(--text-primary); font-size: 1.05rem; display: block; margin-bottom: 0.5rem;">Can I import documents and save bundles straight to the cloud?</strong>
+          <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.5; margin: 0;">
+            Yes. You don't even need the source documents saved locally on the machine or mobile device you are working from. Our dashboard connects smoothly with Google Drive and Dropbox. You can fetch files directly from your shared team folders, compile them on our remote servers, and route the finished master bundle straight back to your cloud architecture. This is a massive data saver when working on phones or tablets.
+          </p>
+        </div>
+
+        <div class="crm-card" style="padding: 1.5rem; border: 1px solid var(--border-color); border-radius: 0.75rem; background: var(--bg-card);">
+          <strong style="color: var(--text-primary); font-size: 1.05rem; display: block; margin-bottom: 0.5rem;">Can I convert non-selectable, scanned documents into a searchable bundle?</strong>
+          <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.5; margin: 0;">
+            Yes. Our backend engine runs an advanced OCR (Optical Character Recognition) process. When you build a bundle using flat images or scanned paper records, our system isolates the text layers, transforming raw image scans into fully searchable, interactive, and editable PDF document sets.
+          </p>
+        </div>
+      </div>
+
+      <!-- Category 3 -->
+      <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary); border-left: 3px solid #10b981; padding-left: 0.75rem; margin-bottom: 1.5rem; text-align: left;">🛠️ Troubleshooting & Technical Issues</h3>
+      <div style="display: flex; flex-direction: column; gap: 1.25rem; text-align: left;">
+        <div class="crm-card" style="padding: 1.5rem; border: 1px solid var(--border-color); border-radius: 0.75rem; background: var(--bg-card);">
+          <strong style="color: var(--text-primary); font-size: 1.05rem; display: block; margin-bottom: 0.5rem;">Why is my bundle processing taking a long time?</strong>
+          <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.5; margin-bottom: 0.5rem;">
+            While our core engines are optimized for high-volume data streams, overall turnaround time comes down to three factors:
+          </p>
+          <ul style="padding-left: 1.25rem; font-size: 0.875rem; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.35rem;">
+            <li><strong>Your internet connection:</strong> Uploading massive batches of uncompressed data depends heavily on your local upload speeds.</li>
+            <li><strong>Total payload size:</strong> Compiling dozens of complex graphics-heavy pages requires slightly more crunching time.</li>
+            <li><strong>Current server traffic volume:</strong> Premium users get designated VIP fast-track pipelines to completely bypass general high-traffic queues.</li>
+          </ul>
+        </div>
+
+        <div class="crm-card" style="padding: 1.5rem; border: 1px solid var(--border-color); border-radius: 0.75rem; background: var(--bg-card);">
+          <strong style="color: var(--text-primary); font-size: 1.05rem; display: block; margin-bottom: 0.5rem;">What are the minimum system requirements to run PDF Bundles?</strong>
+          <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.5; margin: 0;">
+            We keep things incredibly lean. To enjoy smooth, latency-free drag-and-drop mechanics, we recommend using the latest stable versions of Google Chrome, Mozilla Firefox, Apple Safari, or Microsoft Edge. Make sure JavaScript is fully enabled in your browser settings. If you ever hit an unexpected render glitch on a download screen, switching your browser window to Incognito / Private Mode usually resolves it instantly by bypassing cached layout files.
+          </p>
         </div>
       </div>
     `
   },
   security: {
+    title: "🔒 Security & Compliance",
+    subtitle: "Enterprise-Grade Security for Your Document Bundles",
     content: `
-      <div style="text-align: center; margin-bottom: 3.5rem; padding: 2rem 0; animation: fadeIn 0.8s ease-out;">
-        <span style="background: rgba(16, 185, 129, 0.1); color: #10b981; font-size: 0.8rem; font-weight: 700; padding: 0.4rem 1rem; border-radius: 2rem; text-transform: uppercase; letter-spacing: 0.05em; display: inline-block; margin-bottom: 1rem;">🔒 ENTERPRISE COMPLIANCE</span>
-        <h1 style="font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; color: var(--text-primary); margin-bottom: 1rem;">Security & Privacy Compliance</h1>
-        <p style="font-size: 1.15rem; color: var(--text-secondary); max-width: 650px; margin: 0 auto; line-height: 1.6;">How we protect your confidential documents, process files, and satisfy international data standards.</p>
+      <div style="margin-bottom: 2.5rem; text-align: left;">
+        <p style="font-size: 1.1rem; color: var(--text-secondary); line-height: 1.6;">
+          At PDF Bundles, the confidentiality, integrity, and availability of your business records are our absolute priorities. Whether your team compiles thousands of client records or automates internal operational folders, our cloud architecture is built to provide maximum protection at every stage of the document lifecycle.
+        </p>
       </div>
 
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.5rem; margin-bottom: 3rem;">
-        <div class="crm-card" style="padding: 1.75rem; border: 1px solid var(--border-color); border-radius: 0.75rem; background: var(--bg-card); text-align: left;">
-          <div style="font-size: 1.75rem; margin-bottom: 0.5rem;">🛡️</div>
-          <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">GDPR Compliance</h3>
-          <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.5;">Complete data ownership control. European region users have rights to view, cancel, or trigger complete deletion of account profiles instantly.</p>
+      <h3 style="font-size: 1.35rem; font-weight: 800; color: var(--text-primary); border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 1.5rem; text-align: left;">🔒 Document Security Architecture</h3>
+      <div style="display: flex; flex-direction: column; gap: 1.5rem; margin-bottom: 3rem; text-align: left;">
+        <div class="crm-card" style="padding: 1.5rem; border: 1px solid var(--border-color); border-radius: 0.75rem; background: var(--bg-card);">
+          <h4 style="font-size: 1.15rem; font-weight: 700; color: var(--accent-primary); margin-bottom: 0.5rem;">1. Advanced In-Transit & At-Rest Encryption</h4>
+          <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 0.5rem;">No matter which compilation or optimization tool you use, your files are protected by banking-grade security protocols.</p>
+          <ul style="padding-left: 1.25rem; font-size: 0.875rem; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.35rem;">
+            <li><strong>In Transit:</strong> All communications between your local browser and our processing nodes are strictly forced over Hypertext Transfer Protocol Secure (HTTPS). This traffic is fortified via Transport Layer Security (TLS/SSL) encryption, rendering intercepted packet data completely illegible.</li>
+            <li><strong>At Rest:</strong> During the brief window your files sit on our processing servers, they are completely isolated inside single-user sandboxes, preventing cross-tenant data leaks.</li>
+          </ul>
         </div>
 
-        <div class="crm-card" style="padding: 1.75rem; border: 1px solid var(--border-color); border-radius: 0.75rem; background: var(--bg-card); text-align: left;">
-          <div style="font-size: 1.75rem; margin-bottom: 0.5rem;">⚡</div>
-          <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">Transmission Encryption</h3>
-          <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.5;">All server transmissions utilize secure SSL/TLS 1.3 wrappers to prevent packet intercepts or network eavesdropping.</p>
+        <div class="crm-card" style="padding: 1.5rem; border: 1px solid var(--border-color); border-radius: 0.75rem; background: var(--bg-card);">
+          <h4 style="font-size: 1.15rem; font-weight: 700; color: var(--accent-primary); margin-bottom: 0.5rem;">2. Strict Two-Hour Purge Mandate</h4>
+          <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 0.5rem;">We do not archive, index, or sell your business content. We maintain a zero-retention philosophy for standard workflows.</p>
+          <ul style="padding-left: 1.25rem; font-size: 0.875rem; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.35rem;">
+            <li><strong>Automated Erasure:</strong> Within exactly two hours of processing your document batch, our system executes a permanent server-side wipe of both source documents and the compiled bundle.</li>
+            <li><strong>Instant Manual Deletion:</strong> Want it gone immediately? You don't have to wait for the automated script. Simply click the trash icon on your download dashboard to execute a real-time shredding command.</li>
+          </ul>
         </div>
 
-        <div class="crm-card" style="padding: 1.75rem; border: 1px solid var(--border-color); border-radius: 0.75rem; background: var(--bg-card); text-align: left;">
-          <div style="font-size: 1.75rem; margin-bottom: 0.5rem;">🗑️</div>
-          <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">Automatic Deletion</h3>
-          <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.5;">Processed files are completely destroyed from physical servers exactly 60 minutes after generation. We save no duplicates.</p>
+        <div class="crm-card" style="padding: 1.5rem; border: 1px solid var(--border-color); border-radius: 0.75rem; background: var(--bg-card);">
+          <h4 style="font-size: 1.15rem; font-weight: 700; color: var(--accent-primary); margin-bottom: 0.5rem;">3. Long-Term Integrity (eIDAS & PDF/A)</h4>
+          <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 0.5rem;">When building sensitive legal or corporate bundles:</p>
+          <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.5; padding-left: 0.5rem;"><strong>Long-Term Preservation:</strong> Convert document bundles to PDF/A standards to guarantee long-term archiving stability, keeping structural fonts and elements intact for decades without file degradation.</p>
         </div>
+      </div>
+
+      <h3 style="font-size: 1.35rem; font-weight: 800; color: var(--text-primary); border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 1.5rem; text-align: left;">🏢 Internal Operations & Compliance Standards</h3>
+      
+      <div style="overflow-x: auto; width: 100%; border: 1px solid var(--border-color); border-radius: 0.75rem; box-shadow: var(--shadow-soft); margin-bottom: 2.5rem; text-align: left;">
+        <table style="width: 100%; border-collapse: collapse; min-width: 600px; background: var(--bg-secondary);">
+          <thead>
+            <tr style="background: var(--bg-primary); border-bottom: 1px solid var(--border-color); font-size: 0.8rem; text-transform: uppercase;">
+              <th style="padding: 1rem; font-weight: 700; color: var(--text-secondary); width: 25%;">Security Category</th>
+              <th style="padding: 1rem; font-weight: 700; color: var(--text-secondary); width: 35%;">Protocol Implemented</th>
+              <th style="padding: 1rem; font-weight: 700; color: var(--text-secondary); width: 40%;">Business Advantage</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom: 1px solid var(--border-color); font-size: 0.875rem;">
+              <td style="padding: 1.25rem 1rem; font-weight: 600; color: var(--text-primary);">Data Privacy</td>
+              <td style="padding: 1.25rem 1rem; color: var(--text-secondary); line-height: 1.4;">Full GDPR Alignment</td>
+              <td style="padding: 1.25rem 1rem; color: var(--text-secondary); line-height: 1.4;">Protects EU user data and respects fundamental user erasure/privacy rights globally.</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border-color); font-size: 0.875rem;">
+              <td style="padding: 1.25rem 1rem; font-weight: 600; color: var(--text-primary);">Infrastructure Protection</td>
+              <td style="padding: 1.25rem 1rem; color: var(--text-secondary); line-height: 1.4;">DDoS Shielding & Global Content Delivery Networks (CDN)</td>
+              <td style="padding: 1.25rem 1rem; color: var(--text-secondary); line-height: 1.4;">Guarantees high-speed multi-file uploads while maintaining resilient uptime against malicious attacks.</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border-color); font-size: 0.875rem;">
+              <td style="padding: 1.25rem 1rem; font-weight: 600; color: var(--text-primary);">Access Controls</td>
+              <td style="padding: 1.25rem 1rem; color: var(--text-secondary); line-height: 1.4;">Principle of Least Privilege & Mandatory 2FA</td>
+              <td style="padding: 1.25rem 1rem; color: var(--text-secondary); line-height: 1.4;">Restricts infrastructure system visibility exclusively to verified operational nodes.</td>
+            </tr>
+            <tr style="font-size: 0.875rem;">
+              <td style="padding: 1.25rem 1rem; font-weight: 600; color: var(--text-primary);">Account Defense</td>
+              <td style="padding: 1.25rem 1rem; color: var(--text-secondary); line-height: 1.4;">90-Day Forced Password Rotation</td>
+              <td style="padding: 1.25rem 1rem; color: var(--text-secondary); line-height: 1.4;">Limits the window of risk for credential stuffing or brute-force profile attacks.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="crm-card" style="padding: 2rem; background: rgba(16, 185, 129, 0.03); border: 1.5px dashed rgba(16, 185, 129, 0.2); border-radius: 1rem; text-align: left; margin-top: 1rem;">
+        <h3 style="font-size: 1.2rem; font-weight: 700; color: #10b981; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">🤝 Our Promise to Teams & Developers</h3>
+        <p style="font-size: 0.95rem; color: var(--text-secondary); margin: 0; line-height: 1.5;">
+          PDF Bundles explicitly guarantees that your processed text, image assets, and metadata are never accessed, reviewed, or used to train public or private Artificial Intelligence (AI) models. Your business data remains exclusively yours.
+        </p>
       </div>
     `
   },
   press: {
+    title: "📰 Press Room",
+    subtitle: "Official Brand Assets & Press Materials",
     content: `
-      <div style="text-align: center; margin-bottom: 3.5rem; padding: 2rem 0; animation: fadeIn 0.8s ease-out;">
-        <span style="background: rgba(245, 158, 11, 0.1); color: #f59e0b; font-size: 0.8rem; font-weight: 700; padding: 0.4rem 1rem; border-radius: 2rem; text-transform: uppercase; letter-spacing: 0.05em; display: inline-block; margin-bottom: 1rem;">📰 PRESS & BRAND NEWS</span>
-        <h1 style="font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; color: var(--text-primary); margin-bottom: 1rem;">Media Kit & Press Releases</h1>
-        <p style="font-size: 1.15rem; color: var(--text-secondary); max-width: 650px; margin: 0 auto; line-height: 1.6;">Follow our updates, access platform logo assets, or check our media contact directory.</p>
+      <div style="margin-bottom: 2.5rem; text-align: left;">
+        <p style="font-size: 1.1rem; color: var(--text-secondary); line-height: 1.6;">
+          We are on a mission to end the friction of fragmented document management. PDF Bundles empowers global enterprises, small businesses, and digital agencies to scale their workflows through advanced batch processing, high-fidelity conversions, and multi-file automation.
+        </p>
+        <p style="font-size: 0.95rem; color: var(--text-muted); margin-top: 0.5rem; line-height: 1.5;">
+          Discover our brand journey, grab certified media resources, or connect directly with our communications team.
+        </p>
       </div>
 
-      <div class="crm-card" style="padding: 2.5rem; border: 1px solid var(--border-color); border-radius: 1rem; background: var(--bg-card); text-align: left; max-width: 800px; margin: 0 auto;">
-        <h3 style="font-size: 1.35rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.75rem;">Identity Guidelines</h3>
-        <p style="font-size: 0.95rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 1.5rem;">Please refer to our platform as <strong>pdfbundles</strong> in lowercase. Do not manipulate color schemes, shapes, or aspect dimensions of vector logo marks.</p>
-        
-        <div style="background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 0.75rem; padding: 1.5rem; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem;">
-          <div>
-            <strong style="color: var(--text-primary); font-size: 0.95rem;">Download Assets Pack (.zip)</strong>
-            <span style="display: block; font-size: 0.8rem; color: var(--text-muted);">Includes high-res PNG logos and vector SVG brand marks.</span>
-          </div>
-          <button class="btn-action" style="padding: 0.6rem 1.25rem; font-size: 0.85rem;" onclick="showToast('Branding package download initiated.', 'info')">Download Kit</button>
+      <h3 style="font-size: 1.35rem; font-weight: 800; color: var(--text-primary); border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 1.5rem; text-align: left;">📊 The PDF Bundles Story at a Glance</h3>
+      
+      <div style="overflow-x: auto; width: 100%; border: 1px solid var(--border-color); border-radius: 0.75rem; box-shadow: var(--shadow-soft); margin-bottom: 3rem; text-align: left;">
+        <table style="width: 100%; border-collapse: collapse; min-width: 600px; background: var(--bg-secondary);">
+          <thead>
+            <tr style="background: var(--bg-primary); border-bottom: 1px solid var(--border-color); font-size: 0.8rem; text-transform: uppercase;">
+              <th style="padding: 1rem; font-weight: 700; color: var(--text-secondary); width: 25%;">Company Metric</th>
+              <th style="padding: 1rem; font-weight: 700; color: var(--text-secondary); width: 45%;">Our Core Philosophy</th>
+              <th style="padding: 1rem; font-weight: 700; color: var(--text-secondary); width: 30%;">Impact Horizon</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom: 1px solid var(--border-color); font-size: 0.875rem;">
+              <td style="padding: 1.25rem 1rem; font-weight: 600; color: var(--text-primary);">The Core Problem</td>
+              <td style="padding: 1.25rem 1rem; color: var(--text-secondary); line-height: 1.4;">Teams lose hours managing individual, fragmented business documents one by one.</td>
+              <td style="padding: 1.25rem 1rem; color: var(--accent-secondary); font-weight: 600;">Operational Bottlenecks</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border-color); font-size: 0.875rem;">
+              <td style="padding: 1.25rem 1rem; font-weight: 600; color: var(--text-primary);">Our Solution</td>
+              <td style="padding: 1.25rem 1rem; color: var(--text-secondary); line-height: 1.4;">A unified, fast dashboard built to compile, optimize, and manage multi-file document sets instantly.</td>
+              <td style="padding: 1.25rem 1rem; color: var(--accent-primary); font-weight: 600;">Seamless Batch Workflows</td>
+            </tr>
+            <tr style="font-size: 0.875rem;">
+              <td style="padding: 1.25rem 1rem; font-weight: 600; color: var(--text-primary);">Target Audience</td>
+              <td style="padding: 1.25rem 1rem; color: var(--text-secondary); line-height: 1.4;">Legal firms, enterprise operations, creative agencies, and digital store owners.</td>
+              <td style="padding: 1.25rem 1rem; color: var(--text-primary); font-weight: 600;">Scalable B2B Document SaaS</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div style="text-align: left; margin-bottom: 3rem;">
+        <h3 style="font-size: 1.35rem; font-weight: 800; color: var(--text-primary); border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 1.5rem;">📰 Official Brand Assets & Press Materials</h3>
+        <h4 style="font-size: 1.1rem; font-weight: 700; color: var(--accent-primary); margin-bottom: 0.5rem;">About PDF Bundles</h4>
+        <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 1.5rem;">
+          PDF Bundles is a web-based productivity application built to handle the complexities of high-volume document batch management. Launched to rescue teams from tedious, single-file processing, our software automates the aggregation, compression, conversion, and encryption of massive multi-file datasets. By moving away from rigid, isolated file utility setups, PDF Bundles delivers high-performance processing capabilities that integrate with modern cloud infrastructure like Google Drive and Dropbox.
+        </p>
+
+        <div style="padding: 1.5rem; background: rgba(79, 70, 229, 0.03); border-left: 4px solid var(--accent-primary); border-radius: 0 0.5rem 0.5rem 0; margin-bottom: 2.5rem; font-style: italic;">
+          <p style="font-size: 1rem; color: var(--text-primary); margin: 0; line-height: 1.5;">
+            "The future of business efficiency isn't about handling documents faster—it's about handling them collectively. PDF Bundles changes the dynamic from tedious individual management to fluid, automated workspace aggregation."
+          </p>
         </div>
+      </div>
+
+      <div class="crm-card" style="padding: 1.75rem; border: 1px solid var(--border-color); border-radius: 0.75rem; background: var(--bg-card); text-align: left;">
+        <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">📬 Media & Public Relations Contact</h3>
+        <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 1rem;">
+          Are you a journalist, tech reviewer, or industry analyst covering the evolving landscape of digital workplace productivity and SaaS tools? We would love to collaborate.
+        </p>
+        <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 0.5rem;">
+          For interview requests, product deep-dives, exclusive insights, or custom review credentials, reach out straight to our media relations team:
+        </p>
+        <p style="font-size: 0.95rem; color: var(--text-primary); font-weight: 700; margin-bottom: 0.25rem;">
+          📧 Press Inquiries: <a href="mailto:press@pdfbundles.com" style="color: var(--accent-secondary); text-decoration: none;">press@pdfbundles.com</a>
+        </p>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">
+          🕒 Response Window: Our communications desk typically responds to verified media queries within 24 business hours.
+        </p>
       </div>
     `
   },
   privacy: {
+    title: "🛡️ Privacy Policy",
+    subtitle: "Your Privacy is Our Foundation",
     content: `
-      <div style="text-align: center; margin-bottom: 3rem; padding: 1.5rem 0;">
-        <h1 style="font-size: 2.25rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.75rem;">Privacy Policy</h1>
-        <p style="font-size: 1.05rem; color: var(--text-secondary);">Last updated: July 2026. How we manage and store user profile records.</p>
+      <div style="margin-bottom: 2.5rem; text-align: left;">
+        <p style="font-size: 1.1rem; color: var(--text-secondary); line-height: 1.6;">
+          At PDF Bundles, we believe that data privacy isn't just a legal obligation—it is a core feature of our business model. When you upload multi-file document sets to organize, compress, or convert, your files remain completely yours. We never read, monetize, or store your documents beyond the baseline processing window.
+        </p>
       </div>
 
-      <div class="crm-card" style="padding: 2.5rem; border: 1px solid var(--border-color); border-radius: 1rem; background: var(--bg-card); text-align: left; max-width: 900px; margin: 0 auto; line-height: 1.7; color: var(--text-secondary);">
-        <h3 style="color: var(--text-primary); font-size: 1.25rem; font-weight: 700; margin-bottom: 0.75rem;">1. Information We Collect</h3>
-        <p style="margin-bottom: 1.5rem; font-size: 0.95rem;">We only request basic configuration records necessary to manage subscriptions and team seats (names, email addresses, payment tokens). We save no record of individual conversion text layers.</p>
+      <h3 style="font-size: 1.35rem; font-weight: 800; color: var(--text-primary); border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 1.5rem; text-align: left;">The PDF Bundles Privacy Guarantee</h3>
+      
+      <div style="overflow-x: auto; width: 100%; border: 1px solid var(--border-color); border-radius: 0.75rem; box-shadow: var(--shadow-soft); margin-bottom: 3rem; text-align: left;">
+        <table style="width: 100%; border-collapse: collapse; min-width: 600px; background: var(--bg-secondary);">
+          <thead>
+            <tr style="background: var(--bg-primary); border-bottom: 1px solid var(--border-color); font-size: 0.8rem; text-transform: uppercase;">
+              <th style="padding: 1rem; font-weight: 700; color: var(--text-secondary); width: 25%;">Data Type</th>
+              <th style="padding: 1rem; font-weight: 700; color: var(--text-secondary); width: 50%;">How We Handle It</th>
+              <th style="padding: 1rem; font-weight: 700; color: var(--text-secondary); width: 25%;">Retention Period</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom: 1px solid var(--border-color); font-size: 0.875rem;">
+              <td style="padding: 1.25rem 1rem; font-weight: 600; color: var(--text-primary);">Your Uploaded Files</td>
+              <td style="padding: 1.25rem 1rem; color: var(--text-secondary); line-height: 1.4;">Strictly isolated, encrypted, and processed on secure servers.</td>
+              <td style="padding: 1.25rem 1rem; color: #ef4444; font-weight: 600;">2 Hours (Then permanently purged)</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border-color); font-size: 0.875rem;">
+              <td style="padding: 1.25rem 1rem; font-weight: 600; color: var(--text-primary);">Account Information</td>
+              <td style="padding: 1.25rem 1rem; color: var(--text-secondary); line-height: 1.4;">Standard account management metrics (Email, subscription tier).</td>
+              <td style="padding: 1.25rem 1rem; color: var(--text-secondary);">Active life of your account</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border-color); font-size: 0.875rem;">
+              <td style="padding: 1.25rem 1rem; font-weight: 600; color: var(--text-primary);">Payment Data</td>
+              <td style="padding: 1.25rem 1rem; color: var(--text-secondary); line-height: 1.4;">Processed through tier-1, PCI-DSS compliant payment gateways.</td>
+              <td style="padding: 1.25rem 1rem; color: var(--text-muted); font-style: italic;">Never stored on our servers</td>
+            </tr>
+            <tr style="font-size: 0.875rem;">
+              <td style="padding: 1.25rem 1rem; font-weight: 600; color: var(--text-primary);">Anonymized Analytics</td>
+              <td style="padding: 1.25rem 1rem; color: var(--text-secondary); line-height: 1.4;">Aggregate, non-identifiable usage stats to optimize server loads.</td>
+              <td style="padding: 1.25rem 1rem; color: var(--text-secondary);">Rolling analytical cycles</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
-        <h3 style="color: var(--text-primary); font-size: 1.25rem; font-weight: 700; margin-bottom: 0.75rem;">2. Cookies & Tracker Disclaimers</h3>
-        <p style="margin-bottom: 1.5rem; font-size: 0.95rem;">We use only essential session cookies required to verify user tokens. No third-party advertisements or background analytics trackers are active inside the user workspace.</p>
+      <div style="text-align: left; margin-bottom: 3rem;">
+        <h3 style="font-size: 1.35rem; font-weight: 800; color: var(--text-primary); border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 1.5rem;">🔒 Document Processing & Ephemeral Data Control</h3>
+        <h4 style="font-size: 1.1rem; font-weight: 700; color: var(--accent-primary); margin-bottom: 0.5rem;">Complete Automated File Purging</h4>
+        <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 1rem;">
+          When you upload folders of contracts, financial charts, or image files to create a unified asset bundle, those documents live inside a highly locked server container.
+        </p>
+        <ul style="padding-left: 1.25rem; font-size: 0.875rem; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.5rem;">
+          <li><strong>The Two-Hour Rule:</strong> The absolute second your document bundle is generated, an automated clock begins ticking. After exactly two hours, our systems trigger a deep-scrub sequence, permanently deleting both the original source elements and the compiled outputs from our storage arrays.</li>
+          <li><strong>On-Demand Immediate Deletion:</strong> If you don't want to wait two hours, simply click the "Delete Instantly" trash icon on your download dashboard. This forces our system to bypass the timer and securely wipe the project data instantly.</li>
+        </ul>
+
+        <h4 style="font-size: 1.1rem; font-weight: 700; color: var(--accent-primary); margin-bottom: 0.5rem;">Zero Document Mining & Content Snooping</h4>
+        <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 1.5rem;">
+          We maintain a strict stance against automated data farming. PDF Bundles does not scan, read, copy, or index the underlying text, metadata, or images contained within your documents. Furthermore, we explicitly guarantee that none of your uploaded information or document datasets are ever used to train public or private Artificial Intelligence (AI) models.
+        </p>
+      </div>
+
+      <div style="text-align: left; margin-bottom: 3rem;">
+        <h3 style="font-size: 1.35rem; font-weight: 800; color: var(--text-primary); border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 1.5rem;">🇪🇺 Global Data Compliance & GDPR Alignment</h3>
+        <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 1rem;">
+          We recognize that our users operate within strict legal boundaries. PDF Bundles actively designs its data collection and storage pipelines to reflect leading global standards:
+        </p>
+        <ul style="padding-left: 1.25rem; font-size: 0.875rem; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.5rem;">
+          <li><strong>General Data Protection Regulation (GDPR):</strong> We protect the fundamental right to data privacy for individuals within the European Economic Area (EEA), upholding the rights of data access, rectification, and the right to be forgotten.</li>
+          <li><strong>Data Transfers:</strong> All multi-file information processing routes through end-to-end TLS/SSL encrypted channels to defend against man-in-the-middle network attacks.</li>
+        </ul>
+      </div>
+
+      <div style="text-align: left; margin-bottom: 3rem;">
+        <h3 style="font-size: 1.35rem; font-weight: 800; color: var(--text-primary); border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 1.5rem;">🍪 Website Usage & Analytical Cookies</h3>
+        <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 1rem;">
+          To keep our dashboard operating smoothly, optimize processing speeds during peak hours, and keep your session authenticated, we utilize basic web cookies.
+        </p>
+        <ul style="padding-left: 1.25rem; font-size: 0.875rem; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.5rem;">
+          <li><strong>Essential Cookies:</strong> Strictly necessary to remember your user state, active uploads, and subscription levels as you move through our tools.</li>
+          <li><strong>Analytical Optimization:</strong> We use anonymized behavioral tools to monitor macro-performance metrics (like general processing success rates and load latency times). This data contains zero personally identifiable information (PII) and helps us balance server capacity globally.</li>
+        </ul>
+      </div>
+
+      <div class="crm-card" style="padding: 1.75rem; border: 1px solid var(--border-color); border-radius: 0.75rem; background: var(--bg-card); text-align: left;">
+        <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">💬 Contact Our Privacy Officer</h3>
+        <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 1rem;">
+          If you represent an enterprise team, a legal firm, or an organization with strict data protection addendums (DPAs), our team is here to help. For comprehensive compliance documentation or targeted privacy inquiries, reach out to us at:
+        </p>
+        <p style="font-size: 0.95rem; color: var(--text-primary); font-weight: 700; margin: 0;">
+          📧 Email Desk: <a href="mailto:privacy@pdfbundles.com" style="color: var(--accent-secondary); text-decoration: none;">privacy@pdfbundles.com</a>
+        </p>
       </div>
     `
   },
   terms: {
+    title: "📄 Terms & Conditions",
+    subtitle: "PDF Bundles Terms of Service",
     content: `
-      <div style="text-align: center; margin-bottom: 3rem; padding: 1.5rem 0;">
-        <h1 style="font-size: 2.25rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.75rem;">Terms & Conditions</h1>
-        <p style="font-size: 1.05rem; color: var(--text-secondary);">Terms of usage, platform service SLA bounds, and billings cancellation policies.</p>
+      <div style="margin-bottom: 2.5rem; text-align: left;">
+        <p style="font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; margin-bottom: 0.5rem;">Last Updated: July 9, 2026</p>
+        <p style="font-size: 1.1rem; color: var(--text-secondary); line-height: 1.6;">
+          Welcome to PDF Bundles. Please read these Terms of Service ("Terms", "Agreement") carefully before using our website located at https://pdfbundles.com/ and any associated subdomains, web applications, or digital tools (collectively, the "Service") operated by PDF Bundles ("Company", "we", "us", "our").
+        </p>
+        <p style="font-size: 0.95rem; color: var(--text-secondary); line-height: 1.5; margin-top: 0.75rem;">
+          By accessing or using our Service to upload, convert, merge, compress, or otherwise manipulate multi-file document sets ("Bundles"), you explicitly agree to be bound by these internationally standardized terms. If you do not agree to any portion of this agreement, you must immediately halt all use of our services.
+        </p>
       </div>
 
-      <div class="crm-card" style="padding: 2.5rem; border: 1px solid var(--border-color); border-radius: 1rem; background: var(--bg-card); text-align: left; max-width: 900px; margin: 0 auto; line-height: 1.7; color: var(--text-secondary);">
-        <h3 style="color: var(--text-primary); font-size: 1.25rem; font-weight: 700; margin-bottom: 0.75rem;">1. Platform SLA Disclaimers</h3>
-        <p style="margin-bottom: 1.5rem; font-size: 0.95rem;">pdfbundles conversions are provided as-is without any warranties of uptime, layout mapping precision, or complete security duration guarantees.</p>
+      <div style="display: flex; flex-direction: column; gap: 1.75rem; text-align: left;">
+        <div>
+          <h4 style="font-size: 1.1rem; font-weight: 700; color: var(--accent-primary); margin-bottom: 0.5rem;">1. Description of Service & Core Scope</h4>
+          <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5;">
+            PDF Bundles provides users with a web-based document automation workspace designed to handle bulk workflows. Our system allows users to execute batch functions including, but not limited to, combining multiple independent files into unified master documents, splitting extensive datasets, optimizing file payloads (compression), converting file formats, and executing bulk document security measures.
+          </p>
+          <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5; margin-top: 0.5rem;">
+            We grant you a non-exclusive, non-transferable, revocable license to access our platform strictly in accordance with these Terms. We reserve the right to modify, suspend, or discontinue any aspect of our tools or dashboard capacities at any time without prior liability.
+          </p>
+        </div>
 
-        <h3 style="color: var(--text-primary); font-size: 1.25rem; font-weight: 700; margin-bottom: 0.75rem;">2. Billing & Seat Cancellations</h3>
-        <p style="margin-bottom: 1.5rem; font-size: 0.95rem;">Subscriptions automatically renew monthly. Users can disable auto-renew settings at any time directly from the account dashboard settings module. Payments are non-refundable.</p>
+        <div>
+          <h4 style="font-size: 1.1rem; font-weight: 700; color: var(--accent-primary); margin-bottom: 0.5rem;">2. User Accounts, Responsibilities, and Identity</h4>
+          <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 0.5rem;">
+            <strong>2.1 Account Creation and Security:</strong> To unlock advanced multi-file parameters, increased file size thresholds, and shared team assets, you may be required to register a premium corporate or personal account. You agree to provide accurate, current, and complete details during registration. You bear sole responsibility for safeguarding your login credentials and for any action taken under your identity.
+          </p>
+          <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5;">
+            <strong>2.2 Prohibited Content and Misuse:</strong> You maintain absolute ownership and liability for all documents, text, images, and sheets uploaded to our servers. You explicitly covenant that your batch files will not contain material that infringes upon third-party IP rights, contains malware or exploits, promotes fraud, or violates local, national, or international privacy laws.
+          </p>
+        </div>
+
+        <div>
+          <h4 style="font-size: 1.1rem; font-weight: 700; color: var(--accent-primary); margin-bottom: 0.5rem;">3. Data Processing, File Ownership, and The Two-Hour Rule</h4>
+          <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 0.75rem;">
+            <strong>3.1 Your Intellectual Property Protection:</strong> PDF Bundles lays no claim, title, or interest to the contents of the files you process. We do not extract, read, open, index, or parse text layers within your document sets, except where automated systems must calculate baseline operations (e.g., performing requested OCR layers or applying page numbers).
+          </p>
+          <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 1rem;">
+            <strong>3.2 Automated Server Scrubbing Protocol:</strong> To preserve server efficiency and guarantee maximum user privacy, our platform operates on a strict ephemeral model:
+          </p>
+          
+          <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 0.5rem; padding: 1.25rem; font-family: monospace; font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 1rem; overflow-x: auto; text-align: center;">
+            [ User Uploads Batch Files ]<br>
+            │<br>
+            ▼<br>
+            [ Engine Compiles Bundle Output ]<br>
+            │<br>
+            ▼<br>
+            [ 2-Hour Countdown Timer Triggers ] ──► [ Permanent, Unrecoverable Deletion ]
+          </div>
+
+          <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5;">
+            Once your processing concludes, our architecture caches the completed bundle on secure, isolated scratch disks for exactly two (2) hours to facilitate successful downloads. Upon expiry of this window, our automated file scrubbers execute a permanent deletion sweep. Expired files are unrecoverable.
+          </p>
+        </div>
+
+        <div>
+          <h4 style="font-size: 1.1rem; font-weight: 700; color: var(--accent-primary); margin-bottom: 0.5rem;">4. Subscription Fees, Cancellations, and Refunds</h4>
+          <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 0.5rem;">
+            <strong>4.1 Subscription Billing Mechanics:</strong> Access to basic tools is free within certain file limits. Extended tiers require recurring monthly or annual payments. By selecting a Premium or Enterprise package, you authorize our third-party, PCI-DSS compliant billing gateways to process recurring transaction amounts.
+          </p>
+          <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 0.5rem;">
+            <strong>4.2 Cancellation Policy:</strong> You are free to cancel your active subscription package at any time directly through your dashboard billing profile. Your account will maintain unrestricted premium parameters until the conclusion of your current paid billing period.
+          </p>
+          <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5;">
+            <strong>4.3 Refund Exceptions:</strong> Given the digital nature of immediate server capacity allocation, fees paid to PDF Bundles are generally non-refundable. Exceptions are evaluated strictly on a case-by-case basis if our automated engine experiences a system-wide infrastructure failure.
+          </p>
+        </div>
+      </div>
+
+      <div class="crm-card" style="padding: 1.5rem; background: rgba(239, 68, 68, 0.02); border: 1.5px dashed rgba(239, 68, 68, 0.2); border-radius: 1rem; text-align: left; margin-top: 2rem; margin-bottom: 2rem;">
+        <h4 style="font-size: 1.1rem; font-weight: 700; color: #ef4444; margin-bottom: 0.5rem;">⚠️ Limitation of Liability and Warranties</h4>
+        <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 0.75rem;">
+          <strong>International Legal Disclaimer:</strong> PDF Bundles is provided on an "AS IS" and "AS AVAILABLE" basis without warranties of any kind, whether express or implied. We do not guarantee that our services will operate completely uninterrupted, error-free, or that your compiled document sets will match arbitrary layout standards across all external document readers.
+        </p>
+        <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; margin: 0;">
+          In no event shall PDF Bundles, its parent corporations, founders, directors, employees, or tech partners be held liable for any indirect, incidental, special, consequential, or punitive damages—including without limitation, loss of business profits, data corruption, operational downtime, or financial setbacks resulting from your use or inability to use our platform.
+        </p>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 1.5rem; text-align: left;">
+        <div>
+          <h4 style="font-size: 1.1rem; font-weight: 700; color: var(--accent-primary); margin-bottom: 0.5rem;">6. Global Compliance, Indemnification, and Governing Law</h4>
+          <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 0.5rem;">
+            <strong>6.1 User Indemnification:</strong> You agree to defend, indemnify, and hold harmless PDF Bundles and its licensees from and against any claims, damages, liabilities, losses, costs, or debt arising directly from your violation of these Terms or the unlawful nature of the document contents you upload.
+          </p>
+          <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5;">
+            <strong>6.2 Governing Jurisdictions:</strong> These Terms shall be interpreted, governed, and construed in accordance with standard international electronic commerce frameworks and prevailing commercial laws.
+          </p>
+        </div>
+
+        <div>
+          <h4 style="font-size: 1.1rem; font-weight: 700; color: var(--accent-primary); margin-bottom: 0.5rem;">7. Revisions to This Agreement</h4>
+          <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5; margin: 0;">
+            We reserve the right, at our sole discretion, to modify or replace these Terms at any time. If a revision is material, we will make reasonable efforts to provide at least 30 days' notice prior to any new terms taking effect. Continued use of our tools after revisions go live constitutes binding acceptance of the updated terms.
+          </p>
+        </div>
       </div>
     `
   },
   about: {
+    title: "👥 About Us",
+    subtitle: "Our Mission & Global Vision",
     content: `
-      <!-- Hero Section -->
-      <div style="text-align: center; margin-bottom: 3.5rem; padding: 2rem 0; animation: fadeIn 0.8s ease-out;">
-        <span style="background: rgba(99, 102, 241, 0.1); color: var(--accent-secondary); font-size: 0.8rem; font-weight: 700; padding: 0.4rem 1rem; border-radius: 2rem; text-transform: uppercase; letter-spacing: 0.05em; display: inline-block; margin-bottom: 1rem;">👥 ABOUT THE COMPANY</span>
-        <h1 style="font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; color: var(--text-primary); margin-bottom: 1rem;">Fast, Secure, & Modern PDF Editor</h1>
-        <p style="font-size: 1.15rem; color: var(--text-secondary); max-width: 700px; margin: 0 auto; line-height: 1.6;">
-          Our mission is to build highly performant browser tools that help professionals process document bundles efficiently without compromising on design or user privacy.
+      <div style="margin-bottom: 2.5rem; text-align: left;">
+        <p style="font-size: 1.1rem; color: var(--text-secondary); line-height: 1.6;">
+          At PDF Bundles, we believe that true productivity doesn't come from handling documents faster—it comes from handling them collectively.
+        </p>
+        <p style="font-size: 0.95rem; color: var(--text-secondary); line-height: 1.5; margin-top: 0.75rem;">
+          Every day, millions of professionals waste valuable hours manually opening, organizing, converting, and saving individual files one by one. We engineered PDF Bundles to eliminate this operational friction. Our platform reimagines document management by introducing a high-performance, batch-focused workspace where complex multi-file collections are transformed into streamlined, professional document sets instantly.
         </p>
       </div>
 
-      <!-- Company Contacts Grid -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2rem; margin-bottom: 3rem; text-align: left;">
-        <div class="crm-card" style="padding: 2rem; border: 1px solid var(--border-color); border-radius: 1rem; background: var(--bg-card); display: flex; flex-direction: column; justify-content: space-between;">
-          <div>
-            <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.75rem;">Platform Mission</h3>
-            <p style="font-size: 0.925rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 1rem;">We build lightweight, ad-free utilities running directly in modern browsers. Process sensitive files locally without server-side leaks.</p>
-          </div>
+      <h3 style="font-size: 1.35rem; font-weight: 800; color: var(--text-primary); border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 1.5rem; text-align: left;">📊 The Core Values That Drive Us</h3>
+      
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.5rem; margin-bottom: 3rem; text-align: left;">
+        <div class="crm-card" style="padding: 1.5rem; border: 1px solid var(--border-color); border-radius: 0.75rem; background: var(--bg-card); display: flex; flex-direction: column; gap: 0.5rem;">
+          <div style="font-size: 1.25rem; font-weight: 700; color: var(--accent-primary);">Batch Innovation</div>
+          <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.4; margin: 0;">Built for multi-file automation at scale.</p>
         </div>
+        <div class="crm-card" style="padding: 1.5rem; border: 1px solid var(--border-color); border-radius: 0.75rem; background: var(--bg-card); display: flex; flex-direction: column; gap: 0.5rem;">
+          <div style="font-size: 1.25rem; font-weight: 700; color: var(--accent-secondary);">Data Security First</div>
+          <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.4; margin: 0;">Strict 2-hour server data-purging protocols.</p>
+        </div>
+        <div class="crm-card" style="padding: 1.5rem; border: 1px solid var(--border-color); border-radius: 0.75rem; background: var(--bg-card); display: flex; flex-direction: column; gap: 0.5rem;">
+          <div style="font-size: 1.25rem; font-weight: 700; color: #10b981;">Frictionless Design</div>
+          <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.4; margin: 0;">Zero complex training; just drag, drop & bundle.</p>
+        </div>
+      </div>
 
-        <div class="crm-card" style="padding: 2rem; border: 1px solid var(--border-color); border-radius: 1rem; background: var(--bg-card); display: flex; flex-direction: column; justify-content: space-between;">
+      <div style="text-align: left; margin-bottom: 3rem;">
+        <h3 style="font-size: 1.35rem; font-weight: 800; color: var(--text-primary); border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 1.5rem;">Engineered for the Modern Global Workflow</h3>
+        
+        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
           <div>
-            <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.75rem;">Support Directory</h3>
-            <p style="font-size: 0.925rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 1rem;">Need help with subscriptions or billing? Reach out to support:</p>
-            <span style="display: block; font-size: 0.9rem; color: var(--accent-primary); font-weight: 600;">support@pdfbundles.com</span>
-            <span style="display: block; font-size: 0.9rem; color: var(--accent-primary); font-weight: 600; margin-top: 0.25rem;">info@pdfbundles.com</span>
+            <h4 style="font-size: 1.1rem; font-weight: 700; color: var(--accent-primary); margin-bottom: 0.25rem;">⚡ True Multi-File Batch Performance</h4>
+            <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5; margin: 0;">
+              Unlike conventional platforms built around individual file modifications, our infrastructure is native to batch processing. Whether you are merging hundreds of invoices, extracting targeted reporting blocks, or converting vast presentation decks, our system utilizes distributed cloud processing to manage intense data payloads simultaneously without lagging your browser.
+            </p>
+          </div>
+
+          <div>
+            <h4 style="font-size: 1.1rem; font-weight: 700; color: var(--accent-primary); margin-bottom: 0.25rem;">🛡️ Absolute Privacy by Design</h4>
+            <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5; margin: 0;">
+              We respect the confidentiality of your corporate records. PDF Bundles operates under a strict data-ephemerality framework. Your uploaded assets are completely isolated during processing and are permanently wiped from our server arrays exactly two hours after your task is completed. We never inspect, store, or sell your contents, and your documents are never used to train artificial intelligence models.
+            </p>
+          </div>
+
+          <div>
+            <h4 style="font-size: 1.1rem; font-weight: 700; color: var(--accent-primary); margin-bottom: 0.25rem;">🌐 Our Global Footprint</h4>
+            <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5; margin: 0;">
+              From small creative agencies optimizing client portfolios to multi-national corporations processing thousands of daily shipping records, PDF Bundles is trusted by professionals worldwide. Our compliance frameworks match rigorous global data-handling principles, including GDPR standards, ensuring that your compliance teams can clear our application for everyday company workflows.
+            </p>
           </div>
         </div>
+      </div>
+
+      <div class="crm-card" style="padding: 1.75rem; border: 1px solid var(--border-color); border-radius: 0.75rem; background: var(--bg-card); text-align: left;">
+        <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">🤝 Connect With Our Team</h3>
+        <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 1rem;">
+          We are constantly expanding our tool suites, scaling our server pipelines, and rolling out new features to stay ahead of your document workflow needs. If you are interested in enterprise deployment, strategic partnerships, or custom workflow configurations, we invite you to start a conversation:
+        </p>
+        <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 0.5rem;">
+          📧 General Inquiries: <a href="mailto:hello@pdfbundles.com" style="color: var(--accent-secondary); text-decoration: none;">hello@pdfbundles.com</a>
+        </p>
+        <p style="font-size: 0.9rem; color: var(--text-secondary); margin: 0;">
+          💼 Enterprise & Partnerships: <a href="mailto:corporate@pdfbundles.com" style="color: var(--accent-secondary); text-decoration: none;">corporate@pdfbundles.com</a>
+        </p>
       </div>
     `
   }
@@ -7350,12 +7746,26 @@ window.navigateToInfoPage = navigateToInfoPage;
 
 function loadInfoPageContent(pageKey) {
   const data = INFO_PAGES_DATA[pageKey] || INFO_PAGES_DATA['features'];
+  
+  const title = document.getElementById('info-page-title');
+  const subtitle = document.getElementById('info-page-subtitle');
   const contentCard = document.getElementById('info-page-content-card');
+  
+  if (title) title.textContent = data.title;
+  if (subtitle) subtitle.textContent = data.subtitle;
   if (contentCard) contentCard.innerHTML = data.content;
+  
+  // Highlight the active page in the navigator sidebar
+  document.querySelectorAll('.info-nav-link').forEach(link => {
+    if (link.getAttribute('data-page') === pageKey) {
+      link.classList.add('active');
+    } else {
+      link.classList.remove('active');
+    }
+  });
 
-  // Scroll to top
+  // Scroll to top of card content
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 window.loadInfoPageContent = loadInfoPageContent;
-
 

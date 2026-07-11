@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>" />
+    <link rel="icon" type="image/png" href="/logo-mobile.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="pdfbundles | Free Online PDF Editor, Converter & Tools. Merge, split, compress, convert, edit, and secure PDFs with 24 complete tools. 100% private and secure." />
     <title>pdfbundles | Free Online PDF Editor, Converter & Tools</title>
@@ -23,9 +23,8 @@
           <button id="btn-trigger-crm" class="btn-crm-toggle" style="display: none; background: transparent; border: none; color: var(--text-primary); cursor: pointer; padding: 0.5rem; border-radius: 0.375rem; align-items: center; justify-content: center;" title="Open Dashboard Menu">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg>
           </button>
-          <a href="/" class="logo" id="logo-link">
-            <div class="logo-icon">P</div>
-            <span>pdfbundles</span>
+          <a href="/" class="logo" id="logo-link" style="padding: 0.2rem 0; display: flex; align-items: center;">
+            <img src="/logo-desktop.png" alt="pdfbundles" style="height: 48px; width: auto; display: block;">
           </a>
           <div class="header-nav-menu">
             <a class="nav-menu-link" id="nav-link-all-tools">All Tools <svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-left: 0.15rem;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg></a>
@@ -1578,8 +1577,6 @@
                   <label for="landing-sales-consent" style="font-size: 0.825rem; color: var(--text-secondary); line-height: 1.4; cursor: pointer;">I agree to receive marketing communications from pdfbundles and acknowledge that I can opt out upon request</label>
                 </div>
 
-                <p style="font-size: 0.775rem; color: var(--text-muted); margin: 0; line-height: 1.4;">By clicking Submit, you agree to pdfbundles's <a href="#" style="color: var(--accent-secondary); text-decoration: none;">Privacy Policy</a> and <a href="#" style="color: var(--accent-secondary); text-decoration: none;">Terms of Service</a></p>
-
                 <button type="submit" class="btn-action" style="align-self: flex-start; background: #e11d48; color: white; border: none; padding: 0.85rem 2.5rem; font-weight: 700; border-radius: 0.5rem; margin-top: 0.5rem; cursor: pointer; transition: background 0.2s;">Submit Inquiry</button>
               </form>
             </div>
@@ -2743,9 +2740,25 @@
       </section>
 
       <!-- INFO CONTENT PAGES (Features, Docs, FAQ, Security, Press, Privacy, Terms, About) -->
-      <section id="info-page" style="display: none; animation: fadeIn 0.4s ease-out; margin-top: 1.5rem; width: 100%;">
-        <div id="info-page-content-card" style="width: 100%;">
-          <!-- Dynamic HTML loaded here via javascript -->
+      <section id="info-page" style="display: none; animation: fadeIn 0.4s ease-out; margin-top: 2rem; padding: 0 1rem;">
+        <div style="max-width: 960px; margin: 0 auto; width: 100%;">
+          <!-- Hero Banner Section -->
+          <div style="text-align: center; margin-bottom: 3rem;">
+            <div class="premium-badge-pill" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0.85rem; border-radius: 2rem; background: rgba(79, 70, 229, 0.08); border: 1px solid rgba(79, 70, 229, 0.15); font-size: 0.75rem; font-weight: 700; color: var(--accent-primary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem; animation: floatAnim 3s ease-in-out infinite;">
+              🚀 Official Reference
+            </div>
+            <h1 id="info-page-title" style="font-size: 2.5rem; font-weight: 800; background: linear-gradient(135deg, var(--text-primary) 30%, var(--accent-primary) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 0.75rem;">Page Title</h1>
+            <p id="info-page-subtitle" style="font-size: 1.15rem; color: var(--text-secondary); max-width: 600px; margin: 0 auto; line-height: 1.5;">Sub-headline or brief description of the section.</p>
+            <div style="width: 50px; height: 4px; background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary)); border-radius: 2px; margin: 1.5rem auto 0 auto;"></div>
+          </div>
+
+          <!-- Dynamic Content Card -->
+          <div class="info-page-card" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 1.25rem; padding: 2.5rem; box-shadow: var(--shadow-premium); position: relative; overflow: hidden; animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; min-height: 400px; text-align: left; line-height: 1.6;" id="info-page-content-card">
+            <!-- Glow decorative background -->
+            <div class="glow-bg-decorative" style="position: absolute; top: -150px; right: -150px; width: 300px; height: 300px; background: radial-gradient(circle, rgba(79, 70, 229, 0.05) 0%, transparent 70%); pointer-events: none;"></div>
+            <div class="glow-bg-decorative" style="position: absolute; bottom: -150px; left: -150px; width: 300px; height: 300px; background: radial-gradient(circle, rgba(168, 85, 247, 0.05) 0%, transparent 70%); pointer-events: none;"></div>
+            <!-- Dynamic HTML loaded here via javascript -->
+          </div>
         </div>
       </section>
 
@@ -2767,9 +2780,8 @@
       <div class="footer-container">
         <!-- Column 1: Brand Info -->
         <div class="footer-col brand-col">
-          <a href="#" id="footer-logo-link" class="logo">
-            <div class="logo-icon">P</div>
-            <span>pdfbundles</span>
+          <a href="#" id="footer-logo-link" class="logo" style="padding: 0.2rem 0; display: flex; align-items: center;">
+            <img src="/logo-desktop.png" alt="pdfbundles" style="height: 48px; width: auto; display: block;">
           </a>
           <span class="brand-tag">PROFESSIONAL SUITE</span>
           <p class="brand-desc">
