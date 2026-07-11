@@ -104,97 +104,46 @@ const safeSessionStorage = {
     }
   }
 };
-
 // User Auth State
 let token = safeStorage.getItem('token') || null;
 let currentUser = null;
 
-const LOGGED_OUT_DRAWER_HTML = `
-  <div class="drawer-menu-links" style="display: flex; flex-direction: column; gap: 0.25rem; padding: 1rem 0.75rem;">
-    <!-- Other Products Dropdown -->
-    <div>
-      <a href="#" class="drawer-menu-link drawer-dropdown-trigger" id="mob-trigger-products">
-        <div style="display: flex; align-items: center; gap: 0.75rem;">
-          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 13.5h3.86a2.25 2.25 0 012.008 1.24l.885 1.77a2.25 2.25 0 002.007 1.24h1.98a2.25 2.25 0 002.007-1.24l.885-1.77a2.25 2.25 0 012.007-1.24h3.86m-18 0h18m-18 0v-7.5A2.25 2.25 0 012.25 6h19.5a2.25 2.25 0 012.25 2.25v7.5m-18 0v-7.5m18 0v7.5" /></svg>
-          <span style="font-weight: 600; font-size: 0.85rem; letter-spacing: 0.05em; text-transform: uppercase;">Other Products</span>
-        </div>
-        <span class="drawer-arrow">›</span>
-      </a>
-      <div class="drawer-submenu" id="mob-submenu-products">
-        <a href="#" class="drawer-submenu-item" data-tool="merge-pdf">Merge PDF</a>
-        <a href="#" class="drawer-submenu-item" data-tool="split-pdf">Split PDF</a>
-        <a href="#" class="drawer-submenu-item" data-tool="compress-pdf">Compress PDF</a>
-        <a href="#" class="drawer-submenu-item" data-tool="ocr-pdf">OCR PDF</a>
-        <a href="#" class="drawer-submenu-item" data-tool="pdf-to-word">PDF to Word</a>
-        <a href="#" class="drawer-submenu-item" data-tool="word-to-pdf">Word to PDF</a>
-      </div>
-    </div>
+const LOGGED_OUT_DRAWER_HTML = '<div style="display: flex; flex-direction: column; gap: 1.5rem; padding: 1.25rem 1rem; height: 100%; box-sizing: border-box; text-align: center; width: 100%;">' +
+  '<!-- Profile placeholder icon centered at top -->' +
+  '<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">' +
+    '<div style="width: 64px; height: 64px; border-radius: 50%; overflow: hidden; border: 1.5px solid var(--border-color); display: flex; align-items: center; justify-content: center; background: var(--bg-secondary); flex-shrink: 0; box-shadow: var(--shadow-soft);">' +
+      '<svg width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color: var(--text-secondary); background: var(--bg-secondary); border-radius: 50%; padding: 18%; box-sizing: border-box; display: block;">' +
+        '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />' +
+        '<circle cx="12" cy="7" r="4" />' +
+      '</svg>' +
+    '</div>' +
+    '<span style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Welcome, Guest!</span>' +
+  '</div>' +
+  '<!-- Login / Sign Up Actions stacked at top -->' +
+  '<div class="drawer-auth-actions" id="drawer-auth-actions" style="display: flex; flex-direction: column; gap: 0.75rem; width: 100%;">' +
+    '<button class="drawer-btn-login" id="mob-btn-login">Login</button>' +
+    '<button class="drawer-btn-signup" id="mob-btn-signup">Sign up</button>' +
+  '</div>' +
+  '<!-- Simple Navigation Links below auth actions -->' +
+  '<div class="drawer-menu-links" style="display: flex; flex-direction: column; gap: 0.5rem; width: 100%; border-top: 1px solid var(--border-color); padding-top: 1.25rem;">' +
+    '<!-- Pricing Link -->' +
+    '<a href="#" class="drawer-menu-link" id="mob-link-pricing" style="display: flex; align-items: center; gap: 0.75rem; text-decoration: none; padding: 0.75rem 0.5rem; border-radius: 0.375rem; color: var(--text-secondary); transition: background 0.15s ease;">' +
+      '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.5 8.5h19M2.5 12h19M2.5 15.5h19" /></svg>' +
+      '<span>Pricing</span>' +
+    '</a>' +
+    '<!-- Features Link -->' +
+    '<a href="#" class="drawer-menu-link" id="mob-link-features" style="display: flex; align-items: center; gap: 0.75rem; text-decoration: none; padding: 0.75rem 0.5rem; border-radius: 0.375rem; color: var(--text-secondary); transition: background 0.15s ease;">' +
+      '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" /></svg>' +
+      '<span>Features</span>' +
+    '</a>' +
+    '<!-- About us Link -->' +
+    '<a href="#" class="drawer-menu-link" id="mob-link-about" style="display: flex; align-items: center; gap: 0.75rem; text-decoration: none; padding: 0.75rem 0.5rem; border-radius: 0.375rem; color: var(--text-secondary); transition: background 0.15s ease;">' +
+      '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 111.063.852l-.708 2.836a.75.75 0 001.063.852l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" /></svg>' +
+      '<span>About us</span>' +
+    '</a>' +
+  '</div>' +
+'</div>';
 
-    <!-- Solutions Dropdown -->
-    <div>
-      <a href="#" class="drawer-menu-link drawer-dropdown-trigger" id="mob-trigger-solutions">
-        <div style="display: flex; align-items: center; gap: 0.75rem;">
-          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-          <span style="font-weight: 600; font-size: 0.85rem; letter-spacing: 0.05em; text-transform: uppercase;">Solutions</span>
-        </div>
-        <span class="drawer-arrow">›</span>
-      </a>
-      <div class="drawer-submenu" id="mob-submenu-solutions">
-        <a href="#" class="drawer-submenu-category" data-cat="organize">Organize PDF</a>
-        <a href="#" class="drawer-submenu-category" data-cat="optimize">Optimize PDF</a>
-        <a href="#" class="drawer-submenu-category" data-cat="convert">Convert PDF</a>
-        <a href="#" class="drawer-submenu-category" data-cat="edit">Edit PDF</a>
-        <a href="#" class="drawer-submenu-category" data-cat="security">PDF Security</a>
-      </div>
-    </div>
-
-    <!-- Applications Dropdown -->
-    <div>
-      <a href="#" class="drawer-menu-link drawer-dropdown-trigger" id="mob-trigger-apps">
-        <div style="display: flex; align-items: center; gap: 0.75rem;">
-          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25m18 0A2.25 2.25 0 0018.75 3H5.25A2.25 2.25 0 003 5.25m18 0V12a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 12V5.25" /></svg>
-          <span style="font-weight: 600; font-size: 0.85rem; letter-spacing: 0.05em; text-transform: uppercase;">Applications</span>
-        </div>
-        <span class="drawer-arrow">›</span>
-      </a>
-      <div class="drawer-submenu" id="mob-submenu-apps">
-        <a href="#" class="drawer-submenu-item" data-tool="ai-assistant">🤖 AI Assistant</a>
-        <a href="#" class="drawer-submenu-item" data-tool="upscale-image">🖼️ Upscale Image</a>
-        <a href="#" class="drawer-submenu-item" data-tool="remove-background">✂️ Remove BG</a>
-      </div>
-    </div>
-
-    <!-- Pricing Link -->
-    <a href="#" class="drawer-menu-link" id="mob-link-pricing">
-      <div style="display: flex; align-items: center; gap: 0.75rem;">
-        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.5 8.5h19M2.5 12h19M2.5 15.5h19" /></svg>
-        <span>Pricing</span>
-      </div>
-    </a>
-
-    <!-- Features Link -->
-    <a href="#" class="drawer-menu-link" id="mob-link-features">
-      <div style="display: flex; align-items: center; gap: 0.75rem;">
-        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" /></svg>
-        <span>Features</span>
-      </div>
-    </a>
-
-    <!-- About us Link -->
-    <a href="#" class="drawer-menu-link" id="mob-link-about">
-      <div style="display: flex; align-items: center; gap: 0.75rem;">
-        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 111.063.852l-.708 2.836a.75.75 0 001.063.852l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" /></svg>
-        <span>About us</span>
-      </div>
-    </a>
-  </div>
-  <div class="drawer-auth-actions" id="drawer-auth-actions">
-    <button class="drawer-btn-login" id="mob-btn-login">Login</button>
-    <button class="drawer-btn-signup" id="mob-btn-signup">Sign up</button>
-  </div>
-`;
-
-// Cumulative Size Session Tracking Helpers
 function getCumulativeUploadSize() {
   const size = safeSessionStorage.getItem('cumulative_upload_size');
   return size ? parseInt(size, 10) : 0;
@@ -203,8 +152,6 @@ function addCumulativeUploadSize(bytes) {
   const current = getCumulativeUploadSize();
   safeSessionStorage.setItem('cumulative_upload_size', current + bytes);
 }
-
-// Dev environment browser redirect helper
 function performCheckoutRedirect(url) {
   let targetUrl = url;
   if (targetUrl.startsWith('/') && window.location.port === '5173') {
@@ -900,6 +847,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   window.navigateToTool = navigateToTool;
   window.navigateToBlog = navigateToBlog;
   setupEventListeners();
+  setupMobileBottomNav();
   setupSignaturePad();
   await checkAuthSession();
   setupAuthEventListeners();
@@ -1060,10 +1008,25 @@ function closeAuthDrawer() {
   }
 }
 
+function syncMobileBottomNav(activeId) {
+  document.querySelectorAll('.mobile-nav-item').forEach(item => {
+    if (item.id === activeId) {
+      item.classList.add('active');
+    } else {
+      item.classList.remove('active');
+    }
+  });
+}
+
 function updatePricingDisplay() {
   const isYearly = pricingInterval === 'year';
-  const price = isYearly ? 4 : 7;
-  const periodText = isYearly ? '/ user / month (billed yearly)' : '/ user / month';
+  const unitPrice = isYearly ? 4 : 7;
+  const totalPrice = unitPrice * pricingSeats;
+  const totalYearlyBill = 48 * pricingSeats;
+
+  const periodText = isYearly
+    ? `/ month (billed $${totalYearlyBill} yearly for ${pricingSeats} seat${pricingSeats > 1 ? 's' : ''})`
+    : `/ month (for ${pricingSeats} seat${pricingSeats > 1 ? 's' : ''})`;
 
   // Update landing page
   const landPrice = document.getElementById('landing-premium-price');
@@ -1071,7 +1034,7 @@ function updatePricingDisplay() {
   const landToggle = document.getElementById('landing-pricing-toggle');
   const landInput = document.getElementById('input-landing-seats');
 
-  if (landPrice) landPrice.textContent = `$${price}`;
+  if (landPrice) landPrice.textContent = `$${totalPrice}`;
   if (landPeriod) landPeriod.textContent = periodText;
   if (landToggle) landToggle.checked = isYearly;
   if (landInput) landInput.value = pricingSeats;
@@ -1099,7 +1062,7 @@ function updatePricingDisplay() {
   const modalToggle = document.getElementById('modal-pricing-toggle');
   const modalInput = document.getElementById('input-modal-seats');
 
-  if (modalPrice) modalPrice.textContent = `$${price}`;
+  if (modalPrice) modalPrice.textContent = `$${totalPrice}`;
   if (modalPeriod) modalPeriod.textContent = periodText;
   if (modalToggle) modalToggle.checked = isYearly;
   if (modalInput) modalInput.value = pricingSeats;
@@ -1126,7 +1089,7 @@ function updatePricingDisplay() {
   const crmToggle = document.getElementById('crm-pricing-toggle');
   const crmInput = document.getElementById('input-crm-seats');
 
-  if (crmPrice) crmPrice.textContent = `$${price}`;
+  if (crmPrice) crmPrice.textContent = `$${totalPrice}`;
   if (crmPeriod) crmPeriod.textContent = periodText;
   if (crmToggle) crmToggle.checked = isYearly;
   if (crmInput) crmInput.value = pricingSeats;
@@ -2633,7 +2596,7 @@ function setupEventListeners() {
       const emailInput = document.getElementById('newsletter-email');
       const email = emailInput ? emailInput.value.trim() : '';
       if (email) {
-        showToast('Redirecting to Stripe checkout...', 'info');
+        showToast('Subscribing to newsletter...', 'info');
         try {
           const res = await fetch('/api/stripe/newsletter-checkout', {
             method: 'POST',
@@ -2644,16 +2607,13 @@ function setupEventListeners() {
           });
           const data = await res.json();
           if (!res.ok) {
-            throw new Error(data.error || 'Failed to initialize newsletter checkout');
+            throw new Error(data.error || 'Failed to subscribe to newsletter');
           }
-          if (data.url) {
-            window.location.href = data.url;
-          } else {
-            throw new Error('Checkout URL not received');
-          }
+          showToast('Successfully subscribed to the newsletter!', 'success');
+          if (emailInput) emailInput.value = '';
         } catch (err) {
           console.error(err);
-          showToast(err.message || 'Newsletter checkout failed.', 'error');
+          showToast(err.message || 'Newsletter subscription failed.', 'error');
         }
       }
     });
@@ -2753,6 +2713,11 @@ function stopDrawing() {
 
 // Navigation Tool Change Router
 function navigateToTool(tool) {
+  closeToolsDrawer();
+  closeAuthDrawer();
+  closeCRMDrawer();
+  syncMobileBottomNav('btn-mob-nav-tools');
+
   currentTool = tool;
   const meta = TOOL_META[tool];
   if (!meta) return;
@@ -2794,6 +2759,9 @@ function navigateToTool(tool) {
   const accDash = document.getElementById('account-dashboard-page');
   if (accDash) accDash.style.display = 'none';
 
+  const infoPage = document.getElementById('info-page');
+  if (infoPage) infoPage.style.display = 'none';
+
   document.getElementById('workspace-page').style.display = 'block';
   document.getElementById('btn-back-to-dashboard').style.display = 'flex';
 
@@ -2811,6 +2779,11 @@ function navigateToTool(tool) {
 }
 
 function navigateToDashboard() {
+  closeToolsDrawer();
+  closeAuthDrawer();
+  closeCRMDrawer();
+  syncMobileBottomNav('btn-mob-nav-home');
+
   currentTool = null;
   stopWebcamStream();
   clearWorkspace();
@@ -2830,6 +2803,9 @@ function navigateToDashboard() {
   const accDash = document.getElementById('account-dashboard-page');
   if (accDash) accDash.style.display = 'none';
 
+  const infoPage = document.getElementById('info-page');
+  if (infoPage) infoPage.style.display = 'none';
+
   const backBtn = document.getElementById('btn-back-to-dashboard');
   if (backBtn) backBtn.style.display = 'none';
 
@@ -2848,6 +2824,10 @@ function navigateToDashboard() {
    CRM ACCOUNTS DASHBOARD NAVIGATION LOGIC
    ========================================== */
 function navigateToAccountDashboard(tabName = 'profile') {
+  closeToolsDrawer();
+  closeAuthDrawer();
+  syncMobileBottomNav('btn-mob-nav-account');
+
   if (!currentUser) {
     showToast('Please log in to access your accounts dashboard.', 'info');
     showAuthModal('login');
@@ -2869,6 +2849,9 @@ function navigateToAccountDashboard(tabName = 'profile') {
 
   const pricingPage = document.getElementById('pricing-page');
   if (pricingPage) pricingPage.style.display = 'none';
+
+  const infoPage = document.getElementById('info-page');
+  if (infoPage) infoPage.style.display = 'none';
 
   const accDash = document.getElementById('account-dashboard-page');
   if (accDash) accDash.style.display = 'block';
@@ -2980,6 +2963,7 @@ function switchAccountTab(tabName) {
     renderCRMInvoices();
   } else if (tabName === 'admin') {
     loadCRMAdminInquiries();
+    loadCRMAdminSubscribers();
   }
 }
 window.switchAccountTab = switchAccountTab;
@@ -3068,6 +3052,89 @@ async function deleteCRMInquiry(id) {
   }
 }
 window.deleteCRMInquiry = deleteCRMInquiry;
+
+async function loadCRMAdminSubscribers() {
+  const tbody = document.getElementById('admin-subscribers-tbody');
+  if (!tbody) return;
+
+  tbody.innerHTML = `
+    <tr>
+      <td colspan="4" style="text-align: center; padding: 2rem; color: var(--text-muted);">Fetching newsletter subscribers...</td>
+    </tr>
+  `;
+
+  try {
+    const res = await fetch('/api/admin/subscribers', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to load newsletter subscribers');
+
+    const subscribers = data.subscribers || [];
+    if (subscribers.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="4" style="text-align: center; padding: 2rem; color: var(--text-muted);">No newsletter subscribers yet.</td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = subscribers.map(sub => {
+      const formattedDate = new Date(sub.createdAt).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+      return `
+        <tr style="border-bottom: 1px solid var(--border-color); color: var(--text-secondary);">
+          <td style="padding: 1rem 0.75rem; font-weight: 600; color: var(--text-primary);"><a href="mailto:${sub.email}" style="color: var(--accent-primary); text-decoration: none;">${sub.email}</a></td>
+          <td style="padding: 1rem 0.75rem;"><span style="background: rgba(16, 185, 129, 0.1); color: rgb(16, 185, 129); padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 600;">${sub.status}</span></td>
+          <td style="padding: 1rem 0.75rem; white-space: nowrap;">${formattedDate}</td>
+          <td style="padding: 1rem 0.75rem; text-align: center;">
+            <button onclick="deleteCRMSubscriber('${sub.id}')" class="btn-action" style="background: var(--accent-danger); border: none; padding: 0.35rem 0.75rem; font-size: 0.75rem; border-radius: 0.25rem; font-weight: 600; color: white; cursor: pointer;">
+              Unsubscribe
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+  } catch (err) {
+    console.error(err);
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="4" style="text-align: center; padding: 2rem; color: var(--accent-danger); font-weight: 600;">${err.message}</td>
+      </tr>
+    `;
+  }
+}
+window.loadCRMAdminSubscribers = loadCRMAdminSubscribers;
+
+async function deleteCRMSubscriber(id) {
+  if (!confirm('Are you sure you want to permanently unsubscribe/delete this subscriber?')) return;
+
+  try {
+    const res = await fetch(`/api/admin/subscribers/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to unsubscribe');
+
+    showToast('Subscriber removed successfully', 'success');
+    loadCRMAdminSubscribers();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+window.deleteCRMSubscriber = deleteCRMSubscriber;
 
 async function loadCRMTeamData() {
   if (!token) return;
@@ -3776,41 +3843,41 @@ function toggleSettingsPanels(tool) {
   if (TOOL_META[tool] && TOOL_META[tool].noUpload) {
     document.getElementById('settings-generic').style.display = 'none';
   } else {
-    document.getElementById('settings-generic').style.display = 'block';
+    document.getElementById('settings-generic').style.display = 'flex';
   }
 
   if (tool === 'split' || tool === 'extract-pages') {
-    document.getElementById('settings-split').style.display = 'block';
+    document.getElementById('settings-split').style.display = 'flex';
   } else if (tool === 'protect') {
-    document.getElementById('settings-protect').style.display = 'block';
+    document.getElementById('settings-protect').style.display = 'flex';
   } else if (tool === 'img-to-pdf' || tool === 'scan-to-pdf') {
-    document.getElementById('settings-img-to-pdf').style.display = 'block';
+    document.getElementById('settings-img-to-pdf').style.display = 'flex';
   } else if (tool === 'rotate') {
-    document.getElementById('settings-rotate').style.display = 'block';
+    document.getElementById('settings-rotate').style.display = 'flex';
   } else if (tool === 'html-to-pdf') {
-    document.getElementById('settings-html').style.display = 'block';
+    document.getElementById('settings-html').style.display = 'flex';
   } else if (tool === 'compress') {
-    document.getElementById('settings-compress').style.display = 'block';
+    document.getElementById('settings-compress').style.display = 'flex';
   } else if (tool === 'unlock') {
-    document.getElementById('settings-unlock').style.display = 'block';
+    document.getElementById('settings-unlock').style.display = 'flex';
   } else if (tool === 'watermark') {
-    document.getElementById('settings-watermark').style.display = 'block';
+    document.getElementById('settings-watermark').style.display = 'flex';
   } else if (tool === 'page-numbers') {
-    document.getElementById('settings-page-numbers').style.display = 'block';
+    document.getElementById('settings-page-numbers').style.display = 'flex';
   } else if (tool === 'sign') {
-    document.getElementById('settings-sign').style.display = 'block';
+    document.getElementById('settings-sign').style.display = 'flex';
   } else if (tool === 'redact') {
-    document.getElementById('settings-redact').style.display = 'block';
+    document.getElementById('settings-redact').style.display = 'flex';
   } else if (tool === 'crop') {
-    document.getElementById('settings-crop').style.display = 'block';
+    document.getElementById('settings-crop').style.display = 'flex';
   } else if (tool === 'ai-assistant') {
-    document.getElementById('settings-ai-assistant').style.display = 'block';
+    document.getElementById('settings-ai-assistant').style.display = 'flex';
   } else if (tool === 'remove-background') {
-    document.getElementById('settings-remove-background').style.display = 'block';
+    document.getElementById('settings-remove-background').style.display = 'flex';
   } else if (tool === 'upscale-image') {
-    document.getElementById('settings-upscale-image').style.display = 'block';
+    document.getElementById('settings-upscale-image').style.display = 'flex';
   } else if (tool === 'edit-pdf') {
-    document.getElementById('settings-edit-pdf').style.display = 'block';
+    document.getElementById('settings-edit-pdf').style.display = 'flex';
   }
 }
 
@@ -3966,8 +4033,8 @@ async function handleFilesSelected(fileList) {
   showOperationsArea();
   renderFilesList();
 
-  // Interactive preview render modes (split, remove, organize, sign, redact, edit, crop)
-  const previewModes = ['split', 'extract-pages', 'remove-pages', 'organize-pdf', 'sign', 'redact', 'edit-pdf', 'crop', 'pdf-forms'];
+  // Interactive preview render modes (split, remove, organize, sign, redact, edit, crop, rotate)
+  const previewModes = ['split', 'extract-pages', 'remove-pages', 'organize-pdf', 'sign', 'redact', 'edit-pdf', 'crop', 'pdf-forms', 'rotate'];
 
   if (previewModes.includes(currentTool) && uploadedFiles.length > 0) {
     document.getElementById('previews-container').style.display = 'block';
@@ -4067,6 +4134,25 @@ function renderPreviewsGrid() {
     if (currentTool === 'organize-pdf') {
       card.setAttribute('draggable', 'true');
       setupDragAndDropEvents(card, index);
+    }
+
+    // Wire up individual rotate click button
+    if (currentTool === 'rotate') {
+      const rotateBtn = card.querySelector('.btn-rotate-page');
+      if (rotateBtn) {
+        rotateBtn.addEventListener('click', (e) => {
+          e.stopPropagation(); // prevent card selection toggle
+          const currentRotation = pageRotations[index] || 0;
+          const nextRotation = (currentRotation + 90) % 360;
+          pageRotations[index] = nextRotation;
+
+          const img = card.querySelector('.preview-thumbnail-wrapper img');
+          if (img) {
+            img.style.transform = `rotate(${nextRotation}deg)`;
+          }
+          updateProcessButtonState();
+        });
+      }
     }
 
     // Interactive checklist toggle
@@ -5357,8 +5443,8 @@ function updateAuthNav(user) {
 
     if (drawerBody) {
       drawerBody.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 1.5rem; padding: 1.25rem 1rem; height: 100%; justify-content: space-between; box-sizing: border-box;">
-          <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+        <div style="display: flex; flex-direction: column; height: 100%; box-sizing: border-box;">
+          <div style="flex: 1; overflow-y: auto; padding: 1.25rem 1rem; display: flex; flex-direction: column; gap: 1.25rem;">
             <!-- Profile Header -->
             <div id="mob-drawer-profile-header" style="display: flex; align-items: center; gap: 1rem; padding-bottom: 1.25rem; border-bottom: 1px solid var(--border-color); cursor: pointer;">
               <div style="width: 54px; height: 54px; border-radius: 50%; overflow: hidden; border: 1.5px solid var(--border-color); display: flex; align-items: center; justify-content: center; background: var(--bg-secondary); flex-shrink: 0;">
@@ -5371,7 +5457,7 @@ function updateAuthNav(user) {
               </div>
             </div>
             
-            <!-- Menu Options -->
+            <!-- Menu Options (Above Line) -->
             <div style="display: flex; flex-direction: column; gap: 0.5rem;">
               <a href="#" class="drawer-menu-link" id="mob-btn-settings" style="display: flex; align-items: center; gap: 0.75rem; text-decoration: none; padding: 0.75rem 0.5rem; border-radius: 0.375rem; color: var(--text-secondary); transition: background 0.15s ease;">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -5386,9 +5472,67 @@ function updateAuthNav(user) {
                 <span>Upgrade to Premium</span>
               </a>
             </div>
+
+            <!-- Divider Line -->
+            <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 0.5rem 0;" />
+
+            <!-- Support / Legal Pages Links -->
+            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+              <!-- Pricing -->
+              <a href="#" class="drawer-menu-link" id="mob-link-pricing" style="display: flex; align-items: center; gap: 0.75rem; text-decoration: none; padding: 0.75rem 0.5rem; border-radius: 0.375rem; color: var(--text-secondary); transition: background 0.15s ease;">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.5 8.5h19M2.5 12h19M2.5 15.5h19" /></svg>
+                <span>Pricing</span>
+              </a>
+              <!-- Tech Blog -->
+              <a href="#" class="drawer-menu-link" id="mob-link-blog" style="display: flex; align-items: center; gap: 0.75rem; text-decoration: none; padding: 0.75rem 0.5rem; border-radius: 0.375rem; color: var(--text-secondary); transition: background 0.15s ease;">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6M7 12h4" /></svg>
+                <span>Tech Blog</span>
+              </a>
+              <!-- Platform Features -->
+              <a href="#" class="drawer-menu-link mob-info-link" data-page="features" style="display: flex; align-items: center; gap: 0.75rem; text-decoration: none; padding: 0.75rem 0.5rem; border-radius: 0.375rem; color: var(--text-secondary); transition: background 0.15s ease;">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" /></svg>
+                <span>Platform Features</span>
+              </a>
+              <!-- Tools/documentation -->
+              <a href="#" class="drawer-menu-link mob-info-link" data-page="documentation" style="display: flex; align-items: center; gap: 0.75rem; text-decoration: none; padding: 0.75rem 0.5rem; border-radius: 0.375rem; color: var(--text-secondary); transition: background 0.15s ease;">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg>
+                <span>Tools/documentation</span>
+              </a>
+              <!-- FAQ -->
+              <a href="#" class="drawer-menu-link mob-info-link" data-page="faq" style="display: flex; align-items: center; gap: 0.75rem; text-decoration: none; padding: 0.75rem 0.5rem; border-radius: 0.375rem; color: var(--text-secondary); transition: background 0.15s ease;">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" /></svg>
+                <span>FAQ</span>
+              </a>
+              <!-- Security -->
+              <a href="#" class="drawer-menu-link mob-info-link" data-page="security" style="display: flex; align-items: center; gap: 0.75rem; text-decoration: none; padding: 0.75rem 0.5rem; border-radius: 0.375rem; color: var(--text-secondary); transition: background 0.15s ease;">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.598-3.75h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>
+                <span>Security & Trust</span>
+              </a>
+              <!-- Press Kit -->
+              <a href="#" class="drawer-menu-link mob-info-link" data-page="press" style="display: flex; align-items: center; gap: 0.75rem; text-decoration: none; padding: 0.75rem 0.5rem; border-radius: 0.375rem; color: var(--text-secondary); transition: background 0.15s ease;">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6M7 12h4" /></svg>
+                <span>Press Kit</span>
+              </a>
+              <!-- Privacy Policy -->
+              <a href="#" class="drawer-menu-link mob-info-link" data-page="privacy" style="display: flex; align-items: center; gap: 0.75rem; text-decoration: none; padding: 0.75rem 0.5rem; border-radius: 0.375rem; color: var(--text-secondary); transition: background 0.15s ease;">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" /></svg>
+                <span>Privacy Policy</span>
+              </a>
+              <!-- Terms & Conditions -->
+              <a href="#" class="drawer-menu-link mob-info-link" data-page="terms" style="display: flex; align-items: center; gap: 0.75rem; text-decoration: none; padding: 0.75rem 0.5rem; border-radius: 0.375rem; color: var(--text-secondary); transition: background 0.15s ease;">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
+                <span>Terms & Conditions</span>
+              </a>
+              <!-- About Us -->
+              <a href="#" class="drawer-menu-link mob-info-link" data-page="about" style="display: flex; align-items: center; gap: 0.75rem; text-decoration: none; padding: 0.75rem 0.5rem; border-radius: 0.375rem; color: var(--text-secondary); transition: background 0.15s ease;">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 111.063.852l-.708 2.836a.75.75 0 001.063.852l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" /></svg>
+                <span>About us</span>
+              </a>
+            </div>
           </div>
           
-          <div style="display: flex; flex-direction: column; gap: 0.5rem; border-top: 1px solid var(--border-color); padding-top: 1rem; width: 100%;">
+          <!-- Anchor Log out to bottom -->
+          <div style="border-top: 1px solid var(--border-color); padding: 1rem; width: 100%; box-sizing: border-box;">
             <a href="#" class="drawer-menu-link" id="mob-btn-logout" style="display: flex; align-items: center; gap: 0.75rem; text-decoration: none; padding: 0.75rem 0.5rem; border-radius: 0.375rem; color: var(--accent-danger); transition: background 0.15s ease;">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
               <span>Log out</span>
@@ -5486,6 +5630,38 @@ function updateAuthNav(user) {
     if (mobDrawerHeader) {
       mobDrawerHeader.addEventListener('click', settingsAction);
     }
+
+    // Mobile additional links binding
+    const mobLinkPricing = document.getElementById('mob-link-pricing');
+    if (mobLinkPricing) {
+      mobLinkPricing.addEventListener('click', (e) => {
+        e.preventDefault();
+        closeAuthDrawer();
+        if (currentUser) {
+          navigateToAccountDashboard('billing');
+        } else {
+          navigateToDashboard();
+          const pricing = document.getElementById('pricing-grid') || document.querySelector('.premium-stats-grid');
+          if (pricing) pricing.scrollIntoView({ behavior: 'smooth' });
+        }
+      });
+    }
+
+    const mobLinkBlog = document.getElementById('mob-link-blog');
+    if (mobLinkBlog) {
+      mobLinkBlog.addEventListener('click', (e) => {
+        e.preventDefault();
+        closeAuthDrawer();
+        navigateToBlog();
+      });
+    }
+
+    document.querySelectorAll('.mob-info-link').forEach(item => {
+      item.addEventListener('click', (e) => {
+        e.preventDefault();
+        navigateToInfoPage(item.getAttribute('data-page'));
+      });
+    });
 
   } else {
     // Logged-out state
@@ -6514,6 +6690,11 @@ function setupBlogEventListeners() {
 }
 
 function navigateToBlog() {
+  closeToolsDrawer();
+  closeAuthDrawer();
+  closeCRMDrawer();
+  syncMobileBottomNav('btn-mob-nav-blog');
+
   currentTool = null;
   stopWebcamStream();
   clearWorkspace();
@@ -6530,6 +6711,9 @@ function navigateToBlog() {
 
   const accDash = document.getElementById('account-dashboard-page');
   if (accDash) accDash.style.display = 'none';
+
+  const infoPage = document.getElementById('info-page');
+  if (infoPage) infoPage.style.display = 'none';
 
   document.getElementById('blog-page').style.display = 'block';
   document.getElementById('btn-back-to-dashboard').style.display = 'flex';
@@ -7353,7 +7537,7 @@ const INFO_PAGES_DATA = {
 
       <h3 style="font-size: 1.35rem; font-weight: 800; color: var(--text-primary); border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 1.5rem; text-align: left;">🏢 Internal Operations & Compliance Standards</h3>
       
-      <div style="overflow-x: auto; width: 100%; border: 1px solid var(--border-color); border-radius: 0.75rem; box-shadow: var(--shadow-soft); margin-bottom: 2.5rem; text-align: left;">
+      <div class="table-responsive-wrapper" style="overflow-x: auto; width: 100%; border: 1px solid var(--border-color); border-radius: 0.75rem; box-shadow: var(--shadow-soft); margin-bottom: 2.5rem; text-align: left;">
         <table style="width: 100%; border-collapse: collapse; min-width: 600px; background: var(--bg-secondary);">
           <thead>
             <tr style="background: var(--bg-primary); border-bottom: 1px solid var(--border-color); font-size: 0.8rem; text-transform: uppercase;">
@@ -7743,6 +7927,11 @@ const INFO_PAGES_DATA = {
 };
 
 function navigateToInfoPage(pageKey) {
+  closeToolsDrawer();
+  closeAuthDrawer();
+  closeCRMDrawer();
+  syncMobileBottomNav('');
+
   currentTool = null;
   stopWebcamStream();
   clearWorkspace();
@@ -7800,4 +7989,35 @@ function loadInfoPageContent(pageKey) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 window.loadInfoPageContent = loadInfoPageContent;
+
+function setupMobileBottomNav() {
+  const btnHome = document.getElementById('btn-mob-nav-home');
+  if (btnHome) btnHome.addEventListener('click', (e) => {
+    e.preventDefault();
+    navigateToDashboard();
+  });
+
+  const btnTools = document.getElementById('btn-mob-nav-tools');
+  if (btnTools) btnTools.addEventListener('click', (e) => {
+    e.preventDefault();
+    openToolsDrawer();
+  });
+
+  const btnBlog = document.getElementById('btn-mob-nav-blog');
+  if (btnBlog) btnBlog.addEventListener('click', (e) => {
+    e.preventDefault();
+    navigateToBlog();
+  });
+
+  const btnAccount = document.getElementById('btn-mob-nav-account');
+  if (btnAccount) btnAccount.addEventListener('click', (e) => {
+    e.preventDefault();
+    if (currentUser) {
+      navigateToAccountDashboard();
+    } else {
+      showAuthModal('login');
+    }
+  });
+}
+window.setupMobileBottomNav = setupMobileBottomNav;
 

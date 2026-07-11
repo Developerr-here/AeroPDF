@@ -18,9 +18,11 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { createRequire } from 'module';
 import { OAuth2Client } from 'google-auth-library';
+import { PDFParse } from 'pdf-parse';
 const require = createRequire(import.meta.url);
-const pdfParse = require('pdf-parse');
 const mammoth = require('mammoth');
+const officeParser = require('officeparser');
+const PptxGenJS = require('pptxgenjs');
 import { User, BlogPost, CollaborationEmail, NewsletterSubscriber, ContactInquiry, syncDatabase } from './db.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -908,7 +910,7 @@ app.post('/api/stripe/blog-checkout', authenticateToken, async (req, res) => {
   }
 });
 
-// Route: Paid newsletter subscription checkout session
+// Route: Newsletter subscription - directly saving to database (free)
 app.post('/api/stripe/newsletter-checkout', async (req, res) => {
   try {
     const { email } = req.body;
@@ -916,55 +918,19 @@ app.post('/api/stripe/newsletter-checkout', async (req, res) => {
       return res.status(400).json({ error: 'Email is required for newsletter subscription.' });
     }
 
-    const isMock = STRIPE_SECRET_KEY === 'sk_test_mockstripekey';
-    if (isMock) {
-      const mockUrl = `/api/stripe/mock-checkout?type=newsletter&email=${encodeURIComponent(email)}&success_url=${encodeURIComponent(req.headers.origin || 'http://localhost:5173')}/?payment=newsletter-success`;
-      return res.json({ url: mockUrl });
-    }
+    const emailLower = email.toLowerCase().trim();
+    
+    // Save/Upsert to database
+    await NewsletterSubscriber.upsert({
+      email: emailLower,
+      status: 'active'
+    });
 
-    // Try to find if user has a stripe_customer_id already
-    let customerId = null;
-    const user = await User.findOne({ where: { email: email.toLowerCase() } });
-    if (user && user.stripe_customer_id) {
-      customerId = user.stripe_customer_id;
-    }
-
-    const sessionData = {
-      payment_method_types: ['card'],
-      line_items: [{
-        price_data: {
-          currency: 'usd',
-          product_data: {
-            name: 'pdfbundles Premium Newsletter Subscription',
-            description: 'Stay ahead with weekly PDF tool guides, updates, and templates.'
-          },
-          unit_amount: 500, // $5.00 USD
-          recurring: {
-            interval: 'month'
-          }
-        },
-        quantity: 1
-      }],
-      mode: 'subscription',
-      success_url: `${req.headers.origin || 'http://localhost:5173'}/?payment=newsletter-success`,
-      cancel_url: `${req.headers.origin || 'http://localhost:5173'}/?payment=cancel`,
-      metadata: {
-        type: 'newsletter',
-        email: email.toLowerCase()
-      }
-    };
-
-    if (customerId) {
-      sessionData.customer = customerId;
-    } else {
-      sessionData.customer_email = email.toLowerCase();
-    }
-
-    const session = await stripe.checkout.sessions.create(sessionData);
-    res.json({ url: session.url });
+    console.log(`[Newsletter] Free subscription successful for ${emailLower}.`);
+    res.json({ success: true, message: 'Successfully subscribed to the newsletter!' });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Stripe newsletter checkout failed: ' + err.message, message: err.message });
+    console.error('[Newsletter Error]', err);
+    res.status(500).json({ error: 'Failed to subscribe to the newsletter: ' + err.message });
   }
 });
 
@@ -1343,6 +1309,38 @@ app.delete('/api/admin/inquiries/:id', authenticateToken, async (req, res) => {
   }
 });
 
+// Admin newsletter subscribers fetch
+app.get('/api/admin/subscribers', authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.id);
+    if (!user || user.role !== 'admin') {
+      return res.status(403).json({ error: 'Access denied. Administrator privileges required.' });
+    }
+    const subscribers = await NewsletterSubscriber.findAll({ order: [['createdAt', 'DESC']] });
+    res.json({ subscribers });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to retrieve newsletter subscribers.' });
+  }
+});
+
+// Admin newsletter subscriber deletion / unsubscribe
+app.delete('/api/admin/subscribers/:id', authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.id);
+    if (!user || user.role !== 'admin') {
+      return res.status(403).json({ error: 'Access denied. Administrator privileges required.' });
+    }
+    const subscriber = await NewsletterSubscriber.findByPk(req.params.id);
+    if (!subscriber) return res.status(404).json({ error: 'Subscriber not found.' });
+    await subscriber.destroy();
+    res.json({ success: true, message: 'Subscriber deleted successfully.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to delete subscriber.' });
+  }
+});
+
 // Admin manual account plan override configuration API
 app.post('/api/admin/set-plan', authenticateToken, async (req, res) => {
   const { email, plan, seats, interval, customFeatures, features, role } = req.body;
@@ -1564,8 +1562,8 @@ app.post('/api/ai/assistant', upload.single('file'), checkUploadLimit, verifyAIS
     // Stream text parsing from file
     let pdfData;
     try {
-      const dataBuffer = fs.readFileSync(file.path);
-      pdfData = await pdfParse(dataBuffer);
+      const parser = new PDFParse({ data: new Uint8Array(dataBuffer) });
+      pdfData = await parser.getText();
     } catch (parseErr) {
       fs.unlink(file.path, () => {});
       console.error('[PDF Parse Error]:', parseErr);
@@ -1685,8 +1683,8 @@ app.post('/api/ai/summarize', upload.single('file'), checkUploadLimit, verifyAIS
     // Stream text parsing from file
     let pdfData;
     try {
-      const dataBuffer = fs.readFileSync(file.path);
-      pdfData = await pdfParse(dataBuffer);
+      const parser = new PDFParse({ data: new Uint8Array(dataBuffer) });
+      pdfData = await parser.getText();
     } catch (parseErr) {
       fs.unlink(file.path, () => {});
       console.error('[PDF Parse Error]:', parseErr);
@@ -1766,8 +1764,8 @@ app.post('/api/ai/translate', upload.single('file'), checkUploadLimit, verifyAIS
 
     let pdfData;
     try {
-      const dataBuffer = fs.readFileSync(file.path);
-      pdfData = await pdfParse(dataBuffer);
+      const parser = new PDFParse({ data: new Uint8Array(dataBuffer) });
+      pdfData = await parser.getText();
     } catch (parseErr) {
       fs.unlink(file.path, () => {});
       console.error('[PDF Parse Error]:', parseErr);
@@ -2408,7 +2406,80 @@ app.post('/api/office-to-pdf', upload.single('file'), checkUploadLimit, apiLimit
       return res.send(Buffer.from(bytes));
     }
 
-    // Fallback for non-docx/non-xlsx office files (pptx)
+    // Support PPTX to PDF using officeparser text extraction
+    const isPptx = file.originalname.toLowerCase().endsWith('.pptx') ||
+                   file.originalname.toLowerCase().endsWith('.ppt');
+
+    if (isPptx) {
+      let extractedText = '';
+      try {
+        const parsed = await officeParser.parseOffice(file.path, { fileType: 'pptx' });
+        extractedText = parsed.toText();
+      } catch (parseErr) {
+        console.warn('PPTX parsing failed:', parseErr.message);
+        extractedText = 'Failed to extract text from PowerPoint slides.';
+      }
+
+      fs.unlink(file.path, () => {});
+
+      const pdfDoc = await PDFDocument.create();
+      const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+      const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+      const fontSize = 10;
+      const lineHeight = 15;
+      const margin = 50;
+      const pageWidth = 595.28;
+      const pageHeight = 841.89;
+      const maxTextWidth = pageWidth - (margin * 2);
+
+      let page = pdfDoc.addPage([pageWidth, pageHeight]);
+      let y = pageHeight - margin;
+
+      // Draw title
+      page.drawText(`PowerPoint Presentation PDF Export: ${file.originalname}`, { x: margin, y, size: 12, font: fontBold, color: rgb(0.12, 0.16, 0.3) });
+      y -= 25;
+
+      const paragraphs = sanitizeWinAnsi(extractedText).split('\n');
+      for (const paragraph of paragraphs) {
+        const trimmed = paragraph.trim();
+        if (!trimmed) continue;
+
+        const words = trimmed.split(' ');
+        let currentLine = '';
+
+        for (const word of words) {
+          const testLine = currentLine ? `${currentLine} ${word}` : word;
+          const width = font.widthOfTextAtSize(testLine, fontSize);
+          if (width > maxTextWidth) {
+            if (y - lineHeight < margin) {
+              page = pdfDoc.addPage([pageWidth, pageHeight]);
+              y = pageHeight - margin;
+            }
+            page.drawText(currentLine, { x: margin, y, size: fontSize, font });
+            y -= lineHeight;
+            currentLine = word;
+          } else {
+            currentLine = testLine;
+          }
+        }
+
+        if (currentLine) {
+          if (y - lineHeight < margin) {
+            page = pdfDoc.addPage([pageWidth, pageHeight]);
+            y = pageHeight - margin;
+          }
+          page.drawText(currentLine, { x: margin, y, size: fontSize, font });
+          y -= lineHeight;
+        }
+        y -= lineHeight * 0.5; // paragraph spacing
+      }
+
+      const bytes = await pdfDoc.save();
+      res.setHeader('Content-Type', 'application/pdf');
+      return res.send(Buffer.from(bytes));
+    }
+
+    // Fallback for other non-docx/non-xlsx office files (e.g. legacy formats)
     fs.unlink(file.path, () => {});
     const pdfDoc = await PDFDocument.create();
     const page = pdfDoc.addPage([595.28, 841.89]);
@@ -2433,29 +2504,92 @@ app.post('/api/office-to-pdf', upload.single('file'), checkUploadLimit, apiLimit
 app.post('/api/html-to-pdf', apiLimiter, async (req, res) => {
   try {
     const { html, url, mode } = req.body;
-    const pdfDoc = await PDFDocument.create();
-    const page = pdfDoc.addPage([595.28, 841.89]);
-    const fontTitle = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-    const fontBody = await pdfDoc.embedFont(StandardFonts.Helvetica);
-
-    page.drawText('HTML to PDF Compiled Output', { x: 50, y: 760, size: 18, font: fontTitle, color: rgb(0.39, 0.4, 0.95) });
+    let extractedText = '';
 
     if (mode === 'url') {
-      page.drawText(`Source URL: ${url}`, { x: 50, y: 720, size: 11, font: fontBody, color: rgb(0.2, 0.6, 0.4) });
+      if (!url) return res.status(400).json({ error: 'URL is required.' });
+      try {
+        const fetchRes = await fetch(url);
+        if (!fetchRes.ok) throw new Error(`Status ${fetchRes.status}`);
+        const htmlContent = await fetchRes.text();
+        extractedText = htmlContent
+          .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '') // strip style blocks
+          .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '') // strip script blocks
+          .replace(/<[^>]*>/g, ' ') // strip remaining tags
+          .replace(/\s+/g, ' ') // collapse spacing
+          .trim();
+      } catch (fetchErr) {
+        console.error('HTML fetch failed:', fetchErr);
+        extractedText = `Failed to fetch or compile content from URL: ${url}\nError: ${fetchErr.message}`;
+      }
     } else {
-      page.drawText(`HTML Source Code Compiled:`, { x: 50, y: 720, size: 11, font: fontTitle });
-      const lines = (html || '').substring(0, 1000).split('\n');
-      let yPos = 680;
-      lines.slice(0, 20).forEach(line => {
-        page.drawText(line.trim(), { x: 50, y: yPos, size: 9, font: fontBody, color: rgb(0.1, 0.1, 0.1) });
-        yPos -= 20;
-      });
+      if (!html) return res.status(400).json({ error: 'HTML code is required.' });
+      extractedText = html
+        .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '') // strip style blocks
+        .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '') // strip script blocks
+        .replace(/<[^>]*>/g, ' ') // strip remaining tags
+        .replace(/\s+/g, ' ') // collapse spacing
+        .trim();
+    }
+
+    const pdfDoc = await PDFDocument.create();
+    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+    const fontSize = 10;
+    const lineHeight = 15;
+    const margin = 50;
+    const pageWidth = 595.28;
+    const pageHeight = 841.89;
+    const maxTextWidth = pageWidth - (margin * 2);
+
+    let page = pdfDoc.addPage([pageWidth, pageHeight]);
+    let y = pageHeight - margin;
+
+    // Draw header
+    const titleText = mode === 'url' ? `HTML Webpage Export: ${url}` : 'Compiled HTML Source Code';
+    page.drawText(titleText, { x: margin, y, size: 12, font: fontBold, color: rgb(0.12, 0.16, 0.3) });
+    y -= 30;
+
+    const paragraphs = sanitizeWinAnsi(extractedText).split('\n');
+    for (const paragraph of paragraphs) {
+      const trimmed = paragraph.trim();
+      if (!trimmed) continue;
+
+      const words = trimmed.split(' ');
+      let currentLine = '';
+
+      for (const word of words) {
+        const testLine = currentLine ? `${currentLine} ${word}` : word;
+        const width = font.widthOfTextAtSize(testLine, fontSize);
+        if (width > maxTextWidth) {
+          if (y - lineHeight < margin) {
+            page = pdfDoc.addPage([pageWidth, pageHeight]);
+            y = pageHeight - margin;
+          }
+          page.drawText(currentLine, { x: margin, y, size: fontSize, font });
+          y -= lineHeight;
+          currentLine = word;
+        } else {
+          currentLine = testLine;
+        }
+      }
+
+      if (currentLine) {
+        if (y - lineHeight < margin) {
+          page = pdfDoc.addPage([pageWidth, pageHeight]);
+          y = pageHeight - margin;
+        }
+        page.drawText(currentLine, { x: margin, y, size: fontSize, font });
+        y -= lineHeight;
+      }
+      y -= lineHeight * 0.5; // paragraph space
     }
 
     const bytes = await pdfDoc.save();
     res.setHeader('Content-Type', 'application/pdf');
     res.send(Buffer.from(bytes));
   } catch (err) {
+    console.error('[HTML-TO-PDF Error]', err);
     res.status(500).json({ error: 'HTML compilation failed.' });
   }
 });
@@ -2500,9 +2634,106 @@ app.post('/api/pdf-to-office', upload.single('file'), checkUploadLimit, apiLimit
       res.setHeader('Content-Disposition', 'attachment; filename="converted-data.csv"');
       return res.send(Buffer.from(csvLines.join('\n'), 'utf-8'));
     } else {
-      const wordHtml = `<html><body><h1>Extracted Content: ${title}</h1><p>Pages: ${pageCount}</p></body></html>`;
-      res.setHeader('Content-Type', 'application/msword');
-      return res.send(Buffer.from(wordHtml));
+      let extractedText = '';
+      try {
+        const parser = new PDFParse({ data: new Uint8Array(buffer) });
+        const pdfData = await parser.getText();
+        extractedText = pdfData.text || '';
+      } catch (parseErr) {
+        console.warn('PDF parsing failed during Word/PPT export:', parseErr.message);
+        extractedText = 'Failed to extract text from this PDF file.';
+      }
+
+      // Format extracted lines into paragraph block HTML
+      const paragraphsHtml = extractedText.split('\n')
+        .map(line => line.trim() ? `<p style="font-family: sans-serif; font-size: 11pt; line-height: 1.5; color: #1e293b; margin-bottom: 12px;">${line.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>` : '')
+        .filter(Boolean)
+        .join('\n');
+
+      const wordHtml = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head><meta charset="utf-8"><title>${title}</title></head>
+        <body style="font-family: Arial, sans-serif; padding: 1.5in; max-width: 600px; margin: auto;">
+          <h1 style="font-size: 24pt; color: #0f172a; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; border-bottom: 2px solid #e2e8f0; padding-bottom: 12px; margin-bottom: 18px;">${title}</h1>
+          <p style="color: #64748b; font-size: 9pt; margin-bottom: 24px; font-style: italic;">Converted from PDF via pdfbundles on ${new Date().toLocaleDateString()}</p>
+          ${paragraphsHtml}
+        </body>
+        </html>
+      `;
+
+      if (format === 'pptx') {
+        const pptx = new PptxGenJS();
+        pptx.title = title;
+
+        const paragraphs = extractedText.split('\n')
+          .map(line => line.trim())
+          .filter(Boolean);
+
+        const maxParagraphsPerSlide = 4;
+        for (let i = 0; i < paragraphs.length; i += maxParagraphsPerSlide) {
+          const slide = pptx.addSlide();
+          slide.addText(title, {
+            x: 0.5,
+            y: 0.4,
+            w: 9.0,
+            h: 0.5,
+            fontSize: 16,
+            bold: true,
+            color: '3b82f6',
+            fontFace: 'Arial'
+          });
+
+          const slideNum = Math.floor(i / maxParagraphsPerSlide) + 1;
+          slide.addText(`Slide ${slideNum}`, {
+            x: 8.5,
+            y: 5.2,
+            w: 1.0,
+            h: 0.3,
+            fontSize: 9,
+            color: '64748b',
+            align: 'right'
+          });
+
+          const slideParagraphs = paragraphs.slice(i, i + maxParagraphsPerSlide);
+          const slideText = slideParagraphs.join('\n\n');
+
+          slide.addText(slideText, {
+            x: 0.5,
+            y: 1.1,
+            w: 9.0,
+            h: 3.8,
+            fontSize: 11,
+            color: '1e293b',
+            fontFace: 'Arial',
+            align: 'left',
+            valign: 'top',
+            lineSpacing: 16
+          });
+        }
+
+        if (paragraphs.length === 0) {
+          const slide = pptx.addSlide();
+          slide.addText('No extractable text content found in original document.', {
+            x: 0.5,
+            y: 1.5,
+            w: 9.0,
+            h: 2.0,
+            fontSize: 12,
+            color: '64748b',
+            fontFace: 'Arial',
+            align: 'center'
+          });
+        }
+
+        const pptxBuffer = await pptx.write('nodebuffer');
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.presentationml.presentation');
+        res.setHeader('Content-Disposition', `attachment; filename="${file.originalname.replace(/\.[^/.]+$/, "")}.pptx"`);
+        return res.send(pptxBuffer);
+      } else {
+        res.setHeader('Content-Type', 'application/msword');
+        res.setHeader('Content-Disposition', `attachment; filename="${file.originalname.replace(/\.[^/.]+$/, "")}.doc"`);
+        return res.send(Buffer.from(wordHtml));
+      }
     }
   } catch (err) {
     cleanTempFiles(req);
