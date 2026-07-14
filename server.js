@@ -483,23 +483,34 @@ const verifyAISubscriptionAndCredits = async (req, res, next) => {
   let effectiveUser = null;
   let planName = 'free';
 
+  // Calculate the AI credit cost dynamically depending on the route
+  const getAICostForRoute = (path) => {
+    if (path.includes('/remove-background')) return 500; // Image background removal costs 500 credits
+    if (path.includes('/upscale')) return 450;           // Image upscaling costs 450 credits
+    return 5; // Default text tools cost 5 credits (Summarize, Chat assistant, Translate)
+  };
+
+  const cost = getAICostForRoute(req.path);
+
   if (token) {
     try {
       const decoded = jwt.verify(token, JWT_SECRET);
       const dbUser = await User.findByPk(decoded.id);
       if (dbUser) {
+        // Resolve subscription plan using resolved.user (owner/subscriber)
         const resolved = await resolveEffectivePlanAndUser(dbUser);
         planName = resolved.plan;
-        effectiveUser = resolved.user;
-
-        if (checkAISubscription(effectiveUser)) {
-          const limit = getAICreditLimit(planName, effectiveUser);
-          const used = effectiveUser.ai_credits_used || 0;
-          if (used < limit) {
+        
+        // If the resolved subscriber has access, allow the logged-in user to use credits separately
+        if (checkAISubscription(resolved.user)) {
+          effectiveUser = dbUser; // Separate credit count: track on the logged-in user directly!
+          const limit = getAICreditLimit(planName, dbUser);
+          const used = dbUser.ai_credits_used || 0;
+          if (used + cost <= limit) {
             isAllowed = true;
           } else {
             cleanTempFiles(req);
-            return res.status(403).json({ error: `AI Monthly Credits limit of ${limit} reached. Please contact support or upgrade your plan.` });
+            return res.status(403).json({ error: `Insufficient AI Credits. This request requires ${cost} credits, but you only have ${limit - used} credits remaining. Please upgrade or contact support.` });
           }
         }
       }
@@ -508,11 +519,11 @@ const verifyAISubscriptionAndCredits = async (req, res, next) => {
 
   if (!isAllowed) {
     cleanTempFiles(req);
-    return res.status(403).json({ error: 'AI tools (including Summarize, Chat, Translate, and Notes) are only available on the Premium or Business plan. Please upgrade to continue.' });
+    return res.status(403).json({ error: 'AI tools (including Summarize, Chat, Translate, Background Remover, and Upscaler) are only available on the Premium or Business plan. Please upgrade to continue.' });
   }
 
   if (effectiveUser) {
-    effectiveUser.ai_credits_used = (effectiveUser.ai_credits_used || 0) + 1;
+    effectiveUser.ai_credits_used = (effectiveUser.ai_credits_used || 0) + cost;
     await effectiveUser.save();
     req.user = { id: effectiveUser.id, email: effectiveUser.email };
   }
@@ -1839,7 +1850,7 @@ Set your \`GROQ_API_KEY\` in your environment variables to enable live translati
    AI IMAGE INTELLIGENCE SYSTEM
    ========================================== */
 
-app.post('/api/image/remove-background', upload.single('file'), checkUploadLimit, apiLimiter, async (req, res) => {
+app.post('/api/image/remove-background', upload.single('file'), checkUploadLimit, verifyAISubscriptionAndCredits, apiLimiter, async (req, res) => {
   let fileBuffer;
   try {
     const file = req.file;
@@ -1894,7 +1905,7 @@ app.post('/api/image/remove-background', upload.single('file'), checkUploadLimit
   }
 });
 
-app.post('/api/image/upscale', upload.single('file'), checkUploadLimit, apiLimiter, async (req, res) => {
+app.post('/api/image/upscale', upload.single('file'), checkUploadLimit, verifyAISubscriptionAndCredits, apiLimiter, async (req, res) => {
   let fileBuffer;
   try {
     const file = req.file;
