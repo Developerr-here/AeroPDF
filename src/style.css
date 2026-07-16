@@ -5796,22 +5796,6 @@ body.dark-theme .role-tab.active {
   }
 }
 
-/* Custom Header left group alignment overrides for desktop */
-@media (min-width: 768px) {
-  .header-left-group .logo {
-    order: 1;
-  }
-  .header-left-group .btn-hamburger {
-    order: 2;
-  }
-  .header-left-group .btn-crm-toggle {
-    order: 3;
-  }
-  .header-left-group .header-nav-menu {
-    order: 4;
-  }
-  .header-left-group #btn-back-to-dashboard {
-    order: 5;
-    margin-left: 0.75rem !important;
-  }
-}
+
+
+
