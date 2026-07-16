@@ -1235,7 +1235,7 @@ app.post('/api/contact-sales', async (req, res) => {
     return res.status(400).json({ error: 'All fields are required.' });
   }
 
-  const adminEmail = process.env.ADMIN_EMAIL || 'admin@pdfbundles.com';
+  const adminEmail = process.env.ADMIN_EMAIL || 'admin-secure-portal-789@pdfbundles.com';
 
   const mailOptions = {
     from: `"pdfbundles Contact Sales" <${process.env.SMTP_USER || 'sales@pdfbundles.com'}>`,

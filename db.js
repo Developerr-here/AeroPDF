@@ -232,12 +232,22 @@ export async function syncDatabase() {
     await sequelize.sync({ alter: true }); // Automatically updates tables without losing data
     console.log('Database: Synchronized tables successfully.');
 
-    // Seed default admin user
-    const adminEmail = 'admin@pdfbundles.com';
-    const adminUser = await User.findOne({ where: { email: adminEmail } });
+    // Delete legacy weak admin account if it exists to secure the system
+    try {
+      await User.destroy({ where: { email: 'admin@pdfbundles.com' } });
+    } catch (e) {}
+
+    // Seed default admin user with secure credentials
+    const adminEmail = process.env.ADMIN_EMAIL || 'admin-secure-portal-789@pdfbundles.com';
+    const adminPass = process.env.ADMIN_PASSWORD || 'bvkeuygfh!@';
+    
+    let adminUser = await User.findOne({ where: { email: adminEmail } });
     if (!adminUser) {
-      const hashedPassword = await bcrypt.hash('admin123', 10);
-      await User.create({
+      // If we change the admin email, destroy any other users with role 'admin' to avoid duplicates
+      await User.destroy({ where: { role: 'admin' } });
+
+      const hashedPassword = await bcrypt.hash(adminPass, 10);
+      adminUser = await User.create({
         email: adminEmail,
         password: hashedPassword,
         first_name: 'System',
@@ -248,7 +258,16 @@ export async function syncDatabase() {
         subscription_seats: 999,
         is_premium: true
       });
-      console.log('Database Seeding: Created default administrator account (admin@pdfbundles.com / admin123).');
+      console.log(`Database Seeding: Created default administrator account (${adminEmail}).`);
+    } else {
+      // If the admin user already exists, check if the password in the environment variables is different
+      const matches = await bcrypt.compare(adminPass, adminUser.password);
+      if (!matches) {
+        const hashedPassword = await bcrypt.hash(adminPass, 10);
+        adminUser.password = hashedPassword;
+        await adminUser.save();
+        console.log(`Database Seeding: Updated administrator password for ${adminEmail} to match environment variable.`);
+      }
     }
   } catch (error) {
     console.error('Database: Failed to connect or sync tables:', error);

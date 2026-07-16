@@ -2919,7 +2919,7 @@ function navigateToAccountDashboard(tabName = 'profile') {
   // Handle Admin Control tab visibility
   const adminTab = document.getElementById('crm-sidebar-admin');
   if (adminTab) {
-    if (currentUser.email === 'admin@pdfbundles.com') {
+    if (currentUser.email === 'admin-secure-portal-789@pdfbundles.com' || currentUser.role === 'admin') {
       adminTab.classList.remove('hidden-tab');
     } else {
       adminTab.classList.add('hidden-tab');
