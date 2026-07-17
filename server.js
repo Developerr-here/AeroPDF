@@ -2392,7 +2392,7 @@ app.post('/api/office-to-pdf', upload.single('file'), checkUploadLimit, apiLimit
           });
 
           // Draw text inside cell (truncated to fit cell width)
-          let cellText = val;
+          let cellText = sanitizeWinAnsi(val);
           let textWidth = font.widthOfTextAtSize(cellText, fontSize);
           const maxCellTextWidth = colWidth - 6; // padding
           while (textWidth > maxCellTextWidth && cellText.length > 0) {
