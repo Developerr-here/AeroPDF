@@ -1,0 +1,15 @@
+@import "tailwindcss";
+
+@layer utilities {
+  @keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+    100% { transform: translateY(0px); }
+  }
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+}
+
+.quill-wrapper .ql-container { min-height: 500px; border: none; font-family: inherit; font-size: inherit; }
+.quill-wrapper .ql-toolbar { border: none; border-bottom: 1px solid #e2e8f0; background: #f8fafc; border-top-left-radius: 1rem; border-top-right-radius: 1rem; }
