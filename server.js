@@ -3104,6 +3104,7 @@ app.post('/api/compare', upload.array('files'), checkUploadLimit, apiLimiter, as
 /* ==========================================
    SEO SITEMAP FOR SPA
    ========================================== */
+/*
 app.get('/sitemap.xml', (req, res) => {
   const host = req.get('host');
   const protocol = req.protocol;
@@ -3157,12 +3158,14 @@ app.get('/sitemap.xml', (req, res) => {
   res.header('Content-Type', 'application/xml');
   res.send(xml);
 });
+*/
 
-app.use(express.static(path.join(__dirname, 'dist')));
+// Serve static files from the React frontend build
+app.use(express.static(path.join(__dirname, '../frontend/dist')));
 
 app.get(/.*/, (req, res, next) => {
   if (req.path.startsWith('/api')) return next();
-  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+  res.sendFile(path.join(__dirname, '../frontend/dist', 'index.html'));
 });
 
 // Express Error Handler for Multer / general errors
