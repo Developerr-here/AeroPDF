@@ -1224,9 +1224,14 @@ const transporter = nodemailer.createTransport({
   secure: process.env.SMTP_SECURE === 'true',
   connectionTimeout: 30000,
   socketTimeout: 30000,
-  family: 4, // Force IPv4 routing
+  // Violently force IPv4 lookup to bypass Railway's broken IPv6 routing
+  lookup: (hostname, options, callback) => {
+    dns.lookup(hostname, { family: 4 }, (err, address, family) => {
+      callback(err, address, family);
+    });
+  },
   tls: {
-    rejectUnauthorized: false // Fixes strict TLS handshake timeouts on cloud servers
+    rejectUnauthorized: false
   },
   auth: {
     user: process.env.SMTP_USER || 'ethereal.user@ethereal.email',
