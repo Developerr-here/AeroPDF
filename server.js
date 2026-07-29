@@ -1222,9 +1222,12 @@ const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || 'smtp.ethereal.email',
   port: parseInt(process.env.SMTP_PORT, 10) || 587,
   secure: process.env.SMTP_SECURE === 'true',
-  connectionTimeout: 10000,
-  socketTimeout: 10000,
-  family: 4, // Force IPv4 routing (Fixes Railway ENETUNREACH IPv6 bug)
+  connectionTimeout: 30000,
+  socketTimeout: 30000,
+  family: 4, // Force IPv4 routing
+  tls: {
+    rejectUnauthorized: false // Fixes strict TLS handshake timeouts on cloud servers
+  },
   auth: {
     user: process.env.SMTP_USER || 'ethereal.user@ethereal.email',
     pass: process.env.SMTP_PASS || 'ethereal_password'
