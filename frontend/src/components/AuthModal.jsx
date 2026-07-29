@@ -197,13 +197,13 @@ const AuthModal = () => {
           <div className="space-y-1.5">
             <div className="flex justify-between items-center">
               <label className="text-[13px] font-bold text-[#475569]">Password</label>
-              {authModalView === 'login' && (
-                {/* --- FORGOT PASSWORD DISABLED ---
+              {/* --- FORGOT PASSWORD DISABLED ---
+              authModalView === 'login' && (
                 <button type="button" onClick={handleForgotPassword} className="text-[13px] font-bold text-[#4f46e5] hover:underline focus:outline-none">
                   Forgot password?
                 </button>
-                */}
-              )}
+              )
+              */}
             </div>
             <input 
               type="password" required
