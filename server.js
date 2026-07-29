@@ -704,6 +704,7 @@ app.post('/api/auth/google', authLimiter, async (req, res) => {
   }
 });
 
+/* --- FORGOT PASSWORD FEATURE TEMPORARILY DISABLED ---
 // Forgot password request code
 app.post('/api/auth/forgot-password', authLimiter, async (req, res) => {
   try {
@@ -794,6 +795,7 @@ app.post('/api/auth/reset-password', authLimiter, async (req, res) => {
     res.status(500).json({ error: 'Password reset failed.' });
   }
 });
+--- FORGOT PASSWORD FEATURE TEMPORARILY DISABLED --- */
 
 app.get('/api/auth/me', authenticateToken, async (req, res) => {
   try {

@@ -48,6 +48,7 @@ const AuthModal = () => {
     }
   };
 
+  /* --- FORGOT PASSWORD DISABLED ---
   const handleForgotPassword = async () => {
     if (!email) return alert("Please enter your email address first.");
     setError(null);
@@ -99,6 +100,7 @@ const AuthModal = () => {
       setLoading(false);
     }
   };
+  --- FORGOT PASSWORD DISABLED --- */
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
@@ -196,9 +198,11 @@ const AuthModal = () => {
             <div className="flex justify-between items-center">
               <label className="text-[13px] font-bold text-[#475569]">Password</label>
               {authModalView === 'login' && (
+                {/* --- FORGOT PASSWORD DISABLED ---
                 <button type="button" onClick={handleForgotPassword} className="text-[13px] font-bold text-[#4f46e5] hover:underline focus:outline-none">
                   Forgot password?
                 </button>
+                */}
               )}
             </div>
             <input 
