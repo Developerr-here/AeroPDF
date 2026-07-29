@@ -2,166 +2,186 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://pdfbundles.com/</loc>
-    <changefreq>daily</changefreq>
-    <priority>1.0</priority>
-  </url>
-  <url>
-    <loc>https://pdfbundles.com/merge-pdf</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pdfbundles.com/split-pdf</loc>
+    <loc>https://pdfbundles.com/dashboard</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pdfbundles.com/remove-pages</loc>
+    <loc>https://pdfbundles.com/blog</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pdfbundles.com/extract-pages</loc>
+    <loc>https://pdfbundles.com/login</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pdfbundles.com/organize-pdf</loc>
+    <loc>https://pdfbundles.com/signup</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pdfbundles.com/scan-to-pdf</loc>
+    <loc>https://pdfbundles.com/tools/merge-pdf</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pdfbundles.com/compress-pdf</loc>
+    <loc>https://pdfbundles.com/tools/split-pdf</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pdfbundles.com/repair-pdf</loc>
+    <loc>https://pdfbundles.com/tools/remove-pages</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pdfbundles.com/ocr-pdf</loc>
+    <loc>https://pdfbundles.com/tools/extract-pages</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pdfbundles.com/jpg-to-pdf</loc>
+    <loc>https://pdfbundles.com/tools/organize-pdf</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pdfbundles.com/word-to-pdf</loc>
+    <loc>https://pdfbundles.com/tools/scan-to-pdf</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pdfbundles.com/ppt-to-pdf</loc>
+    <loc>https://pdfbundles.com/tools/compress-pdf</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pdfbundles.com/excel-to-pdf</loc>
+    <loc>https://pdfbundles.com/tools/repair-pdf</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pdfbundles.com/html-to-pdf</loc>
+    <loc>https://pdfbundles.com/tools/ocr-pdf</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pdfbundles.com/pdf-to-png</loc>
+    <loc>https://pdfbundles.com/tools/jpg-to-pdf</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pdfbundles.com/pdf-to-word</loc>
+    <loc>https://pdfbundles.com/tools/word-to-pdf</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pdfbundles.com/pdf-to-ppt</loc>
+    <loc>https://pdfbundles.com/tools/powerpoint-to-pdf</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pdfbundles.com/pdf-to-excel</loc>
+    <loc>https://pdfbundles.com/tools/excel-to-pdf</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pdfbundles.com/rotate-pdf</loc>
+    <loc>https://pdfbundles.com/tools/html-to-pdf</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pdfbundles.com/page-numbers</loc>
+    <loc>https://pdfbundles.com/tools/pdf-to-png</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pdfbundles.com/add-watermark</loc>
+    <loc>https://pdfbundles.com/tools/pdf-to-word</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pdfbundles.com/crop-pdf</loc>
+    <loc>https://pdfbundles.com/tools/pdf-to-powerpoint</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pdfbundles.com/edit-pdf</loc>
+    <loc>https://pdfbundles.com/tools/pdf-to-excel</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pdfbundles.com/pdf-forms</loc>
+    <loc>https://pdfbundles.com/tools/rotate-pdf</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pdfbundles.com/protect-pdf</loc>
+    <loc>https://pdfbundles.com/tools/page-numbers</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pdfbundles.com/unlock-pdf</loc>
+    <loc>https://pdfbundles.com/tools/watermark-pdf</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pdfbundles.com/sign-pdf</loc>
+    <loc>https://pdfbundles.com/tools/crop-pdf</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pdfbundles.com/redact-pdf</loc>
+    <loc>https://pdfbundles.com/tools/edit-pdf</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pdfbundles.com/compare-pdf</loc>
+    <loc>https://pdfbundles.com/tools/pdf-forms</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pdfbundles.com/ai-pdf-assistant</loc>
+    <loc>https://pdfbundles.com/tools/protect-pdf</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pdfbundles.com/background-remover</loc>
+    <loc>https://pdfbundles.com/tools/unlock-pdf</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pdfbundles.com/image-upscaler</loc>
+    <loc>https://pdfbundles.com/tools/sign-pdf</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://pdfbundles.com/tools/redact-pdf</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://pdfbundles.com/tools/compare-pdf</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://pdfbundles.com/tools/ai-assistant</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://pdfbundles.com/tools/remove-background</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://pdfbundles.com/tools/upscale-image</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>

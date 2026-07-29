@@ -260,7 +260,7 @@ const Dashboard = () => {
           role: adminRole,
           seats: adminSeats,
           interval: adminInterval,
-          customFeatures: adminPlan === 'custom' ? {
+          custom_features: adminPlan === 'custom' ? {
             ...customTools,
             max_file_size: adminMaxFileSize || undefined,
             ai_credits_limit: adminAiCredits || undefined
