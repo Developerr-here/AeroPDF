@@ -19,6 +19,7 @@ import { fileURLToPath } from 'url';
 import { createRequire } from 'module';
 import { OAuth2Client } from 'google-auth-library';
 import { PDFParse } from 'pdf-parse';
+import HTMLtoDOCX from 'html-to-docx';
 const require = createRequire(import.meta.url);
 const mammoth = require('mammoth');
 const officeParser = require('officeparser');
@@ -2637,26 +2638,28 @@ app.post('/api/pdf-to-office', upload.single('file'), checkUploadLimit, apiLimit
       const pdfData = await parser.getText();
       const rawText = pdfData.text || '';
 
-      const csvLines = [
-        `"pdfbundles Table Extraction","${title.replace(/"/g, '""')}"`,
-        `"Page Count","${pageCount}"`,
-        `"Exported On","${new Date().toLocaleString().replace(/"/g, '""')}"`,
-        `""`
+      const aoa = [
+        ["pdfbundles Table Extraction", title],
+        ["Page Count", pageCount.toString()],
+        ["Exported On", new Date().toLocaleString()],
+        []
       ];
 
       const lines = rawText.split('\n');
       for (const line of lines) {
         const trimmed = line.trim();
         if (!trimmed) continue;
-        // Split by tabs or 2+ consecutive spaces
         const columns = trimmed.split(/\s{2,}|\t/);
-        const csvRow = columns.map(col => `"${col.replace(/"/g, '""')}"`).join(',');
-        csvLines.push(csvRow);
+        aoa.push(columns);
       }
 
-      res.setHeader('Content-Type', 'text/csv');
-      res.setHeader('Content-Disposition', 'attachment; filename="converted-data.csv"');
-      return res.send(Buffer.from(csvLines.join('\n'), 'utf-8'));
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.aoa_to_sheet(aoa);
+      XLSX.utils.book_append_sheet(wb, ws, "Extracted Data");
+      const excelBuffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      return res.send(excelBuffer);
     } else {
       let extractedText = '';
       try {
@@ -2754,9 +2757,13 @@ app.post('/api/pdf-to-office', upload.single('file'), checkUploadLimit, apiLimit
         res.setHeader('Content-Disposition', `attachment; filename="${file.originalname.replace(/\.[^/.]+$/, "")}.pptx"`);
         return res.send(pptxBuffer);
       } else {
-        res.setHeader('Content-Type', 'application/msword');
-        res.setHeader('Content-Disposition', `attachment; filename="${file.originalname.replace(/\.[^/.]+$/, "")}.doc"`);
-        return res.send(Buffer.from(wordHtml));
+        const docxBuffer = await HTMLtoDOCX(wordHtml, null, {
+          title: title,
+          font: 'Arial'
+        });
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+        res.setHeader('Content-Disposition', `attachment; filename="${file.originalname.replace(/\.[^/.]+$/, "")}.docx"`);
+        return res.send(docxBuffer);
       }
     }
   } catch (err) {
