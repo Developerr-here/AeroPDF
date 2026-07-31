@@ -4,9 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
+    "dev": "node server.js",
+    "build": "echo 'Frontend built in postinstall. Backend ready.'",
     "postinstall": "cd frontend && npm install --legacy-peer-deps && npm run build",
     "start": "node server.js"
   },
