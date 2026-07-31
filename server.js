@@ -20,6 +20,33 @@ import { createRequire } from 'module';
 import { OAuth2Client } from 'google-auth-library';
 import { PDFParse } from 'pdf-parse';
 import HTMLtoDOCX from 'html-to-docx';
+import fetch from 'node-fetch';
+import FormData from 'form-data';
+
+const CLOUDMERSIVE_API_KEY = process.env.CLOUDMERSIVE_API_KEY || 'a655cf08-635a-4b09-a816-d5dacac98a30';
+
+async function convertWithCloudmersive(fileBuffer, fileName, endpointUrl) {
+  if (!CLOUDMERSIVE_API_KEY) throw new Error('No Cloudmersive API key configured');
+  const form = new FormData();
+  form.append('inputFile', fileBuffer, { filename: fileName });
+
+  const response = await fetch(endpointUrl, {
+    method: 'POST',
+    headers: {
+      'Apikey': CLOUDMERSIVE_API_KEY,
+      ...form.getHeaders()
+    },
+    body: form
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`Cloudmersive API error (${response.status}): ${errText}`);
+  }
+
+  const arrayBuffer = await response.arrayBuffer();
+  return Buffer.from(arrayBuffer);
+}
 const require = createRequire(import.meta.url);
 const mammoth = require('mammoth');
 const officeParser = require('officeparser');
@@ -2284,7 +2311,30 @@ app.post('/api/office-to-pdf', upload.single('file'), checkUploadLimit, apiLimit
     if (!file) return res.status(400).json({ error: 'Document file is required.' });
 
     const buffer = fs.readFileSync(file.path);
-    const isDocx = file.originalname.toLowerCase().endsWith('.docx');
+    const lowerName = file.originalname.toLowerCase();
+
+    // Try Cloudmersive high-fidelity API first
+    try {
+      let endpoint = 'https://api.cloudmersive.com/convert/autodetect/to/pdf';
+      if (lowerName.endsWith('.docx') || lowerName.endsWith('.doc')) {
+        endpoint = 'https://api.cloudmersive.com/convert/docx/to/pdf';
+      } else if (lowerName.endsWith('.xlsx') || lowerName.endsWith('.xls') || lowerName.endsWith('.csv')) {
+        endpoint = 'https://api.cloudmersive.com/convert/xlsx/to/pdf';
+      } else if (lowerName.endsWith('.pptx') || lowerName.endsWith('.ppt')) {
+        endpoint = 'https://api.cloudmersive.com/convert/pptx/to/pdf';
+      }
+
+      console.log(`[Cloudmersive] Converting Office -> PDF (${file.originalname})`);
+      const convertedBuffer = await convertWithCloudmersive(buffer, file.originalname, endpoint);
+      fs.unlink(file.path, () => {});
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${file.originalname.replace(/\.[^/.]+$/, "")}.pdf"`);
+      return res.send(convertedBuffer);
+    } catch (apiErr) {
+      console.warn(`[Cloudmersive API Skipped/Failed]: ${apiErr.message}. Falling back to local converter.`);
+    }
+
+    const isDocx = lowerName.endsWith('.docx');
     const isXlsx = file.originalname.toLowerCase().endsWith('.xlsx') || 
                    file.originalname.toLowerCase().endsWith('.xls') ||
                    file.originalname.toLowerCase().endsWith('.csv');
@@ -2630,8 +2680,30 @@ app.post('/api/pdf-to-office', upload.single('file'), checkUploadLimit, apiLimit
     const pdf = await PDFDocument.load(buffer);
     fs.unlink(file.path, () => {});
 
-    const pageCount = pdf.getPageCount();
-    const title = pdf.getTitle() || file.originalname;
+    // Try Cloudmersive high-fidelity API first
+    try {
+      let endpoint = 'https://api.cloudmersive.com/convert/pdf/to/docx';
+      let contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      let extension = 'docx';
+
+      if (format === 'xlsx') {
+        endpoint = 'https://api.cloudmersive.com/convert/pdf/to/xlsx';
+        contentType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+        extension = 'xlsx';
+      } else if (format === 'pptx') {
+        endpoint = 'https://api.cloudmersive.com/convert/pdf/to/pptx';
+        contentType = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+        extension = 'pptx';
+      }
+
+      console.log(`[Cloudmersive] Converting PDF -> ${format.toUpperCase()}`);
+      const convertedBuffer = await convertWithCloudmersive(buffer, file.originalname, endpoint);
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Content-Disposition', `attachment; filename="${file.originalname.replace(/\.[^/.]+$/, "")}.${extension}"`);
+      return res.send(convertedBuffer);
+    } catch (apiErr) {
+      console.warn(`[Cloudmersive API Skipped/Failed]: ${apiErr.message}. Falling back to local converter.`);
+    }
 
     if (format === 'xlsx') {
       const parser = new PDFParse({ data: new Uint8Array(buffer) });
