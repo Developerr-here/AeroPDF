@@ -2677,7 +2677,19 @@ app.post('/api/pdf-to-office', upload.single('file'), checkUploadLimit, apiLimit
     if (!file) return res.status(400).json({ error: 'PDF file is required.' });
 
     const buffer = fs.readFileSync(file.path);
-    const pdf = await PDFDocument.load(buffer);
+    
+    // 1. Safe PDF load check for corrupted files
+    let pdf;
+    let pageCount = 1;
+    let title = file.originalname;
+    try {
+      pdf = await PDFDocument.load(buffer);
+      pageCount = pdf.getPageCount();
+      title = pdf.getTitle() || file.originalname;
+    } catch (loadErr) {
+      fs.unlink(file.path, () => {});
+      return res.status(400).json({ error: 'The uploaded file is invalid or corrupted. Please upload a valid PDF document.' });
+    }
     fs.unlink(file.path, () => {});
 
     // Try Cloudmersive high-fidelity API first
@@ -2698,9 +2710,15 @@ app.post('/api/pdf-to-office', upload.single('file'), checkUploadLimit, apiLimit
 
       console.log(`[Cloudmersive] Converting PDF -> ${format.toUpperCase()}`);
       const convertedBuffer = await convertWithCloudmersive(buffer, file.originalname, endpoint);
-      res.setHeader('Content-Type', contentType);
-      res.setHeader('Content-Disposition', `attachment; filename="${file.originalname.replace(/\.[^/.]+$/, "")}.${extension}"`);
-      return res.send(convertedBuffer);
+      
+      // If Cloudmersive returned a stripped document (too small/no text for docx), fall back to local text extractor
+      if (format === 'docx' && convertedBuffer.length < 5000) {
+        console.warn(`[Cloudmersive Warning]: Converted DOCX buffer size is small (${convertedBuffer.length} bytes). Stripped text detected. Falling back to local text extractor.`);
+      } else {
+        res.setHeader('Content-Type', contentType);
+        res.setHeader('Content-Disposition', `attachment; filename="${file.originalname.replace(/\.[^/.]+$/, "")}.${extension}"`);
+        return res.send(convertedBuffer);
+      }
     } catch (apiErr) {
       console.warn(`[Cloudmersive API Skipped/Failed]: ${apiErr.message}. Falling back to local converter.`);
     }
