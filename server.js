@@ -3119,28 +3119,42 @@ app.post('/api/sign', upload.single('file'), checkUploadLimit, apiLimiter, async
     const height = parseFloat(req.body.height || '75');
     const signatureBase64 = req.body.signature;
 
-    if (!file || !signatureBase64) return res.status(400).json({ error: 'PDF file and signature are required.' });
+    if (!file || !signatureBase64 || signatureBase64 === 'null' || signatureBase64 === 'undefined') {
+      cleanTempFiles(req);
+      return res.status(400).json({ error: 'PDF file and a valid drawn signature are required.' });
+    }
 
     const buffer = fs.readFileSync(file.path);
     const pdf = await PDFDocument.load(buffer);
     fs.unlink(file.path, () => {});
 
-    const cleanBase64 = signatureBase64.replace(/^data:image\/png;base64,/, "");
+    const cleanBase64 = signatureBase64.replace(/^data:image\/(png|jpeg|jpg);base64,/, "").replace(/\s/g, "");
     const sigBuffer = Buffer.from(cleanBase64, 'base64');
 
     const pages = pdf.getPages();
-    if (pageIndex >= 0 && pageIndex < pages.length) {
-      const page = pages[pageIndex];
-      const sigImage = await pdf.embedPng(sigBuffer);
-      page.drawImage(sigImage, { x, y, width, height });
+    const targetPageIndex = Math.max(0, Math.min(pageIndex, pages.length - 1));
+    const page = pages[targetPageIndex];
+
+    let sigImage;
+    try {
+      sigImage = await pdf.embedPng(sigBuffer);
+    } catch (pngErr) {
+      try {
+        sigImage = await pdf.embedJpg(sigBuffer);
+      } catch (jpgErr) {
+        throw new Error('Invalid signature image format. Please clear and redraw your signature.');
+      }
     }
+
+    page.drawImage(sigImage, { x, y, width, height });
 
     const bytes = await pdf.save();
     res.setHeader('Content-Type', 'application/pdf');
     res.send(Buffer.from(bytes));
   } catch (err) {
+    console.error('[Sign PDF Error]', err);
     cleanTempFiles(req);
-    res.status(500).json({ error: 'Failed to overlay signature.' });
+    res.status(500).json({ error: err.message || 'Failed to overlay signature.' });
   }
 });
 
