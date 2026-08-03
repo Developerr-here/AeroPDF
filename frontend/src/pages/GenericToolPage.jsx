@@ -442,7 +442,7 @@ const GenericToolPage = ({ tool }) => {
         <div className="bg-slate-50 py-24 border-t border-slate-100">
           <div className="max-w-[1200px] mx-auto px-6">
             <div className="mb-24"><h3 className="text-2xl font-bold text-slate-900 mb-8 flex items-center gap-2"><span className="text-indigo-600">→</span> Related Tools</h3><ToolsGrid showHeader={false} /></div>
-            <FAQ /><ArticlesAndGuides />
+            <FAQ /><ArticlesAndGuides tool={tool} />
           </div>
         </div>
       )}

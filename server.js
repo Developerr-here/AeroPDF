@@ -289,17 +289,18 @@ const getToolKeyFromPath = (path) => {
   return 'utility';
 };
 
-const isToolAllowedForUser = (user, toolKey) => {
+const isToolAllowedForUser = (user, toolKey, ownerUser = null) => {
   if (!user) return false;
-  if (user.role === 'admin') return true;
+  const effective = ownerUser || user;
+  if (effective.role === 'admin' || user.role === 'admin') return true;
   
-  const plan = user.subscription_plan || 'free';
+  const plan = effective.subscription_plan || 'free';
   if (plan === 'free') return false;
   
   if (plan === 'custom') {
-    if (!user.custom_features) return false;
+    if (!effective.custom_features) return false;
     try {
-      const custom = typeof user.custom_features === 'string' ? JSON.parse(user.custom_features) : user.custom_features;
+      const custom = typeof effective.custom_features === 'string' ? JSON.parse(effective.custom_features) : effective.custom_features;
       if (custom) {
         if (custom.allowedTools && Array.isArray(custom.allowedTools)) {
           return custom.allowedTools.includes(toolKey);
@@ -313,7 +314,7 @@ const isToolAllowedForUser = (user, toolKey) => {
     }
     return false;
   }
-  
+  return true;
 };
 
 const checkAISubscription = (dbUser) => {
@@ -485,9 +486,17 @@ const checkUploadLimit = async (req, res, next) => {
     return res.status(403).json({ error: `File size exceeds the ${limitMb} limit for this tool on your plan.` });
   }
 
+  // 3. Custom plan per-tool permission check
+  if (planName === 'custom') {
+    const toolKey = req.path.replace(/^\/api\//, '').replace(/\/.*/, '');
+    if (!isToolAllowedForUser(dbUser, toolKey, effectiveUser)) {
+      cleanTempFiles(req);
+      return res.status(403).json({ error: 'This tool is not enabled for your custom plan. Please contact your account administrator.' });
+    }
+  }
+
   if (effectiveUser) {
-    effectiveUser.cumulative_bytes_processed = activeCumulativeSize + totalSize;
-    await effectiveUser.save();
+    await User.increment('cumulative_bytes_processed', { by: totalSize, where: { id: effectiveUser.id } });
     req.user = { id: dbUser.id, email: dbUser.email };
   }
 
@@ -508,7 +517,8 @@ const verifyAISubscriptionAndCredits = async (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
   let isAllowed = false;
-  let effectiveUser = null;
+  let ownerUser = null;
+  let dbUser = null;
   let planName = 'free';
 
   // Calculate the AI credit cost dynamically depending on the route
@@ -523,22 +533,22 @@ const verifyAISubscriptionAndCredits = async (req, res, next) => {
   if (token) {
     try {
       const decoded = jwt.verify(token, JWT_SECRET);
-      const dbUser = await User.findByPk(decoded.id);
+      dbUser = await User.findByPk(decoded.id);
       if (dbUser) {
         // Resolve subscription plan using resolved.user (owner/subscriber)
         const resolved = await resolveEffectivePlanAndUser(dbUser);
         planName = resolved.plan;
+        ownerUser = resolved.user || dbUser;
         
-        // If the resolved subscriber has access, allow the logged-in user to use credits separately
-        if (checkAISubscription(resolved.user)) {
-          effectiveUser = dbUser; // Separate credit count: track on the logged-in user directly!
-          const limit = getAICreditLimit(planName, dbUser);
-          const used = dbUser.ai_credits_used || 0;
+        // Track AI credits on the account owner's shared credit pool
+        if (checkAISubscription(ownerUser)) {
+          const limit = getAICreditLimit(planName, ownerUser);
+          const used = ownerUser.ai_credits_used || 0;
           if (used + cost <= limit) {
             isAllowed = true;
           } else {
             cleanTempFiles(req);
-            return res.status(403).json({ error: `Insufficient AI Credits. This request requires ${cost} credits, but you only have ${limit - used} credits remaining. Please upgrade or contact support.` });
+            return res.status(403).json({ error: `Insufficient AI Credits. This request requires ${cost} credits, but your team only has ${Math.max(0, limit - used)} credits remaining. Please upgrade or contact support.` });
           }
         }
       }
@@ -550,10 +560,9 @@ const verifyAISubscriptionAndCredits = async (req, res, next) => {
     return res.status(403).json({ error: 'AI tools (including Summarize, Chat, Translate, Background Remover, and Upscaler) are only available on the Premium or Business plan. Please upgrade to continue.' });
   }
 
-  if (effectiveUser) {
-    effectiveUser.ai_credits_used = (effectiveUser.ai_credits_used || 0) + cost;
-    await effectiveUser.save();
-    req.user = { id: effectiveUser.id, email: effectiveUser.email };
+  if (ownerUser && dbUser) {
+    await User.increment('ai_credits_used', { by: cost, where: { id: ownerUser.id } });
+    req.user = { id: dbUser.id, email: dbUser.email };
   }
   next();
 };
