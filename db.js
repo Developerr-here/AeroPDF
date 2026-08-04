@@ -113,6 +113,14 @@ export const User = sequelize.define('User', {
   ai_credits_used: {
     type: DataTypes.INTEGER,
     defaultValue: 0
+  },
+  stripe_subscription_id: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  subscription_expires_at: {
+    type: DataTypes.DATE,
+    allowNull: true
   }
 });
 

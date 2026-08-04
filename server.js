@@ -189,9 +189,22 @@ function sanitizeWinAnsi(text) {
    AUTHENTICATION & SECURITY MIDDLEWARE
    ========================================== */
 
+// Helper: Check if a subscription has expired based on subscription_expires_at
+function isSubscriptionExpired(user) {
+  if (!user || user.role === 'admin') return false;
+  if (!user.subscription_expires_at) return false;
+  return new Date() > new Date(user.subscription_expires_at);
+}
+
 // Helper: Calculate dynamic premium status (including collaboration membership)
 async function getPremiumStatus(user) {
   if (!user) return false;
+  if (user.role === 'admin') return true;
+  
+  if (isSubscriptionExpired(user)) {
+    return false;
+  }
+
   if (user.is_premium || (user.subscription_plan && user.subscription_plan !== 'free')) {
     return true;
   }
@@ -201,7 +214,7 @@ async function getPremiumStatus(user) {
   });
   if (isCollaborator) {
     const owner = await User.findByPk(isCollaborator.owner_id);
-    if (owner && ['premium', 'business', 'starter', 'base', 'pro', 'enterprise', 'custom'].includes(owner.subscription_plan)) {
+    if (owner && !isSubscriptionExpired(owner) && ['premium', 'business', 'starter', 'base', 'pro', 'enterprise', 'custom'].includes(owner.subscription_plan)) {
       return true;
     }
   }
@@ -211,11 +224,17 @@ async function getPremiumStatus(user) {
 // Helper: Serialize user responses consistently with dynamic premium and plan information
 async function formatUserResponse(user) {
   if (!user) return null;
+  const isExpired = isSubscriptionExpired(user);
   let plan = user.subscription_plan || 'free';
-  if (plan === 'free') {
+  if (isExpired) {
+    plan = 'free';
+  } else if (plan === 'free') {
     const isCollab = await CollaborationEmail.findOne({ where: { email: user.email } });
     if (isCollab) {
-      plan = 'collaborator';
+      const owner = await User.findByPk(isCollab.owner_id);
+      if (owner && !isSubscriptionExpired(owner)) {
+        plan = 'collaborator';
+      }
     }
   }
   return {
@@ -225,6 +244,7 @@ async function formatUserResponse(user) {
     subscription_plan: plan,
     subscription_seats: user.subscription_seats,
     subscription_interval: user.subscription_interval,
+    subscription_expires_at: user.subscription_expires_at,
     role: user.role,
     custom_features: user.custom_features,
     can_blog: user.can_blog,
@@ -383,16 +403,24 @@ const getToolLimit = (path, plan, dbUser) => {
 
 const resolveEffectivePlanAndUser = async (dbUser) => {
   if (!dbUser) return { plan: 'free', user: null };
+  if (dbUser.role === 'admin') return { plan: dbUser.subscription_plan || 'premium', user: dbUser };
+
   if (dbUser.subscription_plan && dbUser.subscription_plan !== 'free') {
+    if (isSubscriptionExpired(dbUser)) {
+      return { plan: 'free', user: dbUser };
+    }
     return { plan: dbUser.subscription_plan, user: dbUser };
   }
+
   const isCollaborator = await CollaborationEmail.findOne({
     where: { email: dbUser.email }
   });
   if (isCollaborator) {
     const owner = await User.findByPk(isCollaborator.owner_id);
     if (owner && owner.subscription_plan && owner.subscription_plan !== 'free') {
-      return { plan: owner.subscription_plan, user: owner };
+      if (!isSubscriptionExpired(owner)) {
+        return { plan: owner.subscription_plan, user: owner };
+      }
     }
   }
   return { plan: 'free', user: dbUser };
@@ -510,6 +538,46 @@ function cleanTempFiles(req) {
   }
   if (req.files) {
     req.files.forEach(f => fs.unlink(f.path, () => {}));
+  }
+}
+
+// Helper: Periodically clean orphaned temporary files from uploads/ directory (older than 15 mins)
+function cleanupOrphanedUploads() {
+  const uploadsDir = path.join(__dirname, 'uploads');
+  if (!fs.existsSync(uploadsDir)) return;
+
+  const now = Date.now();
+  const maxAgeMs = 15 * 60 * 1000; // 15 minutes
+
+  fs.readdir(uploadsDir, (err, files) => {
+    if (err || !files) return;
+    files.forEach(file => {
+      const filePath = path.join(uploadsDir, file);
+      fs.stat(filePath, (statErr, stats) => {
+        if (statErr || !stats) return;
+        if (now - stats.mtimeMs > maxAgeMs) {
+          fs.unlink(filePath, () => {});
+        }
+      });
+    });
+  });
+}
+
+// Run cleanup immediately on startup and every 30 minutes
+cleanupOrphanedUploads();
+setInterval(cleanupOrphanedUploads, 30 * 60 * 1000);
+
+// Helper: Safely load PDF document with error handling for encrypted/corrupt files
+async function loadPdfSafely(pdfBuffer, options = {}) {
+  try {
+    const pdfDoc = await PDFDocument.load(pdfBuffer, options);
+    return { success: true, pdfDoc };
+  } catch (err) {
+    const msg = err.message || '';
+    if (msg.includes('encrypted') || msg.includes('password') || msg.includes('Encrypt')) {
+      return { success: false, error: 'This PDF file is password-protected or encrypted. Please unlock it before processing.' };
+    }
+    return { success: false, error: 'The uploaded file is corrupt or not a valid PDF document.' };
   }
 }
 
@@ -741,98 +809,14 @@ app.post('/api/auth/google', authLimiter, async (req, res) => {
   }
 });
 
-/* --- FORGOT PASSWORD FEATURE TEMPORARILY DISABLED ---
-// Forgot password request code
-app.post('/api/auth/forgot-password', authLimiter, async (req, res) => {
-  try {
-    const { email } = req.body;
-    if (!email) return res.status(400).json({ error: 'Email is required.' });
-
-    const user = await User.findOne({ where: { email } });
-    if (!user) return res.status(400).json({ error: 'No account found with this email address.' });
-
-    // Generate a random 6-digit code
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    user.reset_code = code;
-    user.reset_code_expires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes expiry
-    await user.save();
-
-    // Send reset code via email
-    try {
-      const mailOptions = {
-        from: `"pdfbundles Support" <${process.env.SMTP_USER || 'no-reply@pdfbundles.com'}>`,
-        to: email,
-        subject: 'Your Password Reset Verification Code',
-        html: `
-          <div style="font-family: sans-serif; padding: 2rem; max-width: 600px; margin: auto; border: 1px solid #e2e8f0; border-radius: 0.75rem; background: #ffffff;">
-            <h2 style="color: #0f172a; margin-top: 0; font-size: 1.5rem; font-weight: 700; text-align: center;">Password Reset Request</h2>
-            <p style="color: #475569; font-size: 0.95rem; line-height: 1.6; margin-top: 1rem; text-align: center;">
-              We received a request to reset the password for your pdfbundles account. Use the verification code below to set a new password:
-            </p>
-            <div style="margin: 2rem 0; text-align: center;">
-              <span style="font-family: monospace; font-size: 2.25rem; font-weight: 800; letter-spacing: 0.1em; color: #0066ff; background: #f1f5f9; padding: 0.75rem 1.5rem; border-radius: 0.5rem; display: inline-block;">
-                ${code}
-              </span>
-            </div>
-            <p style="color: #ef4444; font-size: 0.85rem; font-weight: 600; text-align: center; margin-bottom: 2rem;">
-              This code is valid for 15 minutes. If you did not request a password reset, please ignore this email.
-            </p>
-            <hr style="border: none; border-top: 1px solid #e2e8f0; margin-bottom: 1.5rem;" />
-            <p style="color: #94a3b8; font-size: 0.8rem; margin: 0; text-align: center;">
-              &copy; 2026 pdfbundles. All rights reserved.
-            </p>
-          </div>
-        `
-      };
-      await transporter.sendMail(mailOptions);
-    } catch (mailErr) {
-      console.warn('Mail delivery skipped or failed. Continuing with local code availability. Detail:', mailErr.message);
-    }
-
-    // Log the code to the server console for secure local development visibility
-    console.log(`[PASSWORD_RESET_CODE] Verification code for ${email} is: ${code}`);
-
-    res.json({ 
-      message: 'Verification code sent! Please check your email inbox.' 
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Forgot password processing failed.' });
-  }
+// Password reset endpoints disabled
+app.post('/api/auth/forgot-password', authLimiter, (req, res) => {
+  return res.status(400).json({ error: 'Password reset feature is currently disabled. Please contact support.' });
 });
 
-// Update password using verification code
-app.post('/api/auth/reset-password', authLimiter, async (req, res) => {
-  try {
-    const { email, code, newPassword } = req.body;
-    if (!email || !code || !newPassword) return res.status(400).json({ error: 'All fields are required.' });
-
-    const user = await User.findOne({ where: { email } });
-    if (!user) return res.status(404).json({ error: 'User not found.' });
-
-    if (!user.reset_code || user.reset_code !== code) {
-      return res.status(400).json({ error: 'Invalid verification code.' });
-    }
-
-    if (new Date() > new Date(user.reset_code_expires)) {
-      return res.status(400).json({ error: 'Verification code has expired. Please request a new one.' });
-    }
-
-    if (newPassword.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters.' });
-
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-    user.password = hashedPassword;
-    user.reset_code = null;
-    user.reset_code_expires = null;
-    await user.save();
-
-    res.json({ message: 'Password reset successful! You can now login.' });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Password reset failed.' });
-  }
+app.post('/api/auth/reset-password', authLimiter, (req, res) => {
+  return res.status(400).json({ error: 'Password reset feature is currently disabled. Please contact support.' });
 });
---- FORGOT PASSWORD FEATURE TEMPORARILY DISABLED --- */
 
 app.get('/api/auth/me', authenticateToken, async (req, res) => {
   try {
@@ -1179,12 +1163,19 @@ app.post('/api/stripe/verify-payment', authenticateToken, async (req, res) => {
         user.subscription_plan = plan;
         user.subscription_seats = parseInt(session.metadata.seats, 10) || 1;
         user.subscription_interval = session.metadata.interval || 'month';
+        if (session.customer) user.stripe_customer_id = session.customer;
+        if (session.subscription) user.stripe_subscription_id = session.subscription;
+        
+        const now = new Date();
+        const durationDays = (user.subscription_interval === 'year' || user.subscription_interval === 'yearly') ? 365 : 30;
+        now.setDate(now.getDate() + durationDays);
+        user.subscription_expires_at = now;
       } else if (type === 'blog_pass') {
         user.can_blog = true;
       }
       await user.save();
       
-      console.log(`[Stripe Verification] Verified payment and updated ${user.email} status (type: ${type}).`);
+      console.log(`[Stripe Verification] Verified payment and updated ${user.email} status (type: ${type}, expires: ${user.subscription_expires_at}).`);
       return res.json({ 
         success: true, 
         user: await formatUserResponse(user)
@@ -1215,38 +1206,87 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
-  if (event.type === 'checkout.session.completed') {
-    const session = event.data.object;
-    const userId = session.metadata.userId;
-    const type = session.metadata.type;
+  try {
+    if (event.type === 'checkout.session.completed') {
+      const session = event.data.object;
+      const userId = session.metadata ? session.metadata.userId : null;
+      const type = session.metadata ? session.metadata.type : null;
 
-    if (type === 'newsletter') {
-      const email = session.metadata.email || (session.customer_details && session.customer_details.email);
-      if (email) {
-        await NewsletterSubscriber.upsert({
-          email: email.toLowerCase(),
-          status: 'active',
-          stripe_customer_id: session.customer,
-          stripe_subscription_id: session.subscription
-        });
-        console.log(`[Stripe Webhook] Newsletter subscription completed for ${email}`);
-      }
-    } else if (userId) {
-      const user = await User.findByPk(userId);
-      if (user) {
-        if (type === 'subscription') {
-          user.is_premium = true;
-          user.subscription_plan = session.metadata.plan || 'premium';
-          user.subscription_seats = parseInt(session.metadata.seats, 10) || 1;
-          user.subscription_interval = session.metadata.interval || 'month';
-          console.log(`[Stripe Webhook] Upgraded user ${user.email} to Premium (${user.subscription_seats} seats, ${user.subscription_interval} plan).`);
-        } else if (type === 'blog_pass') {
-          user.can_blog = true;
-          console.log(`[Stripe] Granted blog writer permissions to ${user.email}.`);
+      if (type === 'newsletter') {
+        const email = session.metadata?.email || (session.customer_details && session.customer_details.email);
+        if (email) {
+          await NewsletterSubscriber.upsert({
+            email: email.toLowerCase(),
+            status: 'active',
+            stripe_customer_id: session.customer,
+            stripe_subscription_id: session.subscription
+          });
+          console.log(`[Stripe Webhook] Newsletter subscription completed for ${email}`);
         }
-        await user.save();
+      } else if (userId) {
+        const user = await User.findByPk(userId);
+        if (user) {
+          if (type === 'subscription') {
+            user.is_premium = true;
+            user.subscription_plan = session.metadata.plan || 'premium';
+            user.subscription_seats = parseInt(session.metadata.seats, 10) || 1;
+            user.subscription_interval = session.metadata.interval || 'month';
+            if (session.customer) user.stripe_customer_id = session.customer;
+            if (session.subscription) user.stripe_subscription_id = session.subscription;
+
+            const now = new Date();
+            const durationDays = (user.subscription_interval === 'year' || user.subscription_interval === 'yearly') ? 365 : 30;
+            now.setDate(now.getDate() + durationDays);
+            user.subscription_expires_at = now;
+
+            console.log(`[Stripe Webhook] Upgraded user ${user.email} to Premium (${user.subscription_seats} seats, ${user.subscription_interval} plan, expires ${user.subscription_expires_at}).`);
+          } else if (type === 'blog_pass') {
+            user.can_blog = true;
+            console.log(`[Stripe] Granted blog writer permissions to ${user.email}.`);
+          }
+          await user.save();
+        }
+      }
+    } else if (event.type === 'invoice.payment_succeeded') {
+      const invoice = event.data.object;
+      const subscriptionId = invoice.subscription;
+      const customerId = invoice.customer;
+      
+      if (subscriptionId || customerId) {
+        const user = await User.findOne({ 
+          where: subscriptionId ? { stripe_subscription_id: subscriptionId } : { stripe_customer_id: customerId } 
+        });
+        if (user && user.subscription_plan !== 'free') {
+          user.is_premium = true;
+          const now = new Date();
+          const durationDays = (user.subscription_interval === 'year' || user.subscription_interval === 'yearly') ? 365 : 30;
+          now.setDate(now.getDate() + durationDays);
+          user.subscription_expires_at = now;
+          await user.save();
+          console.log(`[Stripe Webhook] Extended recurring subscription for ${user.email} until ${user.subscription_expires_at}.`);
+        }
+      }
+    } else if (event.type === 'customer.subscription.deleted' || event.type === 'invoice.payment_failed') {
+      const subscription = event.data.object;
+      const subscriptionId = subscription.id || subscription.subscription;
+      const customerId = subscription.customer;
+
+      if (subscriptionId || customerId) {
+        const user = await User.findOne({ 
+          where: subscriptionId ? { stripe_subscription_id: subscriptionId } : { stripe_customer_id: customerId } 
+        });
+        if (user) {
+          user.is_premium = false;
+          user.subscription_plan = 'free';
+          user.subscription_expires_at = null;
+          user.stripe_subscription_id = null;
+          await user.save();
+          console.log(`[Stripe Webhook] Downgraded user ${user.email} to free plan due to subscription cancellation or payment failure.`);
+        }
       }
     }
+  } catch (err) {
+    console.error(`[Stripe Webhook Processing Error]`, err);
   }
 
   res.json({ received: true });
@@ -1423,6 +1463,18 @@ app.post('/api/admin/set-plan', authenticateToken, async (req, res) => {
     user.subscription_seats = parseInt(seats, 10) || 1;
     user.subscription_interval = interval || 'month';
     user.is_premium = plan !== 'free';
+    
+    if (plan === 'free') {
+      user.subscription_expires_at = null;
+      user.stripe_subscription_id = null;
+    } else if (req.body.expires_at) {
+      user.subscription_expires_at = new Date(req.body.expires_at);
+    } else {
+      const now = new Date();
+      const durationDays = (user.subscription_interval === 'year' || user.subscription_interval === 'yearly') ? 365 : 30;
+      now.setDate(now.getDate() + durationDays);
+      user.subscription_expires_at = now;
+    }
     
     if (role) {
       user.role = role;
