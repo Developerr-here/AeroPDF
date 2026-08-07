@@ -18,8 +18,8 @@ const Articles = () => {
   const [articleToEdit, setArticleToEdit] = useState(null);
   const [articleToDelete, setArticleToDelete] = useState(null);
 
-  // Check if current user is logged in to show writer controls
-  const isWriter = !!currentUser;
+  // Check if current user is logged in and authorized to show writer controls
+  const isWriter = currentUser && (currentUser.can_blog || currentUser.role === 'admin' || currentUser.email === 'ehsanulhaqpk094@gmail.com');
 
   const fetchArticles = async () => {
     setLoading(true);
