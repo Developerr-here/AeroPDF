@@ -314,7 +314,9 @@ const isToolAllowedForUser = (user, toolKey, ownerUser = null) => {
   const effective = ownerUser || user;
   if (effective.role === 'admin' || user.role === 'admin') return true;
   
-  const plan = effective.subscription_plan || 'free';
+  let plan = effective.subscription_plan || 'free';
+  if (plan === 'free' && effective.is_premium) plan = 'premium';
+  
   if (plan === 'free') return false;
   
   if (plan === 'custom') {
@@ -340,7 +342,10 @@ const isToolAllowedForUser = (user, toolKey, ownerUser = null) => {
 const checkAISubscription = (dbUser) => {
   if (!dbUser) return false;
   if (dbUser.role === 'admin') return true;
-  const plan = dbUser.subscription_plan || 'free';
+  
+  let plan = dbUser.subscription_plan || 'free';
+  if (plan === 'free' && dbUser.is_premium) plan = 'premium';
+
   if (['premium', 'business', 'starter', 'base', 'pro', 'enterprise'].includes(plan)) {
     return true;
   }
@@ -403,23 +408,34 @@ const getToolLimit = (path, plan, dbUser) => {
 
 const resolveEffectivePlanAndUser = async (dbUser) => {
   if (!dbUser) return { plan: 'free', user: null };
-  if (dbUser.role === 'admin') return { plan: dbUser.subscription_plan || 'premium', user: dbUser };
+  if (dbUser.role === 'admin') {
+    let adminPlan = dbUser.subscription_plan || 'premium';
+    if (adminPlan === 'free') adminPlan = 'premium';
+    return { plan: adminPlan, user: dbUser };
+  }
 
-  if (dbUser.subscription_plan && dbUser.subscription_plan !== 'free') {
+  let selfPlan = dbUser.subscription_plan || 'free';
+  if (selfPlan === 'free' && dbUser.is_premium) selfPlan = 'premium';
+
+  if (selfPlan !== 'free') {
     if (isSubscriptionExpired(dbUser)) {
       return { plan: 'free', user: dbUser };
     }
-    return { plan: dbUser.subscription_plan, user: dbUser };
+    return { plan: selfPlan, user: dbUser };
   }
 
   const isCollaborator = await CollaborationEmail.findOne({
     where: { email: dbUser.email }
   });
+  
   if (isCollaborator) {
     const owner = await User.findByPk(isCollaborator.owner_id);
-    if (owner && owner.subscription_plan && owner.subscription_plan !== 'free') {
-      if (!isSubscriptionExpired(owner)) {
-        return { plan: owner.subscription_plan, user: owner };
+    if (owner) {
+      let ownerPlan = owner.subscription_plan || 'free';
+      if (ownerPlan === 'free' && owner.is_premium) ownerPlan = 'premium';
+      
+      if (ownerPlan !== 'free' && !isSubscriptionExpired(owner)) {
+        return { plan: ownerPlan, user: owner };
       }
     }
   }
@@ -516,7 +532,14 @@ const checkUploadLimit = async (req, res, next) => {
 
   // 3. Custom plan per-tool permission check
   if (planName === 'custom') {
-    const toolKey = req.path.replace(/^\/api\//, '').replace(/\/.*/, '');
+    let toolKey = req.path.replace(/^\/api\//, '');
+    if (toolKey.startsWith('image/remove-background')) toolKey = 'remove-background';
+    else if (toolKey.startsWith('image/upscale')) toolKey = 'upscale-image';
+    else if (toolKey.startsWith('ai/assistant')) toolKey = 'ai-assistant';
+    else if (toolKey.startsWith('ai/summarize')) toolKey = 'ai-assistant';
+    else if (toolKey.startsWith('ai/translate')) toolKey = 'ai-assistant';
+    else toolKey = toolKey.replace(/\/.*/, '');
+
     if (!isToolAllowedForUser(dbUser, toolKey, effectiveUser)) {
       cleanTempFiles(req);
       return res.status(403).json({ error: 'This tool is not enabled for your custom plan. Please contact your account administrator.' });
@@ -1444,8 +1467,8 @@ app.delete('/api/admin/subscribers/:id', authenticateToken, async (req, res) => 
 
 // Admin manual account plan override configuration API
 app.post('/api/admin/set-plan', authenticateToken, async (req, res) => {
-  const { email, plan, seats, interval, customFeatures, features, role } = req.body;
-  const finalFeatures = customFeatures !== undefined ? customFeatures : features;
+  const { email, plan, seats, interval, customFeatures, custom_features, features, role } = req.body;
+  const finalFeatures = customFeatures !== undefined ? customFeatures : (custom_features !== undefined ? custom_features : features);
   if (!email || !plan) {
     return res.status(400).json({ error: 'Email and plan are required.' });
   }
@@ -1502,51 +1525,204 @@ app.post('/api/admin/set-plan', authenticateToken, async (req, res) => {
    BLOGGING API ENDPOINTS
    ========================================== */
 
-app.get('/api/blog', async (req, res) => {
+/* ==========================================
+   ARTICLES & GUIDES CMS API ENDPOINTS
+   ========================================== */
+
+// Helper: Check if user has article editing/publishing rights
+const isArticleWriter = (user) => {
+  if (!user) return false;
+  if (user.role === 'admin' || user.role === 'writer' || user.can_blog) return true;
+  const configuredWriterEmail = (process.env.SEO_WRITER_EMAIL || 'ehsanulhaqpk094@gmail.com').toLowerCase();
+  return user.email.toLowerCase() === configuredWriterEmail;
+};
+
+// Helper: Generate clean SEO slug from title
+const generateSlug = (text) => {
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/[^\w\-]+/g, '')
+    .replace(/\-\-+/g, '-');
+};
+
+// Route: Get articles list (supports ?tool=compress-pdf filtering)
+app.get('/api/articles', async (req, res) => {
   try {
-    const posts = await BlogPost.findAll({ order: [['createdAt', 'DESC']] });
+    const { tool, category } = req.query;
+    const targetTool = tool || category;
     
-    // Enrich each post with the author's current profile picture
-    const enrichedPosts = await Promise.all(posts.map(async (post) => {
-      const author = await User.findByPk(post.author_id);
-      return {
-        ...post.toJSON(),
-        author_pic: author ? author.profile_pic : null
-      };
-    }));
-    
-    res.json({ posts: enrichedPosts });
+    let whereClause = { status: 'published' };
+    if (targetTool && targetTool !== 'all' && targetTool !== 'general') {
+      whereClause.tool_id = targetTool;
+    }
+
+    let posts = await BlogPost.findAll({ 
+      where: whereClause,
+      order: [['createdAt', 'DESC']] 
+    });
+
+    res.json({ success: true, articles: posts, posts });
   } catch (err) {
-    res.status(500).json({ error: 'Failed to load blog posts.' });
+    console.error(err);
+    res.status(500).json({ error: 'Failed to load articles.' });
   }
 });
 
-app.post('/api/blog', authenticateToken, async (req, res) => {
+// Route: Get single article by slug
+app.get('/api/articles/:slug', async (req, res) => {
   try {
-    const { title, content } = req.body;
-    if (!title || !content) return res.status(400).json({ error: 'Title and content are required.' });
+    const { slug } = req.params;
+    let article = await BlogPost.findOne({ where: { slug } });
+    if (!article) {
+      article = await BlogPost.findByPk(slug);
+    }
+    if (!article) {
+      return res.status(404).json({ error: 'Article not found.' });
+    }
+    res.json({ success: true, article, post: article });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to load article.' });
+  }
+});
 
+// Route: Create new article
+app.post('/api/articles', authenticateToken, async (req, res) => {
+  try {
     const user = await User.findByPk(req.user.id);
-    if (!user || !user.can_blog) {
-      return res.status(403).json({ error: 'Permission denied. You must pay the $12 fee to publish articles.' });
+    if (!isArticleWriter(user)) {
+      return res.status(403).json({ error: 'Access denied. SEO Writer privileges required.' });
     }
 
+    const { 
+      title, 
+      slug: customSlug, 
+      category, 
+      tool_id, 
+      author_name, 
+      canonical_url, 
+      keywords, 
+      cover_image, 
+      alt_text, 
+      post_description, 
+      content, 
+      status 
+    } = req.body;
+
+    if (!title || !content) {
+      return res.status(400).json({ error: 'Title and content are required.' });
+    }
+
+    const baseSlug = customSlug || generateSlug(title);
+    let finalSlug = baseSlug;
+    let counter = 1;
+    while (await BlogPost.findOne({ where: { slug: finalSlug } })) {
+      finalSlug = `${baseSlug}-${counter}`;
+      counter++;
+    }
+
+    const targetTool = tool_id || category || 'general';
+    const canonical = canonical_url || `https://pdfbundles.com/articles/${finalSlug}`;
+
     const post = await BlogPost.create({
+      slug: finalSlug,
       title,
       content,
+      category: targetTool,
+      tool_id: targetTool,
+      canonical_url: canonical,
+      keywords: keywords || '',
+      cover_image: cover_image || '',
+      alt_text: alt_text || title,
+      post_description: post_description || '',
+      status: status || 'published',
       author_id: user.id,
       author_email: user.email,
-      author_name: user.display_name || user.email
+      author_name: author_name || user.display_name || 'PDF Bundles Team'
     });
 
-    // Consume the blog publishing token
-    user.can_blog = false;
-    await user.save();
-
-    res.json({ post });
+    res.json({ success: true, article: post, post });
   } catch (err) {
-    res.status(500).json({ error: 'Failed to create blog post.' });
+    console.error(err);
+    res.status(500).json({ error: 'Failed to create article: ' + err.message });
   }
+});
+
+// Route: Update existing article
+app.put('/api/articles/:id', authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.id);
+    if (!isArticleWriter(user)) {
+      return res.status(403).json({ error: 'Access denied. SEO Writer privileges required.' });
+    }
+
+    const post = await BlogPost.findByPk(req.params.id);
+    if (!post) return res.status(404).json({ error: 'Article not found.' });
+
+    const { 
+      title, 
+      slug: customSlug, 
+      category, 
+      tool_id, 
+      author_name, 
+      canonical_url, 
+      keywords, 
+      cover_image, 
+      alt_text, 
+      post_description, 
+      content, 
+      status 
+    } = req.body;
+
+    if (title) post.title = title;
+    if (content) post.content = content;
+    if (customSlug && customSlug !== post.slug) post.slug = customSlug;
+    if (category || tool_id) {
+      post.category = category || tool_id;
+      post.tool_id = tool_id || category;
+    }
+    if (author_name) post.author_name = author_name;
+    if (canonical_url) post.canonical_url = canonical_url;
+    if (keywords !== undefined) post.keywords = keywords;
+    if (cover_image !== undefined) post.cover_image = cover_image;
+    if (alt_text !== undefined) post.alt_text = alt_text;
+    if (post_description !== undefined) post.post_description = post_description;
+    if (status) post.status = status;
+
+    await post.save();
+    res.json({ success: true, article: post, post });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to update article: ' + err.message });
+  }
+});
+
+// Route: Delete article
+app.delete('/api/articles/:id', authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.id);
+    if (!isArticleWriter(user)) {
+      return res.status(403).json({ error: 'Access denied. SEO Writer privileges required.' });
+    }
+
+    const post = await BlogPost.findByPk(req.params.id);
+    if (!post) return res.status(404).json({ error: 'Article not found.' });
+
+    await post.destroy();
+    res.json({ success: true, message: 'Article deleted successfully.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to delete article.' });
+  }
+});
+
+// Legacy blog alias route
+app.get('/api/blog', async (req, res) => {
+  const posts = await BlogPost.findAll({ order: [['createdAt', 'DESC']] });
+  res.json({ posts });
 });
 
 // Route: Upload file or image for blog posts
@@ -1617,6 +1793,19 @@ app.post('/api/user/profile-pic', authenticateToken, blogUpload.single('profile_
     const user = await User.findByPk(req.user.id);
     if (!user) return res.status(404).json({ error: 'User not found.' });
 
+    // Clean up old profile picture from the filesystem to save space
+    if (user.profile_pic && user.profile_pic.startsWith('/api/blog-uploads/')) {
+      const oldFilename = user.profile_pic.split('/').pop();
+      const oldFilePath = path.join(blogUploadsDir, oldFilename);
+      if (fs.existsSync(oldFilePath)) {
+        try {
+          fs.unlinkSync(oldFilePath);
+        } catch (unlinkErr) {
+          console.error('Failed to delete old profile picture:', unlinkErr);
+        }
+      }
+    }
+
     const profilePicUrl = `/api/blog-uploads/${req.file.filename}`;
     user.profile_pic = profilePicUrl;
     await user.save();
@@ -1629,6 +1818,36 @@ app.post('/api/user/profile-pic', authenticateToken, blogUpload.single('profile_
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to upload profile picture.' });
+  }
+});
+
+// Route: Get user invoice history
+app.get('/api/user/invoices', authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.id);
+    if (!user) return res.status(404).json({ error: 'User not found.' });
+
+    if (!user.stripe_customer_id) {
+      return res.json({ invoices: [] });
+    }
+
+    const invoices = await stripe.invoices.list({
+      customer: user.stripe_customer_id,
+      limit: 20
+    });
+
+    const formattedInvoices = invoices.data.map(inv => ({
+      id: inv.number,
+      date: new Date(inv.created * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      amount: `$${(inv.amount_paid / 100).toFixed(2)}`,
+      status: inv.status === 'paid' ? 'Paid' : 'Pending',
+      pdf_url: inv.invoice_pdf
+    }));
+
+    res.json({ invoices: formattedInvoices });
+  } catch (err) {
+    console.error('Error fetching invoices:', err);
+    res.status(500).json({ error: 'Failed to fetch invoice history.', invoices: [] });
   }
 });
 
@@ -1675,6 +1894,7 @@ app.post('/api/ai/assistant', upload.single('file'), checkUploadLimit, verifyAIS
     // Stream text parsing from file
     let pdfData;
     try {
+      const dataBuffer = fs.readFileSync(file.path);
       const parser = new PDFParse({ data: new Uint8Array(dataBuffer) });
       pdfData = await parser.getText();
     } catch (parseErr) {
@@ -1796,6 +2016,7 @@ app.post('/api/ai/summarize', upload.single('file'), checkUploadLimit, verifyAIS
     // Stream text parsing from file
     let pdfData;
     try {
+      const dataBuffer = fs.readFileSync(file.path);
       const parser = new PDFParse({ data: new Uint8Array(dataBuffer) });
       pdfData = await parser.getText();
     } catch (parseErr) {
@@ -1877,6 +2098,7 @@ app.post('/api/ai/translate', upload.single('file'), checkUploadLimit, verifyAIS
 
     let pdfData;
     try {
+      const dataBuffer = fs.readFileSync(file.path);
       const parser = new PDFParse({ data: new Uint8Array(dataBuffer) });
       pdfData = await parser.getText();
     } catch (parseErr) {
@@ -1966,14 +2188,14 @@ app.post('/api/image/remove-background', upload.single('file'), checkUploadLimit
       try {
         console.log('[Remove.bg] Sending request to Remove.bg API...');
         const formData = new FormData();
-        const fileBlob = new Blob([fileBuffer], { type: file.mimetype });
-        formData.append('image_file', fileBlob, file.originalname);
+        formData.append('image_file', fileBuffer, { filename: file.originalname, contentType: file.mimetype });
         formData.append('size', 'auto');
 
         const response = await fetch('https://api.remove.bg/v1.0/removebg', {
           method: 'POST',
           headers: {
-            'X-Api-Key': REMOVE_BG_API_KEY
+            'X-Api-Key': REMOVE_BG_API_KEY,
+            ...formData.getHeaders()
           },
           body: formData
         });
@@ -2023,8 +2245,7 @@ app.post('/api/image/upscale', upload.single('file'), checkUploadLimit, verifyAI
       try {
         console.log('[Stability AI] Sending request to Upscaler API...');
         const formData = new FormData();
-        const fileBlob = new Blob([fileBuffer], { type: file.mimetype });
-        formData.append('image', fileBlob, file.originalname);
+        formData.append('image', fileBuffer, { filename: file.originalname, contentType: file.mimetype });
         formData.append('prompt', 'upscale image, high quality, detailed, sharp focus');
         formData.append('output_format', 'png');
 
@@ -2032,7 +2253,8 @@ app.post('/api/image/upscale', upload.single('file'), checkUploadLimit, verifyAI
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${STABILITY_API_KEY}`,
-            'accept': 'image/*'
+            'accept': 'image/*',
+            ...formData.getHeaders()
           },
           body: formData
         });
@@ -2055,13 +2277,13 @@ app.post('/api/image/upscale', upload.single('file'), checkUploadLimit, verifyAI
       try {
         console.log('[DeepAI] Sending request to Super Resolution API...');
         const formData = new FormData();
-        const fileBlob = new Blob([fileBuffer], { type: file.mimetype });
-        formData.append('image', fileBlob, file.originalname);
+        formData.append('image', fileBuffer, { filename: file.originalname, contentType: file.mimetype });
 
         const response = await fetch('https://api.deepai.org/api/super-resolution', {
           method: 'POST',
           headers: {
-            'api-key': DEEPAI_API_KEY
+            'api-key': DEEPAI_API_KEY,
+            ...formData.getHeaders()
           },
           body: formData
         });

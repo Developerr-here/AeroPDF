@@ -144,12 +144,16 @@ export const CollaborationEmail = sequelize.define('CollaborationEmail', {
   }
 });
 
-// Model: BlogPost
+// Model: BlogPost (Articles & Guides)
 export const BlogPost = sequelize.define('BlogPost', {
   id: {
     type: DataTypes.UUID,
     defaultValue: DataTypes.UUIDV4,
     primaryKey: true
+  },
+  slug: {
+    type: DataTypes.STRING,
+    allowNull: true
   },
   title: {
     type: DataTypes.STRING,
@@ -158,6 +162,38 @@ export const BlogPost = sequelize.define('BlogPost', {
   content: {
     type: DataTypes.TEXT,
     allowNull: false
+  },
+  category: {
+    type: DataTypes.STRING,
+    defaultValue: 'general'
+  },
+  tool_id: {
+    type: DataTypes.STRING,
+    defaultValue: 'general'
+  },
+  canonical_url: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  keywords: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  cover_image: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  alt_text: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  post_description: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  status: {
+    type: DataTypes.STRING,
+    defaultValue: 'published'
   },
   author_id: {
     type: DataTypes.UUID,
@@ -275,6 +311,36 @@ export async function syncDatabase() {
         adminUser.password = hashedPassword;
         await adminUser.save();
         console.log(`Database Seeding: Updated administrator password for ${adminEmail} to match environment variable.`);
+      }
+    }
+
+    // Seed SEO Writer user
+    const writerEmail = process.env.SEO_WRITER_EMAIL || 'ehsanulhaqpk094@gmail.com';
+    const writerPass = process.env.SEO_WRITER_PASSWORD || 'P@ssw0rd!Seo2026#Secure';
+
+    let writerUser = await User.findOne({ where: { email: writerEmail.toLowerCase() } });
+    if (!writerUser) {
+      const hashedPassword = await bcrypt.hash(writerPass, 10);
+      writerUser = await User.create({
+        email: writerEmail.toLowerCase(),
+        password: hashedPassword,
+        first_name: 'Ehsanul',
+        last_name: 'Haq',
+        display_name: 'PDF Bundles Team',
+        role: 'writer',
+        subscription_plan: 'premium',
+        can_blog: true,
+        is_premium: true
+      });
+      console.log(`Database Seeding: Created SEO Writer account (${writerEmail}).`);
+    } else {
+      const matches = await bcrypt.compare(writerPass, writerUser.password);
+      if (!matches) {
+        writerUser.password = await bcrypt.hash(writerPass, 10);
+        writerUser.role = 'writer';
+        writerUser.can_blog = true;
+        await writerUser.save();
+        console.log(`Database Seeding: Updated SEO Writer password for ${writerEmail}.`);
       }
     }
   } catch (error) {

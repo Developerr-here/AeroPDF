@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { X, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { GoogleLogin } from '@react-oauth/google';
+import { useToast } from '../context/ToastContext';
 
 const AuthModal = () => {
   const { isAuthModalOpen, closeAuthModal, authModalView, setAuthModalView, login, signup, googleLogin } = useAuth();
+  const { addToast } = useToast();
   
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -50,7 +52,7 @@ const AuthModal = () => {
 
   /* --- FORGOT PASSWORD DISABLED ---
   const handleForgotPassword = async () => {
-    if (!email) return alert("Please enter your email address first.");
+    if (!email) return addToast("Please enter your email address first.", "info");
     setError(null);
     setLoading(true);
     try {
@@ -88,7 +90,7 @@ const AuthModal = () => {
       });
       const data = await res.json();
       if (res.ok) {
-        alert("Password reset successful! You can now login.");
+        addToast("Password reset successful! You can now login.", "success");
         setAuthModalView('login');
         setPassword('');
       } else {

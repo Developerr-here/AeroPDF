@@ -5,6 +5,8 @@ import GenericToolPage from './pages/GenericToolPage'
 import Blog from './pages/Blog'
 import BlogArticle from './pages/BlogArticle'
 import BlogEditor from './pages/BlogEditor'
+import Articles from './pages/Articles'
+import ArticleView from './pages/ArticleView'
 import Dashboard from './pages/Dashboard'
 import Pricing from './pages/Pricing'
 import Features from './pages/Features'
@@ -74,7 +76,7 @@ const Footer = () => (
           <li><Link to="/features" className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">Features</Link></li>
           <li><Link to="/documentation" className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">Tools/documentation</Link></li>
           <li><Link to="/faq" className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">Frequently Asked Questions</Link></li>
-          <li><Link to="/blog" className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">Tech Blog</Link></li>
+          <li><Link to="/articles" className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">Articles & Guides</Link></li>
           <li><Link to="/pricing" className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">Upgrade to Premium</Link></li>
         </ul>
       </div>
@@ -166,7 +168,7 @@ const Layout = ({ children }) => {
               onMouseEnter={() => setActiveMegaMenu('ai')}
               onMouseLeave={() => setActiveMegaMenu(null)}
             >
-              <Link to="/ai-pdf-assistant" className="font-bold text-[15px] text-slate-700 hover:text-indigo-600 transition-colors flex items-center gap-2 cursor-default">AI Tools <span className="bg-blue-500 text-white text-[10px] px-2 py-0.5 rounded-full shadow-sm">NEW</span></Link>
+              <button className="font-bold text-[15px] text-slate-700 hover:text-indigo-600 transition-colors flex items-center gap-2 cursor-default">AI Tools <span className="bg-blue-500 text-white text-[10px] px-2 py-0.5 rounded-full shadow-sm">NEW</span></button>
               
               {/* AI Mega Menu Dropdown */}
               {activeMegaMenu === 'ai' && (
@@ -187,7 +189,7 @@ const Layout = ({ children }) => {
             </div>
 
             <Link to="/pricing" className="font-bold text-[15px] text-slate-700 hover:text-indigo-600 transition-colors">Pricing</Link>
-            <Link to="/blog" className="font-bold text-[15px] text-slate-700 hover:text-indigo-600 transition-colors">Blog</Link>
+            <Link to="/articles" className="font-bold text-[15px] text-slate-700 hover:text-indigo-600 transition-colors">Articles</Link>
           </nav>
 
           {/* Desktop & Mobile Right */}
@@ -217,8 +219,12 @@ const Layout = ({ children }) => {
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                   className="flex items-center gap-3 md:gap-4 hover:opacity-80 transition-opacity focus:outline-none"
                 >
-                  <div className="w-9 h-9 md:w-10 md:h-10 bg-indigo-100 text-indigo-600 font-bold rounded-full flex items-center justify-center">
-                    {currentUser.display_name ? currentUser.display_name.charAt(0).toUpperCase() : <User size={18}/>}
+                  <div className="w-9 h-9 md:w-10 md:h-10 bg-indigo-100 text-indigo-600 font-bold rounded-full flex items-center justify-center overflow-hidden">
+                    {currentUser.profile_pic ? (
+                      <img src={currentUser.profile_pic} alt="Profile" className="w-full h-full object-cover" />
+                    ) : (
+                      currentUser.display_name ? currentUser.display_name.charAt(0).toUpperCase() : <User size={18}/>
+                    )}
                   </div>
                   <div className="text-left hidden md:block">
                     <p className="text-sm font-bold text-slate-900">{currentUser.display_name || 'User'}</p>
@@ -255,8 +261,12 @@ const Layout = ({ children }) => {
                       {/* Column 3 - User */}
                       <div className="w-full md:w-[260px] md:pl-6 md:border-l border-slate-100 flex flex-col">
                         <div className="pb-3 border-b border-slate-100 flex items-center gap-3">
-                          <div className="w-12 h-12 bg-slate-50 border border-slate-200 text-slate-400 rounded-full flex items-center justify-center shrink-0">
-                            {currentUser.display_name ? currentUser.display_name.charAt(0).toUpperCase() : <User size={20}/>}
+                          <div className="w-12 h-12 bg-slate-50 border border-slate-200 text-slate-400 rounded-full flex items-center justify-center shrink-0 overflow-hidden">
+                            {currentUser.profile_pic ? (
+                              <img src={currentUser.profile_pic} alt="Profile" className="w-full h-full object-cover" />
+                            ) : (
+                              currentUser.display_name ? currentUser.display_name.charAt(0).toUpperCase() : <User size={20}/>
+                            )}
                           </div>
                           <div className="overflow-hidden">
                             <p className="text-[15px] font-bold text-slate-900 truncate">{currentUser.display_name || 'System Administr...'}</p>
@@ -358,8 +368,12 @@ const Layout = ({ children }) => {
                 </div>
               ) : (
                 <div className="px-6 pb-6 flex items-center gap-4 border-b border-slate-100">
-                  <div className="w-16 h-16 bg-slate-50 border border-slate-200 text-slate-400 rounded-full flex items-center justify-center shrink-0">
-                    {currentUser.display_name ? currentUser.display_name.charAt(0).toUpperCase() : <User size={32}/>}
+                  <div className="w-16 h-16 bg-slate-50 border border-slate-200 text-slate-400 rounded-full flex items-center justify-center shrink-0 overflow-hidden">
+                    {currentUser.profile_pic ? (
+                      <img src={currentUser.profile_pic} alt="Profile" className="w-full h-full object-cover" />
+                    ) : (
+                      currentUser.display_name ? currentUser.display_name.charAt(0).toUpperCase() : <User size={32}/>
+                    )}
                   </div>
                   <div>
                     <h3 className="font-bold text-slate-900 text-[17px] leading-tight">{currentUser.display_name || 'System Administr...'}</h3>
@@ -446,6 +460,8 @@ function App() {
           <Layout>
             <Routes>
               <Route path="/" element={<Home />} />
+              <Route path="/articles" element={<Articles />} />
+              <Route path="/articles/:slug" element={<ArticleView />} />
               <Route path="/blog" element={<Blog />} />
               <Route path="/blog/new" element={<BlogEditor />} />
               <Route path="/blog/:id" element={<BlogArticle />} />

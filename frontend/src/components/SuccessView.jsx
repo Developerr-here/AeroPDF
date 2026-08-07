@@ -47,6 +47,12 @@ export default function SuccessView({ filename, blob, jsonResult, onReset }) {
             </tbody>
           </table>
         </div>
+      ) : jsonResult && (jsonResult.summary || jsonResult.result || jsonResult.translation) ? (
+        <div className="w-full max-w-3xl mb-10 text-left bg-slate-50 p-8 rounded-xl border border-slate-200 overflow-y-auto max-h-[500px] shadow-inner custom-scrollbar">
+          <div className="prose prose-slate max-w-none whitespace-pre-wrap text-[15px] leading-relaxed text-slate-700">
+            {jsonResult.summary || jsonResult.result || jsonResult.translation}
+          </div>
+        </div>
       ) : (
         <p className="text-sm text-slate-500 font-medium mb-10 text-center max-w-md">
           Your file <span className="text-slate-700 font-bold">"{filename}"</span> has been processed securely and is ready for download.

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { ALL_TOOLS } from '../data/tools';
 import ToolsGrid from '../components/ToolsGrid';
 import FAQ from '../components/FAQ';
@@ -21,6 +21,16 @@ const Home = () => {
   const { currentUser, openAuthModal, token } = useAuth();
   const { addToast } = useToast();
   const [loading, setLoading] = useState(false);
+
+  const location = useLocation();
+  React.useEffect(() => {
+    if (location.hash) {
+      setTimeout(() => {
+        const element = document.getElementById(location.hash.slice(1));
+        if (element) element.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    }
+  }, [location]);
 
   const [email, setEmail] = useState('');
   const [newsletterLoading, setNewsletterLoading] = useState(false);

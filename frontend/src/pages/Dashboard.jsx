@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import ConfirmModal from '../components/ConfirmModal';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { User, Lock, Users, CreditCard, Building, FileText, Settings, Upload, Star, Check } from 'lucide-react';
 
@@ -31,14 +32,29 @@ const Dashboard = () => {
 
   // Teams State
   const [teamMembers, setTeamMembers] = useState([]);
+  const [seatsUsed, setSeatsUsed] = useState(0);
+  const [maxSeats, setMaxSeats] = useState(1);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviting, setInviting] = useState(false);
   const [loadingTeams, setLoadingTeams] = useState(false);
+
+  // Invoices State
+  const [invoices, setInvoices] = useState([]);
+  const [loadingInvoices, setLoadingInvoices] = useState(false);
 
   // Admin State
   const [adminInquiries, setAdminInquiries] = useState([]);
   const [adminSubscribers, setAdminSubscribers] = useState([]);
   const [loadingAdmin, setLoadingAdmin] = useState(false);
+  
+  // Confirm Modal State
+  const [confirmConfig, setConfirmConfig] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+    isDestructive: true
+  });
   
   const [targetEmail, setTargetEmail] = useState('');
   const [adminPlan, setAdminPlan] = useState('custom'); 
@@ -73,8 +89,27 @@ const Dashboard = () => {
       fetchTeamMembers();
     } else if (activeTab === 'admin' && (currentUser?.is_admin || currentUser?.role === 'admin')) {
       fetchAdminData();
+    } else if (activeTab === 'invoices' && currentUser) {
+      fetchInvoices();
     }
   }, [activeTab, currentUser]);
+
+  const fetchInvoices = async () => {
+    setLoadingInvoices(true);
+    try {
+      const res = await fetch('/api/user/invoices', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setInvoices(data.invoices || []);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingInvoices(false);
+    }
+  };
 
   const fetchTeamMembers = async () => {
     setLoadingTeams(true);
@@ -84,7 +119,9 @@ const Dashboard = () => {
       });
       if (res.ok) {
         const data = await res.json();
-        setTeamMembers(data.collaborations || []);
+        setTeamMembers(data.collaborators || []);
+        setSeatsUsed(data.seatsUsed || 0);
+        setMaxSeats(data.maxSeats || 1);
       }
     } catch (err) {
       console.error(err);
@@ -226,22 +263,29 @@ const Dashboard = () => {
     }
   };
 
-  const handleRemoveTeam = async (email) => {
-    if (!window.confirm(`Remove ${email} from your team?`)) return;
-    try {
-      const res = await fetch('/api/collaboration/remove', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ email })
-      });
-      if (res.ok) {
-        fetchTeamMembers();
-      } else {
-        addToast('Failed to remove team member.', 'error');
+  const handleRemoveTeam = (email) => {
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Remove Team Member',
+      message: `Are you sure you want to remove ${email} from your team? They will lose access to premium features immediately.`,
+      isDestructive: true,
+      onConfirm: async () => {
+        try {
+          const res = await fetch('/api/collaboration/remove', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ email })
+          });
+          if (res.ok) {
+            fetchTeamMembers();
+          } else {
+            addToast('Failed to remove team member.', 'error');
+          }
+        } catch (err) {
+          addToast(err.message, 'error');
+        }
       }
-    } catch (err) {
-      addToast(err.message, 'error');
-    }
+    });
   };
 
   const handleSaveUserConfig = async () => {
@@ -280,17 +324,24 @@ const Dashboard = () => {
     }
   };
 
-  const handleDeleteInquiry = async (id) => {
-    if (!window.confirm('Delete this inquiry?')) return;
-    try {
-      const res = await fetch(`/api/admin/inquiries/${id}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (res.ok) fetchAdminData();
-    } catch (err) {
-      console.error(err);
-    }
+  const handleDeleteInquiry = (id) => {
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Delete Inquiry',
+      message: 'Are you sure you want to delete this support inquiry? This action cannot be undone.',
+      isDestructive: true,
+      onConfirm: async () => {
+        try {
+          const res = await fetch(`/api/admin/inquiries/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (res.ok) fetchAdminData();
+        } catch (err) {
+          console.error(err);
+        }
+      }
+    });
   };
 
   const toggleTool = (toolId) => {
@@ -370,11 +421,8 @@ const Dashboard = () => {
                 <button onClick={() => setActiveTab('billing')} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl font-medium text-[14px] transition-colors ${activeTab === 'billing' ? 'bg-[#f5f3ff] text-[#1a1c29]' : 'text-[#64748b] hover:bg-slate-50 hover:text-[#1a1c29]'}`}>
                   <CreditCard size={18} strokeWidth={2} className={activeTab === 'billing' ? 'text-[#1a1c29]' : 'text-[#94a3b8]'} /> Plans & Packages
                 </button>
-                <button className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl font-medium text-[14px] text-[#64748b] hover:bg-slate-50 hover:text-[#1a1c29] transition-colors">
-                  <Building size={18} strokeWidth={2} className="text-[#94a3b8]" /> Business Details
-                </button>
-                <button className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl font-medium text-[14px] text-[#64748b] hover:bg-slate-50 hover:text-[#1a1c29] transition-colors">
-                  <FileText size={18} strokeWidth={2} className="text-[#94a3b8]" /> Invoices
+                <button onClick={() => setActiveTab('invoices')} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl font-medium text-[14px] transition-colors ${activeTab === 'invoices' ? 'bg-[#f5f3ff] text-[#1a1c29]' : 'text-[#64748b] hover:bg-slate-50 hover:text-[#1a1c29]'}`}>
+                  <FileText size={18} strokeWidth={2} className={activeTab === 'invoices' ? 'text-[#1a1c29]' : 'text-[#94a3b8]'} /> Invoices
                 </button>
               </nav>
             </div>
@@ -592,7 +640,7 @@ const Dashboard = () => {
                 <div className="p-6">
                   <div className="flex justify-between items-center bg-[#f8fafc] border border-slate-200 rounded-xl px-4 py-3 mb-6">
                     <span className="text-[13px] font-bold text-[#1a1c29]">Plan Seat Occupancy:</span>
-                    <span className="text-[13px] font-bold text-[#475569]">{teamMembers.length}/{currentUser.subscription_seats || 1} used</span>
+                    <span className="text-[13px] font-bold text-[#475569]">{seatsUsed}/{maxSeats} used</span>
                   </div>
                   
                   <div className="space-y-2 mb-6">
@@ -639,10 +687,56 @@ const Dashboard = () => {
             <div className="space-y-6 animate-in fade-in max-w-[800px]">
               <div className="bg-white rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-slate-100 overflow-hidden">
                 <div className="px-8 py-6 border-b border-slate-100">
+                  <h3 className="text-[16px] font-bold text-[#1a1c29]">Your Current Plan</h3>
+                </div>
+                <div className="p-8">
+                  {currentUser.subscription_plan === 'free' ? (
+                    <div className="text-center py-6">
+                      <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <CreditCard size={24} className="text-slate-400" />
+                      </div>
+                      <h4 className="text-[18px] font-bold text-slate-800 mb-2">Free Plan</h4>
+                      <p className="text-slate-500 text-[14px] mb-6">You are currently using the free version with limited features.</p>
+                      <Link to="/pricing" className="inline-block bg-[#4f46e5] text-white px-6 py-3 rounded-xl font-bold text-[14px] hover:bg-indigo-700 transition-colors shadow-sm">
+                        Upgrade to Premium
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="bg-slate-50 border border-slate-100 rounded-xl p-6">
+                      <div className="flex justify-between items-start mb-6">
+                        <div>
+                          <h4 className="text-[18px] font-bold text-slate-800 capitalize">{currentUser.subscription_plan} Plan</h4>
+                          <p className="text-slate-500 text-[13px] mt-1">{currentUser.subscription_seats} Seat(s) • Billed {currentUser.subscription_interval || 'monthly'}</p>
+                        </div>
+                        <span className="bg-green-100 text-green-700 text-[11px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wider">Active</span>
+                      </div>
+                      <Link to="/pricing" className="text-[13px] font-bold text-indigo-600 hover:underline">
+                        Change Plan or Manage Subscription
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'invoices' && (
+            <div className="space-y-6 animate-in fade-in max-w-[800px]">
+              <div className="bg-white rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-slate-100 overflow-hidden">
+                <div className="px-8 py-6 border-b border-slate-100">
                   <h3 className="text-[16px] font-bold text-[#1a1c29]">Billing & Invoices</h3>
                 </div>
                 <div className="p-8">
-                  {isPremium ? (
+                  {loadingInvoices ? (
+                    <p className="text-center text-[#64748b] text-[13px] py-10">Fetching invoices...</p>
+                  ) : invoices.length === 0 ? (
+                    <div className="text-center py-10">
+                      <p className="text-[#64748b] text-[14px] mb-4">No invoice history found.</p>
+                      <Link to="/pricing" className="inline-block bg-[#4f46e5] text-white px-5 py-2.5 rounded-lg font-bold text-[13px] hover:bg-indigo-700 transition-colors shadow-sm">
+                        View Premium Plans
+                      </Link>
+                    </div>
+                  ) : (
                     <table className="w-full text-left">
                       <thead>
                         <tr className="border-b border-slate-100">
@@ -654,37 +748,37 @@ const Dashboard = () => {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-50">
-                        <tr>
-                          <td className="py-4 text-[13px] font-medium text-[#1a1c29]">INV-2023-01</td>
-                          <td className="py-4 text-[13px] text-slate-500">Today</td>
-                          <td className="py-4 text-[13px] text-slate-500">{currentUser.subscription_plan === 'pro' ? '$29.00' : '$9.00'}</td>
-                          <td className="py-4"><span className="bg-green-100 text-green-700 text-[11px] font-bold px-2 py-1 rounded">Paid</span></td>
-                          <td className="py-4 text-right">
-                            <button 
-                              onClick={async () => {
-                                const { downloadInvoicePDF } = await import('../utils/invoice');
-                                const date = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-                                const success = await downloadInvoicePDF('INV-2023-01', date, `${date} - Next Month`, currentUser.subscription_plan === 'pro' ? '$29.00' : '$9.00', currentUser);
-                                if (success) {
-                                  addToast('Invoice downloaded successfully!', 'success');
-                                } else {
-                                  addToast('Failed to generate and download invoice.', 'error');
-                                }
-                              }} 
-                              className="text-[12px] font-bold text-blue-600 hover:underline">
-                              Download PDF
-                            </button>
-                          </td>
-                        </tr>
+                        {invoices.map((inv, idx) => (
+                          <tr key={idx}>
+                            <td className="py-4 text-[13px] font-medium text-[#1a1c29]">{inv.id || `INV-00${idx+1}`}</td>
+                            <td className="py-4 text-[13px] text-slate-500">{inv.date}</td>
+                            <td className="py-4 text-[13px] text-slate-500">{inv.amount}</td>
+                            <td className="py-4"><span className={`text-[11px] font-bold px-2 py-1 rounded ${inv.status === 'Paid' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>{inv.status}</span></td>
+                            <td className="py-4 text-right">
+                              {inv.pdf_url ? (
+                                <a href={inv.pdf_url} target="_blank" rel="noreferrer" className="text-[12px] font-bold text-blue-600 hover:underline">
+                                  Download PDF
+                                </a>
+                              ) : (
+                                <button 
+                                  onClick={async () => {
+                                    const { downloadInvoicePDF } = await import('../utils/invoice');
+                                    const success = await downloadInvoicePDF(inv.id || `INV-00${idx+1}`, inv.date, `${inv.date} - Subscription`, inv.amount, currentUser);
+                                    if (success) {
+                                      addToast('Invoice downloaded successfully!', 'success');
+                                    } else {
+                                      addToast('Failed to generate and download invoice.', 'error');
+                                    }
+                                  }} 
+                                  className="text-[12px] font-bold text-blue-600 hover:underline">
+                                  Download PDF
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
                       </tbody>
                     </table>
-                  ) : (
-                    <div className="text-center py-10">
-                      <p className="text-[#64748b] text-[14px] mb-4">You are currently on the Free plan. No invoices available.</p>
-                      <Link to="/pricing" className="inline-block bg-[#4f46e5] text-white px-5 py-2.5 rounded-lg font-bold text-[13px] hover:bg-indigo-700 transition-colors shadow-sm">
-                        View Premium Plans
-                      </Link>
-                    </div>
                   )}
                 </div>
               </div>
@@ -937,9 +1031,17 @@ const Dashboard = () => {
 
         </main>
       </div>
+
+      <ConfirmModal
+        isOpen={confirmConfig.isOpen}
+        onClose={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmConfig.onConfirm}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        isDestructive={confirmConfig.isDestructive}
+      />
     </div>
   );
 };
 
 export default Dashboard;
-
