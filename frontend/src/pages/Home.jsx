@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { ALL_TOOLS } from '../data/tools';
 import ToolsGrid from '../components/ToolsGrid';
 import FAQ from '../components/FAQ';
+import SEOSchema from '../components/SEOSchema';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { 
@@ -128,6 +129,8 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans pb-24 md:pb-12">
+      <SEOSchema />
+      
       {/* Hero Section */}
       <div className="max-w-[1600px] mx-auto px-6 pt-12 md:pt-20 pb-16 flex flex-col lg:flex-row items-center gap-16">
         <div className="flex-1 space-y-6 md:space-y-8 text-center lg:text-left">
@@ -135,11 +138,11 @@ const Home = () => {
             <span className="text-amber-500">✨</span> 100% FREE • NO SIGN UP REQUIRED
           </div>
           <h1 className="text-4xl md:text-6xl lg:text-[76px] font-black tracking-tight text-slate-900 leading-[1.05]">
-            Transform PDFs <br className="hidden lg:block" />
-            in <span className="text-indigo-600">Seconds</span>
+            Free Online PDF <br className="hidden lg:block" />
+            <span className="text-indigo-600">Converter Tools</span>
           </h1>
           <p className="text-base md:text-lg lg:text-xl text-slate-500 font-medium max-w-xl mx-auto lg:mx-0 leading-relaxed">
-            Merge, compress, convert, edit & secure your PDFs with 24 powerful tools. Simple, fast & AI-powered.
+            Now you can merge pdfs, compress your pdf files, edit pdf and do many things with our 24 free online converter tools.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-2">
             <div className="relative w-full sm:w-auto">
@@ -147,7 +150,7 @@ const Home = () => {
                 onClick={() => setShowUploadMenu(!showUploadMenu)}
                 className="w-full sm:w-auto flex justify-center items-center gap-3 bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-4 rounded-full font-bold text-[16px] shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all"
               >
-                <span className="text-xl">↑</span> Upload PDF Now <ChevronDown size={18}/>
+                <span className="text-xl">↑</span> Upload PDF Document <ChevronDown size={18}/>
               </button>
               {showUploadMenu && (
                 <div className="absolute top-full left-0 right-0 sm:right-auto mt-3 w-full sm:w-64 bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden z-50 animate-in fade-in slide-in-from-top-4">
@@ -235,21 +238,24 @@ const Home = () => {
 
       {/* ALL TOOLS */}
       <div id="tools" className="max-w-[1600px] mx-auto px-6 py-12 md:py-16">
-        <ToolsGrid />
+        <ToolsGrid 
+          title="Explore Our 24 Free Online PDF Tools"
+          subtitle="These free PDF tools make your day-to-day tasks easier by saving your time. We have categorized all PDF tools so you can find your PDF tool easily."
+        />
       </div>
 
       {/* How It Works */}
       <div className="max-w-[1600px] mx-auto px-6 py-24 text-center">
         <span className="bg-indigo-100 text-indigo-600 font-bold text-sm px-4 py-1.5 rounded-full uppercase tracking-widest">Simple Process</span>
-        <h2 className="text-5xl font-black text-slate-900 mt-8 mb-6 tracking-tight">How It Works</h2>
-        <p className="text-slate-500 font-medium text-xl mb-20">Three simple steps to process your files securely in your browser</p>
+        <h2 className="text-5xl font-black text-slate-900 mt-8 mb-6 tracking-tight">How PDF Tools Work</h2>
+        <p className="text-slate-500 font-medium text-xl mb-20">Here are three simple steps to process your pdf files securely in your browser.</p>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
           <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-2 hover:border-indigo-100 transition-all duration-300 relative overflow-hidden group">
             <span className="absolute top-6 right-8 text-7xl font-black text-slate-50 group-hover:text-indigo-50/50 transition-colors z-0">01</span>
             <div className="relative z-10">
               <div className="w-14 h-14 bg-indigo-50 rounded-2xl text-indigo-600 flex items-center justify-center mb-8"><UploadCloud size={28}/></div>
-              <h3 className="text-xl font-bold text-slate-900 mb-3">Upload Documents</h3>
+              <h3 className="text-xl font-bold text-slate-900 mb-3">Upload PDF Document</h3>
               <p className="text-slate-500 font-medium leading-relaxed">Select or drag and drop your PDFs or images into our secure workspace area. Files are processed locally or deleted immediately after.</p>
             </div>
           </div>
@@ -267,8 +273,8 @@ const Home = () => {
             <span className="absolute top-6 right-8 text-7xl font-black text-slate-50 group-hover:text-emerald-50/50 transition-colors z-0">03</span>
             <div className="relative z-10">
               <div className="w-14 h-14 bg-emerald-50 rounded-2xl text-emerald-600 flex items-center justify-center mb-8"><Download size={28}/></div>
-              <h3 className="text-xl font-bold text-slate-900 mb-3">Download Output</h3>
-              <p className="text-slate-500 font-medium leading-relaxed">Our processing engine compiles your customized document instantly. Download the output file with a single secure click.</p>
+              <h3 className="text-xl font-bold text-slate-900 mb-3">Download Your PDF</h3>
+              <p className="text-slate-500 font-medium leading-relaxed">Our processing engine compiles your customized document instantly. Download the output pdf file with a single secure click.</p>
             </div>
           </div>
         </div>
@@ -637,8 +643,8 @@ const Home = () => {
       <div className="max-w-[1200px] mx-auto px-6 py-16">
         <div className="flex justify-between items-end mb-8">
           <div>
-            <h2 className="text-2xl font-black text-slate-900 flex items-center gap-2"><span className="text-xl">🔥</span> Popular Tools</h2>
-            <p className="text-slate-500 font-medium text-sm mt-1">Most used PDF tools by our community</p>
+            <h2 className="text-2xl font-black text-slate-900 flex items-center gap-2"><span className="text-xl">🔥</span> Popular Free PDF Converter Tools</h2>
+            <p className="text-slate-500 font-medium text-sm mt-1">Access 24 free online PDF converter tools with PDF Bundles. Convert images and documents, merge or split PDFs, compress files, and manage your PDFs online without installing any software.</p>
           </div>
           <a href="#tools" className="text-sm font-bold text-slate-600 hover:text-indigo-600 transition-colors border border-slate-200 hover:border-indigo-200 px-4 py-2 rounded-full">
             Explore All Tools &rarr;
@@ -731,7 +737,7 @@ const Home = () => {
       <div className="max-w-[1000px] mx-auto px-6 py-20 text-center">
         <span className="bg-indigo-100 text-indigo-600 font-bold text-xs px-3 py-1 rounded-full uppercase tracking-widest">FAQ</span>
         <h2 className="text-4xl font-black text-[#1E1B4B] mt-6 mb-4 tracking-tight">Frequently Asked Questions</h2>
-        <p className="text-slate-500 font-medium text-lg mb-16">Clear, direct answers to common questions about security, limits, and team seats</p>
+        <p className="text-slate-500 font-medium text-lg mb-16">Here you can find clear and direct answers to common questions about PDF tools.</p>
         <div className="text-left">
           <FAQ />
         </div>
