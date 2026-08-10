@@ -3509,63 +3509,44 @@ app.post('/api/compare', upload.array('files'), checkUploadLimit, apiLimiter, as
 });
 
 /* ==========================================
-   SEO SITEMAP FOR SPA
+   DYNAMIC SEO SITEMAP
    ========================================== */
-/*
-app.get('/sitemap.xml', (req, res) => {
-  const host = req.get('host');
-  const protocol = req.protocol;
-  const baseUrl = `${protocol}://${host}`;
+app.get('/sitemap.xml', async (req, res) => {
+  try {
+    const baseUrl = 'https://pdfbundles.com';
+    const seoConfig = require('./seo-config');
+    const tools = Object.keys(seoConfig);
+    const pages = ['', '/pricing', '/features', '/blog', '/dashboard'];
+    
+    let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+    xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
 
-  const pages = [
-    '',
-    '?tab=blog',
-    '?tab=features',
-    '?tab=documentation',
-    '?tab=faq',
-    '?tab=security',
-    '?tab=press',
-    '?tab=privacy',
-    '?tab=terms',
-    '?tab=about'
-  ];
+    // Add Core Pages
+    pages.forEach(p => {
+      xml += `  <url>\n    <loc>${baseUrl}${p}</loc>\n    <changefreq>daily</changefreq>\n    <priority>${p === '' ? '1.0' : '0.8'}</priority>\n  </url>\n`;
+    });
 
-  const tools = [
-    'merge', 'split', 'compress', 'pdf-to-word', 'word-to-pdf', 
-    'pdf-to-img', 'img-to-pdf', 'organize-pdf', 'edit-pdf', 
-    'rotate', 'crop', 'page-numbers', 'watermark', 'protect', 
-    'unlock', 'sign', 'pdf-to-excel', 'excel-to-pdf', 
-    'pdf-to-ppt', 'ppt-to-pdf', 'repair', 'ocr', 
-    'ai-assistant', 'remove-background', 'upscale-image'
-  ];
+    // Add Tools
+    tools.forEach(t => {
+      xml += `  <url>\n    <loc>${baseUrl}${t}</loc>\n    <changefreq>weekly</changefreq>\n    <priority>0.9</priority>\n  </url>\n`;
+    });
 
-  let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
-  xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
+    // Add Dynamic Articles from Database
+    const [articles] = await db.query("SELECT slug, created_at FROM articles WHERE status = 'published'");
+    articles.forEach(article => {
+      const date = new Date(article.created_at).toISOString().split('T')[0];
+      xml += `  <url>\n    <loc>${baseUrl}/blog/${article.slug}</loc>\n    <lastmod>${date}</lastmod>\n    <changefreq>monthly</changefreq>\n    <priority>0.7</priority>\n  </url>\n`;
+    });
 
-  // Add pages
-  pages.forEach(p => {
-    xml += '  <url>\n';
-    xml += `    <loc>${baseUrl}/${p}</loc>\n`;
-    xml += '    <changefreq>weekly</changefreq>\n';
-    xml += '    <priority>0.8</priority>\n';
-    xml += '  </url>\n';
-  });
+    xml += '</urlset>';
 
-  // Add tools
-  tools.forEach(t => {
-    xml += '  <url>\n';
-    xml += `    <loc>${baseUrl}/?tool=${t}</loc>\n`;
-    xml += '    <changefreq>monthly</changefreq>\n';
-    xml += '    <priority>0.9</priority>\n';
-    xml += '  </url>\n';
-  });
-
-  xml += '</urlset>';
-
-  res.header('Content-Type', 'application/xml');
-  res.send(xml);
+    res.header('Content-Type', 'application/xml');
+    res.send(xml);
+  } catch (err) {
+    console.error('Sitemap generation error:', err);
+    res.status(500).send('Error generating sitemap');
+  }
 });
-*/
 
 // Serve static files from the React frontend build
 app.use(express.static(path.join(__dirname, 'frontend/dist')));
