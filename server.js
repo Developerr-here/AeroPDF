@@ -23,7 +23,7 @@ import HTMLtoDOCX from 'html-to-docx';
 import fetch from 'node-fetch';
 import FormData from 'form-data';
 
-const CLOUDMERSIVE_API_KEY = process.env.CLOUDMERSIVE_API_KEY || 'a655cf08-635a-4b09-a816-d5dacac98a30';
+const CLOUDMERSIVE_API_KEY = process.env.CLOUDMERSIVE_API_KEY;
 
 async function convertWithCloudmersive(fileBuffer, fileName, endpointUrl) {
   if (!CLOUDMERSIVE_API_KEY) throw new Error('No Cloudmersive API key configured');
@@ -3570,9 +3570,33 @@ app.get('/sitemap.xml', (req, res) => {
 // Serve static files from the React frontend build
 app.use(express.static(path.join(__dirname, 'frontend/dist')));
 
+const seoConfig = require('./seo-config');
+const fs = require('fs');
+
 app.get(/.*/, (req, res, next) => {
   if (req.path.startsWith('/api')) return next();
-  res.sendFile(path.join(__dirname, 'frontend/dist', 'index.html'));
+  
+  const indexPath = path.join(__dirname, 'frontend/dist', 'index.html');
+  
+  fs.readFile(indexPath, 'utf8', (err, htmlData) => {
+    if (err) {
+      console.error('Error reading index.html:', err);
+      return res.status(500).send('Error loading page');
+    }
+    
+    let finalHtml = htmlData;
+    const seo = seoConfig[req.path];
+    
+    if (seo) {
+      finalHtml = finalHtml.replace(/<title>.*<\/title>/, `<title>${seo.title}</title>`);
+      finalHtml = finalHtml.replace(/<meta name="description" content="[^"]*"/, `<meta name="description" content="${seo.desc}"`);
+      finalHtml = finalHtml.replace(/<meta property="og:title" content="[^"]*"/, `<meta property="og:title" content="${seo.title}"`);
+      finalHtml = finalHtml.replace(/<meta property="og:description" content="[^"]*"/, `<meta property="og:description" content="${seo.desc}"`);
+      finalHtml = finalHtml.replace(/<link rel="canonical" href="[^"]*"/, `<link rel="canonical" href="https://pdfbundles.com${req.path}"`);
+    }
+    
+    res.send(finalHtml);
+  });
 });
 
 // Express Error Handler for Multer / general errors
