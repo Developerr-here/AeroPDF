@@ -1,4 +1,4 @@
-module.exports = {
+export default {
   '/merge-pdf': { title: 'Merge PDF Online | Free PDF Converter Tool', desc: 'Combine multiple PDFs into one. 100% free online PDF merger with no signup required.' },
   '/split-pdf': { title: 'Split PDF Online | Free PDF Extractor Tool', desc: 'Extract ranges or split all pages. 100% free online PDF splitter.' },
   '/remove-pages': { title: 'Remove Pages from PDF | Free PDF Tool', desc: 'Delete pages from your PDF file. 100% free online tool.' },

@@ -22,6 +22,7 @@ import { PDFParse } from 'pdf-parse';
 import HTMLtoDOCX from 'html-to-docx';
 import fetch from 'node-fetch';
 import FormData from 'form-data';
+import seoConfig from './seo-config.js';
 
 const CLOUDMERSIVE_API_KEY = process.env.CLOUDMERSIVE_API_KEY;
 
@@ -3514,7 +3515,6 @@ app.post('/api/compare', upload.array('files'), checkUploadLimit, apiLimiter, as
 app.get('/sitemap.xml', async (req, res) => {
   try {
     const baseUrl = 'https://pdfbundles.com';
-    const seoConfig = require('./seo-config');
     const tools = Object.keys(seoConfig);
     const pages = ['', '/pricing', '/features', '/blog', '/dashboard'];
     
@@ -3550,9 +3550,6 @@ app.get('/sitemap.xml', async (req, res) => {
 
 // Serve static files from the React frontend build
 app.use(express.static(path.join(__dirname, 'frontend/dist')));
-
-const seoConfig = require('./seo-config');
-const fs = require('fs');
 
 app.get(/.*/, (req, res, next) => {
   if (req.path.startsWith('/api')) return next();
