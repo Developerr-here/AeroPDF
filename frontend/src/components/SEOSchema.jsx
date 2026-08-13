@@ -473,10 +473,10 @@ export default function SEOSchema() {
     },
     {
       "@type": "Question",
-      "name": "What is the best JPG to PDF converter?",
+      "name": "What is the best free software for splitting or merging PDF files?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "The best JPG to PDF converter is one that preserves image quality, supports multiple JPG files, processes files quickly, and protects your privacy. A good converter should also work on any device without requiring downloads or account registration. When choosing a JPG to PDF converter, look for features such as drag-and-drop uploads, page reordering, image rotation, fast processing, and secure file handling. If you need to combine multiple images into a single PDF, the converter should let you arrange the images before generating the final document. Browser-based tools make the process simple and convenient while keeping your workflow fast."
+        "text": "The best free tool for splitting or merging PDF files is one that works directly in your browser, since it saves you from downloading software and works the same way on any device. Look for a tool that lets you reorder pages before merging, select custom page ranges when splitting, and keeps your original formatting and image quality intact. Speed also matters, most browser-based tools process files in seconds regardless of document size. PDFBundles offers both merge and split tools for free with no account or email sign up required, making it a straightforward option for one off tasks or regular use."
       }
     }
   ]

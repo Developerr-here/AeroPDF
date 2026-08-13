@@ -71,6 +71,38 @@ const GenericToolPage = ({ tool }) => {
     setFiles(newFiles);
   };
 
+  useEffect(() => {
+    // Dynamically update Canonical URL for SEO extensions during SPA navigation
+    const canonicalUrl = `https://pdfbundles.com/${tool.id}`;
+    let canonicalLink = document.querySelector("link[rel='canonical']");
+    if (!canonicalLink) {
+      canonicalLink = document.createElement('link');
+      canonicalLink.setAttribute('rel', 'canonical');
+      document.head.appendChild(canonicalLink);
+    }
+    canonicalLink.setAttribute('href', canonicalUrl);
+
+    // Update title and meta description dynamically if we have seoSchema
+    if (extraContent && extraContent.seoSchema) {
+      try {
+        const schemaObj = JSON.parse(extraContent.seoSchema);
+        const webPageNode = schemaObj['@graph']?.find(n => n['@type'] === 'WebPage');
+        if (webPageNode) {
+          document.title = webPageNode.name;
+          let metaDesc = document.querySelector("meta[name='description']");
+          if (!metaDesc) {
+            metaDesc = document.createElement('meta');
+            metaDesc.setAttribute('name', 'description');
+            document.head.appendChild(metaDesc);
+          }
+          metaDesc.setAttribute('content', webPageNode.description);
+        }
+      } catch (e) {
+        console.warn("Could not parse seoSchema for dynamic meta tags", e);
+      }
+    }
+  }, [tool.id, extraContent]);
+
   // Reset state when tool changes
   React.useEffect(() => {
     setFiles([]);
@@ -198,6 +230,9 @@ const GenericToolPage = ({ tool }) => {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
+      {extraContent.seoSchema && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: extraContent.seoSchema }} />
+      )}
       {/* Breadcrumb */}
       <div className="w-full bg-white border-b border-slate-100 sticky top-0 z-40">
         <div className="max-w-[1400px] mx-auto px-6 py-4 flex items-center gap-4">
@@ -262,12 +297,35 @@ const GenericToolPage = ({ tool }) => {
           
           {/* Footer Data */}
           <div className="max-w-[1200px] mx-auto px-6 mt-16">
+            {extraContent.seoH1 && (
+              <div className="bg-white border border-slate-100 rounded-3xl p-10 shadow-sm mb-12 space-y-10">
+                <div>
+                  <h1 className="text-[32px] font-black text-slate-900 mb-4 tracking-tight">{extraContent.seoH1}</h1>
+                  <p className="text-slate-500 leading-relaxed text-lg">{extraContent.about}</p>
+                </div>
+                {extraContent.seoH2_1 && (
+                  <div>
+                    <h2 className="text-[24px] font-bold text-slate-900 mb-3 tracking-tight">{extraContent.seoH2_1}</h2>
+                    <p className="text-slate-500 leading-relaxed text-md">{extraContent.seoH2_1Desc}</p>
+                  </div>
+                )}
+                {extraContent.seoH2_2 && (
+                  <div>
+                    <h2 className="text-[24px] font-bold text-slate-900 mb-3 tracking-tight">{extraContent.seoH2_2}</h2>
+                    <p className="text-slate-500 leading-relaxed text-md">{extraContent.seoH2_2Desc}</p>
+                  </div>
+                )}
+              </div>
+            )}
+            
             <div className="bg-white border border-slate-100 rounded-3xl p-10 shadow-sm grid grid-cols-1 md:grid-cols-2 gap-16">
               <div className="space-y-12">
-                <div>
-                  <h3 className="text-[22px] font-bold text-slate-900 mb-4">About {tool.name}</h3>
-                  <p className="text-slate-500 leading-relaxed">{extraContent.about}</p>
-                </div>
+                {!extraContent.seoH1 && (
+                  <div>
+                    <h3 className="text-[22px] font-bold text-slate-900 mb-4">About {tool.name}</h3>
+                    <p className="text-slate-500 leading-relaxed">{extraContent.about}</p>
+                  </div>
+                )}
                 
                 <div>
                   <h3 className="text-[18px] font-bold text-slate-900 mb-6 flex items-center gap-2">
@@ -442,7 +500,7 @@ const GenericToolPage = ({ tool }) => {
         <div className="bg-slate-50 py-24 border-t border-slate-100">
           <div className="max-w-[1200px] mx-auto px-6">
             <div className="mb-24"><h3 className="text-2xl font-bold text-slate-900 mb-8 flex items-center gap-2"><span className="text-indigo-600">→</span> Related Tools</h3><ToolsGrid showHeader={false} /></div>
-            <FAQ /><ArticlesAndGuides tool={tool} />
+            <FAQ faqs={extraContent.seoFaqs || extraContent.faqs} title={extraContent.seoFaqTitle} /><ArticlesAndGuides tool={tool} />
           </div>
         </div>
       )}
