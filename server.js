@@ -102,7 +102,7 @@ app.use('/api/user', userRoutes);
 
 
 import toolRoutes from './src/routes/toolRoutes.js';
-app.use('/api', toolRoutes);
+app.use('/', toolRoutes);
 
 /* ==========================================
    DYNAMIC SEO SITEMAP
