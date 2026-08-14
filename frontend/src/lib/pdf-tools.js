@@ -4,15 +4,6 @@ import * as pdfjsLib from 'pdfjs-dist';
 import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
-// Helper: Handle file download ArrayBuffer responses
-async function handleJSONResponse(response, defaultErrorMsg) {
-  if (!response.ok) {
-    const errData = await response.json().catch(() => ({}));
-    throw new Error(errData.error || defaultErrorMsg);
-  }
-  const arrayBuffer = await response.arrayBuffer();
-  return new Uint8Array(arrayBuffer);
-}
 
 // Global wrapper to ensure authentication token is attached to all API requests
 const authenticatedFetch = async (url, options = {}) => {
