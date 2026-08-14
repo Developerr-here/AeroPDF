@@ -1,6 +1,6 @@
 import express from 'express';
 import { isStorageBucketEnabled, uploadOutputToBucket, createOutputDownloadUrl } from '../utils/storage.js';
-import archiver from 'archiver';
+
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -14,6 +14,7 @@ import { decryptPDF } from '@pdfsmaller/pdf-decrypt';
 import { createRequire } from 'module';
 import { OAuth2Client } from 'google-auth-library';
 const require = createRequire(import.meta.url);
+const archiver = require('archiver');
 const mammoth = require('mammoth');
 const officeParser = require('officeparser');
 const PptxGenJS = require('pptxgenjs');
