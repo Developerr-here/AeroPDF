@@ -836,7 +836,7 @@ router.post('/api/office-to-pdf', upload.single('file'), checkUploadLimit, apiLi
       fs.unlink(file.path, () => {});
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="${file.originalname.replace(/\.[^/.]+$/, "")}.pdf"`);
-      return sendGeneratedFile(res, convertedBuffer, { contentType: 'application/pdf', extension: '.pdf', filename: `output${extension}` });
+      return sendGeneratedFile(res, convertedBuffer, { contentType: 'application/pdf', extension: '.pdf', filename: 'output.pdf' });
     } catch (apiErr) {
       console.warn(`[Cloudmersive API Skipped/Failed]: ${apiErr.message}. Falling back to local converter.`);
     }
@@ -899,8 +899,7 @@ router.post('/api/office-to-pdf', upload.single('file'), checkUploadLimit, apiLi
       }
 
       const bytes = await pdfDoc.save();
-      res.setHeader('Content-Type', 'application/pdf');
-      return res.send(Buffer.from(bytes));
+      return sendGeneratedFile(res, Buffer.from(bytes), { contentType: 'application/pdf', extension: '.pdf', filename: 'output.pdf' });
     }
 
     if (isXlsx) {
@@ -984,8 +983,7 @@ router.post('/api/office-to-pdf', upload.single('file'), checkUploadLimit, apiLi
       }
 
       const bytes = await pdfDoc.save();
-      res.setHeader('Content-Type', 'application/pdf');
-      return res.send(Buffer.from(bytes));
+      return sendGeneratedFile(res, Buffer.from(bytes), { contentType: 'application/pdf', extension: '.pdf', filename: 'output.pdf' });
     }
 
     // Support PPTX to PDF using officeparser text extraction
@@ -1057,8 +1055,7 @@ router.post('/api/office-to-pdf', upload.single('file'), checkUploadLimit, apiLi
       }
 
       const bytes = await pdfDoc.save();
-      res.setHeader('Content-Type', 'application/pdf');
-      return res.send(Buffer.from(bytes));
+      return sendGeneratedFile(res, Buffer.from(bytes), { contentType: 'application/pdf', extension: '.pdf', filename: 'output.pdf' });
     }
 
     // Fallback for other non-docx/non-xlsx office files (e.g. legacy formats)
@@ -1222,7 +1219,7 @@ router.post('/api/pdf-to-office', upload.single('file'), checkUploadLimit, apiLi
       } else {
         res.setHeader('Content-Type', contentType);
         res.setHeader('Content-Disposition', `attachment; filename="${file.originalname.replace(/\.[^/.]+$/, "")}.${extension}"`);
-        return sendGeneratedFile(res, convertedBuffer, { contentType: 'application/pdf', extension: '.pdf', filename: `output${extension}` });
+        return sendGeneratedFile(res, convertedBuffer, { contentType, extension: `.${extension}`, filename: `output.${extension}` });
       }
     } catch (apiErr) {
       console.warn(`[Cloudmersive API Skipped/Failed]: ${apiErr.message}. Falling back to local converter.`);
@@ -1723,3 +1720,4 @@ router.post('/api/compare', upload.array('files'), checkUploadLimit, apiLimiter,
 
 
 export default router;
+

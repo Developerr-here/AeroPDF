@@ -17,13 +17,18 @@ const authenticatedFetch = async (url, options = {}) => {
   return fetch(url, options);
 };
 
-// Helper: Handle JSON responses
+// Helper: Handle JSON or binary responses
 async function handleJSONResponse(response, defaultErrorMsg) {
   if (!response.ok) {
     const errData = await response.json().catch(() => ({}));
     throw new Error(errData.error || defaultErrorMsg);
   }
-  return await response.json();
+  const contentType = response.headers.get('content-type') || '';
+  if (contentType.includes('application/json')) {
+    return await response.json();
+  }
+  const arrayBuffer = await response.arrayBuffer();
+  return new Uint8Array(arrayBuffer);
 }
 
 /* ==========================================

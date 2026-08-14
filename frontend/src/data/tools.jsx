@@ -17,15 +17,25 @@ import UpscaleSettings from '../components/tool-settings/UpscaleSettings';
 import EditSettings from '../components/tool-settings/EditSettings';
 import RedactSettings from '../components/tool-settings/RedactSettings';
 
+const parsePageSelection = (opt) => {
+  if (opt.selectedPages && opt.selectedPages.length > 0) return opt.selectedPages;
+  if (opt.pages && opt.pages.trim()) {
+    return opt.pages.split(',')
+      .map(n => parseInt(n.trim()) - 1)
+      .filter(n => !isNaN(n) && n >= 0);
+  }
+  return [];
+};
+
 export const TOOLS_DATA = [
   {
     category: "Organize PDF",
     icon: <FileText size={14} />,
     items: [
       { id: "merge-pdf", name: "Merge PDF", desc: "Combine multiple PDFs into one.", path: "/merge-pdf", icon: <FileText size={24} />, color: "indigo", multiple: true, minFiles: 2, accept: ".pdf", actionTitle: "Merge PDFs", settingsComponent: GenericSettings, apiAction: async (files) => await api.mergePDFs(files), ext: ".pdf" },
-      { id: "split-pdf", name: "Split PDF", desc: "Extract ranges or split all pages.", path: "/split-pdf", icon: <Scissors size={24} />, color: "rose", multiple: false, accept: ".pdf", actionTitle: "Split PDF", settingsComponent: ExtractSettings, apiAction: async (files, opt) => opt.mode === 'all' ? await api.splitPDFIntoIndividual(files[0]) : await api.splitPDF(files[0], opt.pages.split(',').map(n => parseInt(n.trim()))), isZip: true, ext: ".zip" },
+      { id: "split-pdf", name: "Split PDF", desc: "Extract ranges or split all pages.", path: "/split-pdf", icon: <Scissors size={24} />, color: "rose", multiple: false, accept: ".pdf", actionTitle: "Split PDF", settingsComponent: ExtractSettings, apiAction: async (files, opt) => opt.mode === 'all' ? await api.splitPDFIntoIndividual(files[0]) : await api.splitPDF(files[0], parsePageSelection(opt)), isZip: true, ext: ".zip" },
       { id: "remove-pages", name: "Remove Pages", desc: "Delete pages from your PDF file.", path: "/remove-pages", icon: <Trash2 size={24} />, color: "slate", multiple: false, accept: ".pdf", actionTitle: "Remove Pages", settingsComponent: GenericSettings, apiAction: async (files, opt) => await api.removePages(files[0], opt.selectedPages || []), ext: ".pdf" },
-      { id: "extract-pages", name: "Extract Pages", desc: "Save specific pages as a new PDF.", path: "/extract-pages", icon: <FileOutput size={24} />, color: "blue", multiple: false, accept: ".pdf", actionTitle: "Extract Pages", settingsComponent: ExtractSettings, apiAction: async (files, opt) => opt.mode === 'all' ? await api.splitPDFIntoIndividual(files[0]) : await api.splitPDF(files[0], opt.pages.split(',').map(n => parseInt(n.trim()))), ext: ".pdf" },
+      { id: "extract-pages", name: "Extract Pages", desc: "Save specific pages as a new PDF.", path: "/extract-pages", icon: <FileOutput size={24} />, color: "blue", multiple: false, accept: ".pdf", actionTitle: "Extract Pages", settingsComponent: ExtractSettings, apiAction: async (files, opt) => opt.mode === 'all' ? await api.splitPDFIntoIndividual(files[0]) : await api.splitPDF(files[0], parsePageSelection(opt)), ext: ".pdf" },
       { id: "organize-pdf", name: "Organize PDF", desc: "Drag and reorder page positions.", path: "/organize-pdf", icon: <ArrowUpDown size={24} />, color: "blue", multiple: false, accept: ".pdf", actionTitle: "Organize Pages", settingsComponent: GenericSettings, apiAction: async (files, opt) => await api.organizePDF(files[0], opt.pageOrder || []), ext: ".pdf" },
       { id: "scan-to-pdf", name: "Scan to PDF", desc: "Compile camera snapshots to PDF.", path: "/scan-to-pdf", icon: <Camera size={24} />, color: "slate", multiple: true, accept: "image/*", actionTitle: "Create PDF", settingsComponent: ScanToPdfSettings, apiAction: async (files, opt) => await api.imagesToPDF(files, opt.pageSize, opt.orientation), ext: ".pdf" }
     ]
