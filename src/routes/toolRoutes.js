@@ -11,6 +11,7 @@ import { PDFParse } from 'pdf-parse';
 import HTMLtoDOCX from 'html-to-docx';
 import { encryptPDF } from '@pdfsmaller/pdf-encrypt-lite';
 import { decryptPDF } from '@pdfsmaller/pdf-decrypt';
+import XLSX from 'xlsx';
 import { createRequire } from 'module';
 import { OAuth2Client } from 'google-auth-library';
 const require = createRequire(import.meta.url);
@@ -1253,7 +1254,7 @@ router.post('/api/pdf-to-office', upload.single('file'), checkUploadLimit, apiLi
       const excelBuffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
 
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-      return sendGeneratedFile(res, excelBuffer, { contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', extension: '.xlsx', filename: `output${extension}` });
+      return sendGeneratedFile(res, excelBuffer, { contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', extension: '.xlsx', filename: 'output.xlsx' });
     } else {
       let extractedText = '';
       try {
@@ -1349,7 +1350,7 @@ router.post('/api/pdf-to-office', upload.single('file'), checkUploadLimit, apiLi
         const pptxBuffer = await pptx.write('nodebuffer');
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.presentationml.presentation');
         res.setHeader('Content-Disposition', `attachment; filename="${file.originalname.replace(/\.[^/.]+$/, "")}.pptx"`);
-        return sendGeneratedFile(res, pptxBuffer, { contentType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation', extension: '.pptx', filename: `output${extension}` });
+        return sendGeneratedFile(res, pptxBuffer, { contentType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation', extension: '.pptx', filename: 'output.pptx' });
       } else {
         const docxBuffer = await HTMLtoDOCX(wordHtml, null, {
           title: title,
@@ -1357,10 +1358,11 @@ router.post('/api/pdf-to-office', upload.single('file'), checkUploadLimit, apiLi
         });
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
         res.setHeader('Content-Disposition', `attachment; filename="${file.originalname.replace(/\.[^/.]+$/, "")}.docx"`);
-        return sendGeneratedFile(res, docxBuffer, { contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', extension: '.docx', filename: `output${extension}` });
+        return sendGeneratedFile(res, docxBuffer, { contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', extension: '.docx', filename: 'output.docx' });
       }
     }
   } catch (err) {
+    console.error('[pdf-to-office] Error:', err);
     cleanTempFiles(req);
     res.status(500).json({ error: 'PDF conversion failed.' });
   }
