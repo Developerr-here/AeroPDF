@@ -2,7 +2,9 @@ import * as pdfjsLib from 'pdfjs-dist';
 
 // Configure pdfjs worker using Vite's URL import
 import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
+
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
+pdfjsLib.GlobalWorkerOptions.standardFontDataUrl = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/standard_fonts/`;
 
 
 // Global wrapper to ensure authentication token is attached to all API requests

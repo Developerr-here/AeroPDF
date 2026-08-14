@@ -24,7 +24,7 @@ import { User } from '../../db.js';
 import { upload, checkUploadLimit } from '../middlewares/upload.js';
 import { verifyAISubscriptionAndCredits } from '../middlewares/auth.js';
 import { apiLimiter } from '../middlewares/rateLimiters.js';
-import { cleanTempFiles } from '../utils/helpers.js';
+import { cleanTempFiles, sanitizeWinAnsi } from '../utils/helpers.js';
 import { getToolKeyFromPath, isToolAllowedForUser, getToolLimit } from '../utils/authHelpers.js';
 import { GROQ_API_KEY, GROQ_MODEL, REMOVE_BG_API_KEY, STABILITY_API_KEY, DEEPAI_API_KEY, CLOUDMERSIVE_API_KEY } from '../config/env.js';
 import { getPremiumStatus } from '../utils/authHelpers.js';
@@ -609,9 +609,12 @@ router.post('/api/split', upload.single('file'), checkUploadLimit, apiLimiter, a
         return res.json({ pages });
       }
     } else {
-      const selectedIndices = JSON.parse(req.body.pages || '[]');
+      let selectedIndices = JSON.parse(req.body.pages || '[]');
+      const totalPages = pdf.getPageCount();
+      // Clamp indices to valid range
+      selectedIndices = selectedIndices.filter(i => typeof i === 'number' && !isNaN(i) && i >= 0 && i < totalPages);
       if (selectedIndices.length === 0) {
-        return res.status(400).json({ error: 'No pages selected.' });
+        return res.status(400).json({ error: 'No valid pages selected.' });
       }
       const splitPdf = await PDFDocument.create();
       const copiedPages = await splitPdf.copyPages(pdf, selectedIndices);
@@ -1720,4 +1723,5 @@ router.post('/api/compare', upload.array('files'), checkUploadLimit, apiLimiter,
 
 
 export default router;
+
 

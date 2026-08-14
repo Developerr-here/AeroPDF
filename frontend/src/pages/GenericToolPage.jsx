@@ -156,6 +156,16 @@ const GenericToolPage = ({ tool }) => {
         setStatus('success');
         addToast(`${tool.name} completed successfully!`, 'success');
       }
+      // 1.5. Result is a raw binary buffer (e.g. storage bucket disabled or local fallback)
+      else if (result instanceof Uint8Array || result instanceof Blob || result instanceof ArrayBuffer) {
+        let blob = result instanceof Blob ? result : new Blob([result], { type: result.type || 'application/pdf' });
+        let filename = `${tool.id}_output_${Date.now()}${tool.ext || '.pdf'}`;
+        if (files.length === 1 && tool.ext === '.pdf') filename = `processed_${files[0].name.replace(/\.[^/.]+$/, "")}.pdf`;
+        
+        setSuccessResult({ blob, filename });
+        setStatus('success');
+        addToast(`${tool.name} completed successfully!`, 'success');
+      }
       // 2. Result is an Array (e.g. client-side images, or local fallback split pages)
       else if (Array.isArray(result)) {
         if (tool.id === 'pdf-to-png') {
