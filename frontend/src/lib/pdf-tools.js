@@ -147,12 +147,7 @@ export async function pdfToOffice(file, format) {
   formData.append('file', file);
   formData.append('format', format); // docx, xlsx, pptx
   const res = await authenticatedFetch('/api/pdf-to-office', { method: 'POST', body: formData });
-  
-  if (!res.ok) {
-    const errData = await res.json().catch(() => ({}));
-    throw new Error(errData.error || 'Extraction failed.');
-  }
-  return await res.blob(); // Return Blob to accommodate different content-types (csv, docx)
+  return handleJSONResponse(res, 'Extraction failed.');
 }
 
 /* ==========================================
@@ -429,6 +424,11 @@ export async function aiRemoveBackground(file, token) {
     throw new Error(errData.error || 'Background removal failed.');
   }
 
+  const contentType = res.headers.get('content-type') || '';
+  if (contentType.includes('application/json')) {
+    return await res.json();
+  }
+
   const isMock = res.headers.get('x-mock-active') === 'true';
   const arrayBuffer = await res.arrayBuffer();
   const bytes = new Uint8Array(arrayBuffer);
@@ -456,6 +456,11 @@ export async function aiUpscaleImage(file, factor, token) {
   if (!res.ok) {
     const errData = await res.json().catch(() => ({}));
     throw new Error(errData.error || 'Image upscaling failed.');
+  }
+
+  const contentType = res.headers.get('content-type') || '';
+  if (contentType.includes('application/json')) {
+    return await res.json();
   }
 
   const isMock = res.headers.get('x-mock-active') === 'true';
