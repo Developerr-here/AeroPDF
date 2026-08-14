@@ -1,4 +1,222 @@
 export const TOOL_EXTRA_CONTENT = {
+  'pdf-to-ppt': {
+    category: 'Converter',
+    icon: '📊',
+    badges: ['EDITABLE PPT', 'SLIDE LAYOUT RETAINED', 'FAST CONVERSION'],
+    input: 'PDF Document',
+    engine: 'PowerPoint Converter',
+    output: 'PPTX Document',
+    flow: ['Upload PDF', 'Wait for automatic extraction', 'Download editable PowerPoint slides'],
+    about: "Turn a PDF into an editable PowerPoint presentation without rebuilding every slide from scratch. Upload your PDF and the tool converts each page into a slide, carrying over text, images, and layout so you can open the file directly in PowerPoint and start editing. This is useful when you need to update an old presentation that only exists as a PDF, repurpose report pages into a slide deck, or edit content that was locked into a static file. Everything runs directly in your browser, with no software to install and no account required.",
+    seoH1: 'Now Convert PDF to PPT Online for Free',
+    seoH2_1: 'How This PDF to PowerPoint Converter Works',
+    seoH2_1Desc: "Upload your PDF, and the tool converts each page into its own slide automatically, keeping text, images, and layout intact. As a PDF to PowerPoint converter, it processes the file in seconds and gives you a download link for the finished presentation right away.",
+    seoH2_2: 'Why Convert a PDF Into Editable Slides',
+    seoH2_2Desc: "A PDF is fixed and can't be edited slide by slide, which makes updating an old presentation difficult once it's only saved as a PDF. Using a PDF to PowerPoint converter turns those static pages back into slides you can actually edit, rearrange, or add to.",
+    features: [
+      'Accurate PDF to PPTX extraction',
+      'Preserves original slide layout and positioning',
+      'Turns each PDF page into a distinct editable slide',
+      'Private cloud processing with auto-deletion'
+    ],
+    whoUses: [
+      'Professionals updating legacy presentations',
+      'Students repurposing report graphics',
+      'Educators modifying static lecture notes'
+    ],
+    steps: [
+      { title: 'Upload PDF', desc: 'Select the PDF file containing your presentation.' },
+      { title: 'Wait a Moment', desc: 'The document is processed and slide layouts mapped.' },
+      { title: 'Download Output', desc: 'Save the finalized PowerPoint PPTX file to your device.' }
+    ],
+    seoFaqTitle: 'Frequently Ask Questions About PDF to PPT Converter',
+    seoFaqs: [
+      { q: 'How do I convert a PDF into an editable PowerPoint file?', a: "Upload your PDF to the tool, and it converts each page into a slide automatically, carrying over text, images, and layout. A download link is ready within seconds, with no software installation needed, and you can open the file directly in PowerPoint to start editing." },
+      { q: 'Will the slide layout stay the same after converting PDF to PPT?', a: "The tool does its best to preserve the original layout and positioning of text and images, though very detailed or design heavy pages may need small adjustments once opened in PowerPoint." },
+      { q: 'Can I convert a scanned PDF into PowerPoint slides?', a: "Scanned PDFs are essentially images, so the text within them won't be editable unless the file is run through an OCR tool first to make the content recognisable before converting to slides." },
+      { q: 'Is it free to convert PDF to PPT online?', a: "Yes, converting PDF files to PowerPoint with PDFBundles is completely free, with no account, email sign up, or software download required." }
+    ],
+    seoSchema: `
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebPage",
+          "@id": "https://pdfbundles.com/pdf-to-ppt#webpage",
+          "url": "https://pdfbundles.com/pdf-to-ppt",
+          "name": "Convert PDF to PPT Online Free | PDFBundles",
+          "description": "Convert PDF to PPT online for free with PDFBundles. Turn PDF pages into editable PowerPoint slides and download them in seconds.",
+          "isPartOf": {
+            "@id": "https://pdfbundles.com/#website"
+          }
+        },
+        {
+          "@type": "Organization",
+          "@id": "https://pdfbundles.com/#organization",
+          "name": "PDFBundles",
+          "url": "https://pdfbundles.com/",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://pdfbundles.com/logo-desktop.png"
+          },
+          "contactPoint": {
+            "@type": "ContactPoint",
+            "email": "info@pdfbundles.com",
+            "contactType": "customer support"
+          }
+        },
+        {
+          "@type": "FAQPage",
+          "@id": "https://pdfbundles.com/pdf-to-ppt#faq",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "How do I convert a PDF into an editable PowerPoint file?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Upload your PDF to the tool, and it converts each page into a slide automatically, carrying over text, images, and layout. A download link is ready within seconds, with no software installation needed, and you can open the file directly in PowerPoint to start editing."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Will the slide layout stay the same after converting PDF to PPT?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "The tool does its best to preserve the original layout and positioning of text and images, though very detailed or design heavy pages may need small adjustments once opened in PowerPoint."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Can I convert a scanned PDF into PowerPoint slides?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Scanned PDFs are essentially images, so the text within them won't be editable unless the file is run through an OCR tool first to make the content recognisable before converting to slides."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Is it free to convert PDF to PPT online?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes, converting PDF files to PowerPoint with PDFBundles is completely free, with no account, email sign up, or software download required."
+              }
+            }
+          ]
+        }
+      ]
+    }
+    `,
+    related: ['pdf-to-word', 'pdf-to-png', 'merge-pdf']
+  },
+  'extract-pages': {
+    category: 'Organize',
+    icon: '📑',
+    badges: ['PAGE SELECT', 'NEW PDF', 'FAST EXTRACTION'],
+    input: 'PDF Document',
+    engine: 'PDF Extractor',
+    output: 'Extracted PDF',
+    flow: ['Upload PDF', 'Select pages to extract', 'Download new PDF'],
+    about: "Pull out exactly the pages you need from any PDF and save them as a new file. Whether you're grabbing a single page for a quick share or pulling several pages into one new document, our tool lets you preview and select pages visually before extracting. Once you confirm your selection, the extracted pages are compiled into a fresh PDF ready to download, while your original file stays untouched. It all runs in the browser, so there's nothing to install and no account needed.",
+    seoH1: 'Extract Pages From PDF Online in Seconds',
+    seoH2_1: 'How to Pull Pages From PDF Documents',
+    seoH2_1Desc: "Upload your file, then browse through the page thumbnails to pull pages from PDF documents one at a time or in a batch. Once selected, click extract and the tool generates a new file containing only the pages you chose, ready to download straight away.",
+    seoH2_2: 'Common Reasons to Extract PDF Pages',
+    seoH2_2Desc: "People often need to extract pages from PDF files when only part of a document is relevant, such as pulling a single certificate from a longer report or grabbing a signed page from a contract. Rather than sending the whole file, you can pull pages from PDF documents and share just what's needed.",
+    features: [
+      'Visual page selection interface',
+      'Extract single or multiple pages',
+      'Maintains original PDF quality',
+      'Private cloud processing with auto-deletion'
+    ],
+    whoUses: [
+      'Professionals pulling specific contract pages',
+      'Students extracting relevant book chapters',
+      'Users sharing isolated document sections'
+    ],
+    steps: [
+      { title: 'Upload File', desc: 'Select the PDF you want to extract pages from.' },
+      { title: 'Select Pages', desc: 'Click the thumbnails of the pages you need.' },
+      { title: 'Extract & Download', desc: 'Save your selected pages as a new PDF document.' }
+    ],
+    seoFaqTitle: 'Frequently Ask Questions About Extract Pages From PDF Tool',
+    seoFaqs: [
+      { q: 'How do I extract pages from a PDF?', a: "Upload your file, browse through the page thumbnails, and select the pages you want to pull out. Once you confirm your selection, the tool compiles those pages into a new PDF and gives you a download link right away. The original file remains unchanged throughout the process." },
+      { q: 'Can I extract more than one page at a time?', a: "Yes. You can select multiple pages, whether consecutive or scattered throughout the document, and extract them all together into a single new file. This is useful when you need to combine specific pages from a longer document without keeping the rest." },
+      { q: 'Does extracting pages change the quality of the PDF?', a: "No, extracting pages doesn't alter the content in any way. Text, images, and formatting stay exactly as they appeared in the original file, since the tool simply copies the selected pages into a new document rather than re-processing them." },
+      { q: 'Is extracting PDF pages free to use?', a: "Yes, extracting pages with PDFBundles is completely free, with no account, email sign up, or software download required." }
+    ],
+    seoSchema: `
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebPage",
+          "@id": "https://pdfbundles.com/extract-pages#webpage",
+          "url": "https://pdfbundles.com/extract-pages",
+          "name": "Extract Pages From PDF Online Free | PDFBundles",
+          "description": "Extract pages from PDF files online for free with PDFBundles. Pull pages from PDF documents and download them as a new file in seconds.",
+          "isPartOf": {
+            "@id": "https://pdfbundles.com/#website"
+          }
+        },
+        {
+          "@type": "Organization",
+          "@id": "https://pdfbundles.com/#organization",
+          "name": "PDFBundles",
+          "url": "https://pdfbundles.com/",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://pdfbundles.com/logo-desktop.png"
+          },
+          "contactPoint": {
+            "@type": "ContactPoint",
+            "email": "info@pdfbundles.com",
+            "contactType": "customer support"
+          }
+        },
+        {
+          "@type": "FAQPage",
+          "@id": "https://pdfbundles.com/extract-pages#faq",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "How do I extract pages from a PDF?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Upload your file, browse through the page thumbnails, and select the pages you want to pull out. Once you confirm your selection, the tool compiles those pages into a new PDF and gives you a download link right away. The original file remains unchanged throughout the process."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Can I extract more than one page at a time?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes. You can select multiple pages, whether consecutive or scattered throughout the document, and extract them all together into a single new file. This is useful when you need to combine specific pages from a longer document without keeping the rest."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Does extracting pages change the quality of the PDF?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No, extracting pages doesn't alter the content in any way. Text, images, and formatting stay exactly as they appeared in the original file, since the tool simply copies the selected pages into a new document rather than re-processing them."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Is extracting PDF pages free to use?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes, extracting pages with PDFBundles is completely free, with no account, email sign up, or software download required."
+              }
+            }
+          ]
+        }
+      ]
+    }
+    `,
+    related: ['remove-pages', 'split-pdf', 'organize-pdf']
+  },
   'pdf-to-word': {
     category: 'Converter',
     icon: '📝',

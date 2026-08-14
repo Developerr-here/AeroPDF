@@ -5,7 +5,7 @@ import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 // Helper: Handle file download ArrayBuffer responses
-async function handleBufferResponse(response, defaultErrorMsg) {
+async function handleJSONResponse(response, defaultErrorMsg) {
   if (!response.ok) {
     const errData = await response.json().catch(() => ({}));
     throw new Error(errData.error || defaultErrorMsg);
@@ -43,7 +43,7 @@ export async function mergePDFs(files) {
   const formData = new FormData();
   files.forEach(file => formData.append('files', file));
   const res = await authenticatedFetch('/api/merge', { method: 'POST', body: formData });
-  return handleBufferResponse(res, 'Failed to merge PDF files.');
+  return handleJSONResponse(res, 'Failed to merge PDF files.');
 }
 
 export async function splitPDF(file, pageIndices) {
@@ -52,7 +52,7 @@ export async function splitPDF(file, pageIndices) {
   formData.append('mode', 'selected');
   formData.append('pages', JSON.stringify(pageIndices));
   const res = await authenticatedFetch('/api/split', { method: 'POST', body: formData });
-  return handleBufferResponse(res, 'Failed to extract selected pages.');
+  return handleJSONResponse(res, 'Failed to extract selected pages.');
 }
 
 export async function splitPDFIntoIndividual(file) {
@@ -62,6 +62,9 @@ export async function splitPDFIntoIndividual(file) {
   const res = await authenticatedFetch('/api/split', { method: 'POST', body: formData });
   const data = await handleJSONResponse(res, 'Failed to split pages individually.');
   
+  if (data.downloadUrl) {
+    return data;
+  }
   return data.pages.map(page => {
     const binaryString = atob(page.base64);
     const bytes = new Uint8Array(binaryString.length);
@@ -77,7 +80,7 @@ export async function removePages(file, removeIndices) {
   formData.append('file', file);
   formData.append('pages', JSON.stringify(removeIndices));
   const res = await authenticatedFetch('/api/remove-pages', { method: 'POST', body: formData });
-  return handleBufferResponse(res, 'Failed to delete selected pages.');
+  return handleJSONResponse(res, 'Failed to delete selected pages.');
 }
 
 export async function organizePDF(file, orderIndices) {
@@ -85,7 +88,7 @@ export async function organizePDF(file, orderIndices) {
   formData.append('file', file);
   formData.append('order', JSON.stringify(orderIndices));
   const res = await authenticatedFetch('/api/organize-pdf', { method: 'POST', body: formData });
-  return handleBufferResponse(res, 'Failed to apply new page order.');
+  return handleJSONResponse(res, 'Failed to apply new page order.');
 }
 
 /* ==========================================
@@ -97,21 +100,21 @@ export async function compressPDF(file, level) {
   formData.append('file', file);
   formData.append('level', level); // 'low', 'medium', 'high'
   const res = await authenticatedFetch('/api/compress', { method: 'POST', body: formData });
-  return handleBufferResponse(res, 'Failed to compress PDF document.');
+  return handleJSONResponse(res, 'Failed to compress PDF document.');
 }
 
 export async function repairPDF(file) {
   const formData = new FormData();
   formData.append('file', file);
   const res = await authenticatedFetch('/api/repair', { method: 'POST', body: formData });
-  return handleBufferResponse(res, 'Failed to repair PDF structure.');
+  return handleJSONResponse(res, 'Failed to repair PDF structure.');
 }
 
 export async function ocrPDF(file) {
   const formData = new FormData();
   formData.append('file', file);
   const res = await authenticatedFetch('/api/ocr', { method: 'POST', body: formData });
-  return handleBufferResponse(res, 'OCR rendering operation failed.');
+  return handleJSONResponse(res, 'OCR rendering operation failed.');
 }
 
 /* ==========================================
@@ -124,14 +127,14 @@ export async function imagesToPDF(imageFiles, pageSize = 'a4', orientation = 'po
   formData.append('pageSize', pageSize);
   formData.append('orientation', orientation);
   const res = await authenticatedFetch('/api/img-to-pdf', { method: 'POST', body: formData });
-  return handleBufferResponse(res, 'Failed to convert images to PDF.');
+  return handleJSONResponse(res, 'Failed to convert images to PDF.');
 }
 
 export async function officeToPDF(file) {
   const formData = new FormData();
   formData.append('file', file);
   const res = await authenticatedFetch('/api/office-to-pdf', { method: 'POST', body: formData });
-  return handleBufferResponse(res, 'Failed to compile Office file to PDF.');
+  return handleJSONResponse(res, 'Failed to compile Office file to PDF.');
 }
 
 export async function htmlToPDF(payload) {
@@ -141,7 +144,7 @@ export async function htmlToPDF(payload) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
   });
-  return handleBufferResponse(res, 'Failed to compile HTML into PDF.');
+  return handleJSONResponse(res, 'Failed to compile HTML into PDF.');
 }
 
 /* ==========================================
@@ -170,7 +173,7 @@ export async function rotatePDF(file, rotations) {
   formData.append('file', file);
   formData.append('rotations', JSON.stringify(rotations));
   const res = await authenticatedFetch('/api/rotate', { method: 'POST', body: formData });
-  return handleBufferResponse(res, 'Failed to apply page rotations.');
+  return handleJSONResponse(res, 'Failed to apply page rotations.');
 }
 
 export async function addPageNumbers(file, position, format) {
@@ -179,7 +182,7 @@ export async function addPageNumbers(file, position, format) {
   formData.append('position', position);
   formData.append('format', format);
   const res = await authenticatedFetch('/api/page-numbers', { method: 'POST', body: formData });
-  return handleBufferResponse(res, 'Failed to stamp page numbers.');
+  return handleJSONResponse(res, 'Failed to stamp page numbers.');
 }
 
 export async function addWatermark(file, text, size, rotation, opacity) {
@@ -190,7 +193,7 @@ export async function addWatermark(file, text, size, rotation, opacity) {
   formData.append('rotation', rotation);
   formData.append('opacity', opacity);
   const res = await authenticatedFetch('/api/watermark', { method: 'POST', body: formData });
-  return handleBufferResponse(res, 'Failed to stamp watermark.');
+  return handleJSONResponse(res, 'Failed to stamp watermark.');
 }
 
 export async function cropPDF(file, margins) {
@@ -201,7 +204,7 @@ export async function cropPDF(file, margins) {
   formData.append('top', margins.top);
   formData.append('bottom', margins.bottom);
   const res = await authenticatedFetch('/api/crop', { method: 'POST', body: formData });
-  return handleBufferResponse(res, 'Failed to crop PDF document.');
+  return handleJSONResponse(res, 'Failed to crop PDF document.');
 }
 
 export async function editPDF(file, elements) {
@@ -209,14 +212,14 @@ export async function editPDF(file, elements) {
   formData.append('file', file);
   formData.append('elements', JSON.stringify(elements));
   const res = await authenticatedFetch('/api/edit-pdf', { method: 'POST', body: formData });
-  return handleBufferResponse(res, 'Failed to write text edits.');
+  return handleJSONResponse(res, 'Failed to write text edits.');
 }
 
 export async function fillPDFForms(file) {
   const formData = new FormData();
   formData.append('file', file);
   const res = await authenticatedFetch('/api/pdf-forms', { method: 'POST', body: formData });
-  return handleBufferResponse(res, 'Forms filling action failed.');
+  return handleJSONResponse(res, 'Forms filling action failed.');
 }
 
 /* ==========================================
@@ -228,7 +231,7 @@ export async function protectPDF(file, password) {
   formData.append('file', file);
   formData.append('password', password);
   const res = await authenticatedFetch('/api/protect', { method: 'POST', body: formData });
-  return handleBufferResponse(res, 'Failed to encrypt PDF.');
+  return handleJSONResponse(res, 'Failed to encrypt PDF.');
 }
 
 export async function unlockPDF(file, password) {
@@ -236,7 +239,7 @@ export async function unlockPDF(file, password) {
   formData.append('file', file);
   formData.append('password', password);
   const res = await authenticatedFetch('/api/unlock', { method: 'POST', body: formData });
-  return handleBufferResponse(res, 'Failed to decrypt PDF.');
+  return handleJSONResponse(res, 'Failed to decrypt PDF.');
 }
 
 export async function signPDF(file, signatureBase64, pageIndex, x, y, width, height) {
@@ -250,7 +253,7 @@ export async function signPDF(file, signatureBase64, pageIndex, x, y, width, hei
   formData.append('height', height);
   
   const res = await authenticatedFetch('/api/sign', { method: 'POST', body: formData });
-  return handleBufferResponse(res, 'Failed to overlay signature.');
+  return handleJSONResponse(res, 'Failed to overlay signature.');
 }
 
 export async function redactPDF(file, areas) {
@@ -258,7 +261,7 @@ export async function redactPDF(file, areas) {
   formData.append('file', file);
   formData.append('areas', JSON.stringify(areas));
   const res = await authenticatedFetch('/api/redact', { method: 'POST', body: formData });
-  return handleBufferResponse(res, 'Failed to apply redaction blackouts.');
+  return handleJSONResponse(res, 'Failed to apply redaction blackouts.');
 }
 
 export async function comparePDFs(fileA, fileB) {

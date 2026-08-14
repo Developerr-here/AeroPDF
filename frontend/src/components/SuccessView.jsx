@@ -1,17 +1,25 @@
 import React from 'react';
 import { Check, Download, RotateCcw } from 'lucide-react';
 
-export default function SuccessView({ filename, blob, jsonResult, onReset }) {
+export default function SuccessView({ filename, blob, downloadUrl, jsonResult, onReset }) {
   const handleDownload = () => {
-    if (!blob) return;
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    if (blob) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } else if (downloadUrl) {
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
   };
 
   return (
@@ -60,7 +68,7 @@ export default function SuccessView({ filename, blob, jsonResult, onReset }) {
       )}
 
       <div className="flex gap-4">
-        {blob && (
+        {(blob || downloadUrl) && (
           <button 
             onClick={handleDownload}
             className="bg-indigo-900 hover:bg-indigo-800 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all shadow-md shadow-indigo-900/10"
@@ -74,7 +82,7 @@ export default function SuccessView({ filename, blob, jsonResult, onReset }) {
           className="bg-white border-2 border-slate-200 hover:border-slate-300 text-slate-600 px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all"
         >
           <RotateCcw size={18} />
-          {blob ? 'Process Another File' : 'Start Over'}
+          {(blob || downloadUrl) ? 'Process Another File' : 'Start Over'}
         </button>
       </div>
     </div>

@@ -150,16 +150,20 @@ const GenericToolPage = ({ tool }) => {
     try {
       const result = await tool.apiAction(files, toolConfig);
 
-      // 1. Result is an Array (e.g. split pages, images) -> Bundle into ZIP
-      if (Array.isArray(result)) {
+      // 1. Result has downloadUrl -> It's from the bucket
+      if (result && result.downloadUrl) {
+        setSuccessResult({ downloadUrl: result.downloadUrl, filename: result.filename || `${tool.id}_${Date.now()}${tool.ext || '.pdf'}` });
+        setStatus('success');
+        addToast(`${tool.name} completed successfully!`, 'success');
+      }
+      // 2. Result is an Array (e.g. client-side images, or local fallback split pages)
+      else if (Array.isArray(result)) {
         if (tool.id === 'pdf-to-png') {
-          // Legacy logic: Download each extracted image one by one, bypassing ZIP entirely
           for (const item of result) {
             if (item.dataUrl) {
               const ext = item.dataUrl.split(';')[0].split('/')[1] || 'png';
               let filename = `${files[0].name.replace(/\.[^/.]+$/, "")}-page-${item.pageNum}.${ext}`;
               const blob = await fetch(item.dataUrl).then(r => r.blob());
-              
               const url = URL.createObjectURL(blob);
               const a = document.createElement('a');
               a.href = url;
@@ -168,7 +172,6 @@ const GenericToolPage = ({ tool }) => {
               a.click();
               document.body.removeChild(a);
               URL.revokeObjectURL(url);
-              
               await new Promise(res => setTimeout(res, 100));
             }
           }
@@ -177,10 +180,8 @@ const GenericToolPage = ({ tool }) => {
           addToast(`${tool.name} completed successfully!`, 'success');
         } else {
           const zip = new JSZip();
-          
           result.forEach((item, index) => {
             let filename = `page_${item.pageNum || index + 1}`;
-            
             if (item.dataUrl) {
               const ext = item.dataUrl.split(';')[0].split('/')[1] || 'png';
               filename += `.${ext}`;
@@ -194,28 +195,18 @@ const GenericToolPage = ({ tool }) => {
               zip.file(filename, JSON.stringify(item));
             }
           });
-  
           const zipBlob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
           setSuccessResult({ blob: zipBlob, filename: `${tool.id}_${Date.now()}.zip` });
           setStatus('success');
           addToast(`${tool.name} completed successfully!`, 'success');
         }
       } 
-      // 2. Result is a Blob (e.g. pdfToOffice)
-      else if (result instanceof Blob) {
-        setSuccessResult({ blob: result, filename: `${tool.id}_${Date.now()}${tool.ext}` });
-        setStatus('success');
-        addToast(`${tool.name} completed successfully!`, 'success');
-      } 
-      // 3. Result is a Uint8Array (e.g. mergePDFs, removePages)
-      else if (result instanceof Uint8Array) {
-        const blob = new Blob([result], { type: 'application/pdf' });
-        setSuccessResult({ blob, filename: `${tool.id}_${Date.now()}${tool.ext}` });
-        setStatus('success');
-        addToast(`${tool.name} completed successfully!`, 'success');
-      } 
-      // 4. Result is JSON or Object (e.g. comparePDFs, AI Assistant)
+      // 3. Result is JSON or Object without downloadUrl (e.g. comparePDFs, AI Assistant, local fallback)
       else if (typeof result === 'object') {
+        if (result.success && result.filename && !result.jsonResult && !result.differences && !result.summary && !result.result && !result.translation) {
+           // Local fallback where it sends back JSON but maybe no downloadUrl? Shouldn't happen unless fallback returns JSON.
+           // Let's just treat standard JSON as successResult.jsonResult
+        }
         setSuccessResult({ jsonResult: result });
         setStatus('success');
         addToast(`${tool.name} processed successfully!`, 'success');
@@ -248,6 +239,7 @@ const GenericToolPage = ({ tool }) => {
             <SuccessView 
               filename={successResult.filename} 
               blob={successResult.blob} 
+              downloadUrl={successResult.downloadUrl}
               jsonResult={successResult.jsonResult}
               onReset={() => {
                 setStatus('idle');

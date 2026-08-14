@@ -1,4 +1,6 @@
 import express from 'express';
+import { isStorageBucketEnabled, uploadOutputToBucket, createOutputDownloadUrl } from '../utils/storage.js';
+import archiver from 'archiver';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -29,6 +31,26 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const router = express.Router();
+
+async function sendGeneratedFile(res, buffer, { contentType, filename, extension = '.pdf' }) {
+  if (isStorageBucketEnabled()) {
+    try {
+      const key = await uploadOutputToBucket(buffer, {
+        contentType,
+        filename: filename || `output${extension}`
+      });
+      const downloadUrl = await createOutputDownloadUrl(key);
+      return res.json({ success: true, downloadUrl, filename: filename || `output${extension}` });
+    } catch (err) {
+      console.error('[Storage Error]', err);
+      return res.status(500).json({ error: 'Failed to upload generated file to storage.' });
+    }
+  } else {
+    res.setHeader('Content-Type', contentType);
+    return res.send(buffer);
+  }
+}
+
 
 async function convertWithCloudmersive(fileBuffer, fileName, endpointUrl) {
   if (!CLOUDMERSIVE_API_KEY) throw new Error('No Cloudmersive API key configured');
@@ -395,8 +417,7 @@ router.post('/api/image/remove-background', upload.single('file'), checkUploadLi
 
         const arrayBuffer = await response.arrayBuffer();
         fs.unlink(file.path, () => {});
-        res.setHeader('Content-Type', 'image/png');
-        return res.send(Buffer.from(arrayBuffer));
+        return sendGeneratedFile(res, Buffer.from(arrayBuffer), { contentType: 'image/png', extension: '.png', filename: 'transparent.png' });
       } catch (err) {
         fs.unlink(file.path, () => {});
         console.error(`[Remove.bg API Error]: ${err.message}`);
@@ -408,7 +429,7 @@ router.post('/api/image/remove-background', upload.single('file'), checkUploadLi
       fs.unlink(file.path, () => {});
       res.setHeader('x-mock-active', 'true');
       res.setHeader('Content-Type', file.mimetype);
-      return res.send(fileBuffer);
+      return sendGeneratedFile(res, fileBuffer, { contentType: file.mimetype, extension: '', filename: file.originalname });
     }
   } catch (err) {
     cleanTempFiles(req);
@@ -454,8 +475,7 @@ router.post('/api/image/upscale', upload.single('file'), checkUploadLimit, verif
 
         const arrayBuffer = await response.arrayBuffer();
         fs.unlink(file.path, () => {});
-        res.setHeader('Content-Type', 'image/png');
-        return res.send(Buffer.from(arrayBuffer));
+        return sendGeneratedFile(res, Buffer.from(arrayBuffer), { contentType: 'image/png', extension: '.png', filename: 'transparent.png' });
       } catch (err) {
         fs.unlink(file.path, () => {});
         console.error(`[Stability AI API Error]: ${err.message}`);
@@ -489,8 +509,7 @@ router.post('/api/image/upscale', upload.single('file'), checkUploadLimit, verif
         const imgRes = await fetch(data.output_url);
         const arrayBuffer = await imgRes.arrayBuffer();
         fs.unlink(file.path, () => {});
-        res.setHeader('Content-Type', 'image/png');
-        return res.send(Buffer.from(arrayBuffer));
+        return sendGeneratedFile(res, Buffer.from(arrayBuffer), { contentType: 'image/png', extension: '.png', filename: 'transparent.png' });
       } catch (err) {
         fs.unlink(file.path, () => {});
         console.error(`[DeepAI API Error]: ${err.message}`);
@@ -503,7 +522,7 @@ router.post('/api/image/upscale', upload.single('file'), checkUploadLimit, verif
       res.setHeader('x-mock-active', 'true');
       res.setHeader('x-upscale-factor', factor || '2');
       res.setHeader('Content-Type', file.mimetype);
-      return res.send(fileBuffer);
+      return sendGeneratedFile(res, fileBuffer, { contentType: file.mimetype, extension: '', filename: file.originalname });
     }
   } catch (err) {
     cleanTempFiles(req);
@@ -532,8 +551,7 @@ router.post('/api/merge', upload.array('files'), checkUploadLimit, apiLimiter, a
       fs.unlink(file.path, () => {});
     }
     const bytes = await mergedPdf.save();
-    res.setHeader('Content-Type', 'application/pdf');
-    res.send(Buffer.from(bytes));
+    return sendGeneratedFile(res, Buffer.from(bytes), { contentType: 'application/pdf', extension: '.pdf', filename: 'output.pdf' });
   } catch (err) {
     cleanTempFiles(req);
     res.status(500).json({ error: 'Failed to merge PDFs.' });
@@ -553,18 +571,41 @@ router.post('/api/split', upload.single('file'), checkUploadLimit, apiLimiter, a
 
     if (mode === 'all-split') {
       const totalPages = pdf.getPageCount();
-      const pages = [];
-      for (let i = 0; i < totalPages; i++) {
-        const splitPdf = await PDFDocument.create();
-        const copiedPages = await splitPdf.copyPages(pdf, [i]);
-        splitPdf.addPage(copiedPages[0]);
-        const bytes = await splitPdf.save();
-        pages.push({
-          pageNum: i + 1,
-          base64: Buffer.from(bytes).toString('base64')
+      if (isStorageBucketEnabled()) {
+        const archive = archiver('zip', { zlib: { level: 5 } });
+        const chunks = [];
+        archive.on('data', chunk => chunks.push(chunk));
+        
+        const zipPromise = new Promise((resolve, reject) => {
+          archive.on('end', () => resolve(Buffer.concat(chunks)));
+          archive.on('error', err => reject(err));
         });
+        
+        for (let i = 0; i < totalPages; i++) {
+          const splitPdf = await PDFDocument.create();
+          const copiedPages = await splitPdf.copyPages(pdf, [i]);
+          splitPdf.addPage(copiedPages[0]);
+          const bytes = await splitPdf.save();
+          archive.append(Buffer.from(bytes), { name: `page_${i + 1}.pdf` });
+        }
+        archive.finalize();
+        
+        const zipBuffer = await zipPromise;
+        return sendGeneratedFile(res, zipBuffer, { contentType: 'application/zip', extension: '.zip', filename: 'split_pages.zip' });
+      } else {
+        const pages = [];
+        for (let i = 0; i < totalPages; i++) {
+          const splitPdf = await PDFDocument.create();
+          const copiedPages = await splitPdf.copyPages(pdf, [i]);
+          splitPdf.addPage(copiedPages[0]);
+          const bytes = await splitPdf.save();
+          pages.push({
+            pageNum: i + 1,
+            base64: Buffer.from(bytes).toString('base64')
+          });
+        }
+        return res.json({ pages });
       }
-      return res.json({ pages });
     } else {
       const selectedIndices = JSON.parse(req.body.pages || '[]');
       if (selectedIndices.length === 0) {
@@ -574,8 +615,7 @@ router.post('/api/split', upload.single('file'), checkUploadLimit, apiLimiter, a
       const copiedPages = await splitPdf.copyPages(pdf, selectedIndices);
       copiedPages.forEach((page) => splitPdf.addPage(page));
       const bytes = await splitPdf.save();
-      res.setHeader('Content-Type', 'application/pdf');
-      res.send(Buffer.from(bytes));
+      return sendGeneratedFile(res, Buffer.from(bytes), { contentType: 'application/pdf', extension: '.pdf', filename: 'output.pdf' });
     }
   } catch (err) {
     cleanTempFiles(req);
@@ -609,8 +649,7 @@ router.post('/api/remove-pages', upload.single('file'), checkUploadLimit, apiLim
     copiedPages.forEach(page => modifiedPdf.addPage(page));
 
     const bytes = await modifiedPdf.save();
-    res.setHeader('Content-Type', 'application/pdf');
-    res.send(Buffer.from(bytes));
+    return sendGeneratedFile(res, Buffer.from(bytes), { contentType: 'application/pdf', extension: '.pdf', filename: 'output.pdf' });
   } catch (err) {
     cleanTempFiles(req);
     res.status(500).json({ error: 'Failed to remove pages.' });
@@ -633,8 +672,7 @@ router.post('/api/organize-pdf', upload.single('file'), checkUploadLimit, apiLim
     copiedPages.forEach(page => modifiedPdf.addPage(page));
 
     const bytes = await modifiedPdf.save();
-    res.setHeader('Content-Type', 'application/pdf');
-    res.send(Buffer.from(bytes));
+    return sendGeneratedFile(res, Buffer.from(bytes), { contentType: 'application/pdf', extension: '.pdf', filename: 'output.pdf' });
   } catch (err) {
     cleanTempFiles(req);
     res.status(500).json({ error: 'Failed to organize PDF.' });
@@ -652,8 +690,7 @@ router.post('/api/compress', upload.single('file'), checkUploadLimit, apiLimiter
     fs.unlink(file.path, () => {});
     
     const bytes = await pdf.save({ useObjectStreams: true, addEmptyPage: false });
-    res.setHeader('Content-Type', 'application/pdf');
-    res.send(Buffer.from(bytes));
+    return sendGeneratedFile(res, Buffer.from(bytes), { contentType: 'application/pdf', extension: '.pdf', filename: 'output.pdf' });
   } catch (err) {
     cleanTempFiles(req);
     res.status(500).json({ error: 'Failed to compress PDF.' });
@@ -671,8 +708,7 @@ router.post('/api/repair', upload.single('file'), checkUploadLimit, apiLimiter, 
     fs.unlink(file.path, () => {});
 
     const bytes = await pdf.save();
-    res.setHeader('Content-Type', 'application/pdf');
-    res.send(Buffer.from(bytes));
+    return sendGeneratedFile(res, Buffer.from(bytes), { contentType: 'application/pdf', extension: '.pdf', filename: 'output.pdf' });
   } catch (err) {
     cleanTempFiles(req);
     res.status(500).json({ error: 'Repair operation failed.' });
@@ -699,8 +735,7 @@ router.post('/api/ocr', upload.single('file'), checkUploadLimit, apiLimiter, asy
     });
 
     const bytes = await pdf.save();
-    res.setHeader('Content-Type', 'application/pdf');
-    res.send(Buffer.from(bytes));
+    return sendGeneratedFile(res, Buffer.from(bytes), { contentType: 'application/pdf', extension: '.pdf', filename: 'output.pdf' });
   } catch (err) {
     cleanTempFiles(req);
     res.status(500).json({ error: 'OCR Processing failed.' });
@@ -767,8 +802,7 @@ router.post('/api/img-to-pdf', upload.array('files'), checkUploadLimit, apiLimit
     }
 
     const bytes = await pdfDoc.save();
-    res.setHeader('Content-Type', 'application/pdf');
-    res.send(Buffer.from(bytes));
+    return sendGeneratedFile(res, Buffer.from(bytes), { contentType: 'application/pdf', extension: '.pdf', filename: 'output.pdf' });
   } catch (err) {
     cleanTempFiles(req);
     res.status(500).json({ error: 'Failed to convert images.' });
@@ -800,7 +834,7 @@ router.post('/api/office-to-pdf', upload.single('file'), checkUploadLimit, apiLi
       fs.unlink(file.path, () => {});
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="${file.originalname.replace(/\.[^/.]+$/, "")}.pdf"`);
-      return res.send(convertedBuffer);
+      return sendGeneratedFile(res, convertedBuffer, { contentType: 'application/pdf', extension: '.pdf', filename: `output${extension}` });
     } catch (apiErr) {
       console.warn(`[Cloudmersive API Skipped/Failed]: ${apiErr.message}. Falling back to local converter.`);
     }
@@ -1037,8 +1071,7 @@ router.post('/api/office-to-pdf', upload.single('file'), checkUploadLimit, apiLi
     page.drawText(`Converted On: ${new Date().toLocaleString()}`, { x: 50, y: 680, size: 10, font: fontBody, color: rgb(0.5,0.5,0.5) });
 
     const bytes = await pdfDoc.save();
-    res.setHeader('Content-Type', 'application/pdf');
-    res.send(Buffer.from(bytes));
+    return sendGeneratedFile(res, Buffer.from(bytes), { contentType: 'application/pdf', extension: '.pdf', filename: 'output.pdf' });
   } catch (err) {
     cleanTempFiles(req);
     console.error(err);
@@ -1132,8 +1165,7 @@ router.post('/api/html-to-pdf', apiLimiter, async (req, res) => {
     }
 
     const bytes = await pdfDoc.save();
-    res.setHeader('Content-Type', 'application/pdf');
-    res.send(Buffer.from(bytes));
+    return sendGeneratedFile(res, Buffer.from(bytes), { contentType: 'application/pdf', extension: '.pdf', filename: 'output.pdf' });
   } catch (err) {
     console.error('[HTML-TO-PDF Error]', err);
     res.status(500).json({ error: 'HTML compilation failed.' });
@@ -1188,7 +1220,7 @@ router.post('/api/pdf-to-office', upload.single('file'), checkUploadLimit, apiLi
       } else {
         res.setHeader('Content-Type', contentType);
         res.setHeader('Content-Disposition', `attachment; filename="${file.originalname.replace(/\.[^/.]+$/, "")}.${extension}"`);
-        return res.send(convertedBuffer);
+        return sendGeneratedFile(res, convertedBuffer, { contentType: 'application/pdf', extension: '.pdf', filename: `output${extension}` });
       }
     } catch (apiErr) {
       console.warn(`[Cloudmersive API Skipped/Failed]: ${apiErr.message}. Falling back to local converter.`);
@@ -1220,7 +1252,7 @@ router.post('/api/pdf-to-office', upload.single('file'), checkUploadLimit, apiLi
       const excelBuffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
 
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-      return res.send(excelBuffer);
+      return sendGeneratedFile(res, excelBuffer, { contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', extension: '.xlsx', filename: `output${extension}` });
     } else {
       let extractedText = '';
       try {
@@ -1316,7 +1348,7 @@ router.post('/api/pdf-to-office', upload.single('file'), checkUploadLimit, apiLi
         const pptxBuffer = await pptx.write('nodebuffer');
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.presentationml.presentation');
         res.setHeader('Content-Disposition', `attachment; filename="${file.originalname.replace(/\.[^/.]+$/, "")}.pptx"`);
-        return res.send(pptxBuffer);
+        return sendGeneratedFile(res, pptxBuffer, { contentType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation', extension: '.pptx', filename: `output${extension}` });
       } else {
         const docxBuffer = await HTMLtoDOCX(wordHtml, null, {
           title: title,
@@ -1324,7 +1356,7 @@ router.post('/api/pdf-to-office', upload.single('file'), checkUploadLimit, apiLi
         });
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
         res.setHeader('Content-Disposition', `attachment; filename="${file.originalname.replace(/\.[^/.]+$/, "")}.docx"`);
-        return res.send(docxBuffer);
+        return sendGeneratedFile(res, docxBuffer, { contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', extension: '.docx', filename: `output${extension}` });
       }
     }
   } catch (err) {
@@ -1354,8 +1386,7 @@ router.post('/api/rotate', upload.single('file'), checkUploadLimit, apiLimiter, 
       }
     }
     const bytes = await pdf.save();
-    res.setHeader('Content-Type', 'application/pdf');
-    res.send(Buffer.from(bytes));
+    return sendGeneratedFile(res, Buffer.from(bytes), { contentType: 'application/pdf', extension: '.pdf', filename: 'output.pdf' });
   } catch (err) {
     cleanTempFiles(req);
     res.status(500).json({ error: 'Failed to rotate PDF.' });
@@ -1401,8 +1432,7 @@ router.post('/api/page-numbers', upload.single('file'), checkUploadLimit, apiLim
     });
 
     const bytes = await pdf.save();
-    res.setHeader('Content-Type', 'application/pdf');
-    res.send(Buffer.from(bytes));
+    return sendGeneratedFile(res, Buffer.from(bytes), { contentType: 'application/pdf', extension: '.pdf', filename: 'output.pdf' });
   } catch (err) {
     cleanTempFiles(req);
     res.status(500).json({ error: 'Failed to add page numbers.' });
@@ -1441,8 +1471,7 @@ router.post('/api/watermark', upload.single('file'), checkUploadLimit, apiLimite
     });
 
     const bytes = await pdf.save();
-    res.setHeader('Content-Type', 'application/pdf');
-    res.send(Buffer.from(bytes));
+    return sendGeneratedFile(res, Buffer.from(bytes), { contentType: 'application/pdf', extension: '.pdf', filename: 'output.pdf' });
   } catch (err) {
     cleanTempFiles(req);
     res.status(500).json({ error: 'Failed to add watermark.' });
@@ -1471,8 +1500,7 @@ router.post('/api/crop', upload.single('file'), checkUploadLimit, apiLimiter, as
     });
 
     const bytes = await pdf.save();
-    res.setHeader('Content-Type', 'application/pdf');
-    res.send(Buffer.from(bytes));
+    return sendGeneratedFile(res, Buffer.from(bytes), { contentType: 'application/pdf', extension: '.pdf', filename: 'output.pdf' });
   } catch (err) {
     cleanTempFiles(req);
     res.status(500).json({ error: 'Failed to crop PDF.' });
@@ -1504,8 +1532,7 @@ router.post('/api/edit-pdf', upload.single('file'), checkUploadLimit, apiLimiter
     });
 
     const bytes = await pdf.save();
-    res.setHeader('Content-Type', 'application/pdf');
-    res.send(Buffer.from(bytes));
+    return sendGeneratedFile(res, Buffer.from(bytes), { contentType: 'application/pdf', extension: '.pdf', filename: 'output.pdf' });
   } catch (err) {
     cleanTempFiles(req);
     res.status(500).json({ error: 'Failed to edit PDF.' });
@@ -1533,8 +1560,7 @@ router.post('/api/pdf-forms', upload.single('file'), checkUploadLimit, apiLimite
     });
 
     const bytes = await pdf.save();
-    res.setHeader('Content-Type', 'application/pdf');
-    res.send(Buffer.from(bytes));
+    return sendGeneratedFile(res, Buffer.from(bytes), { contentType: 'application/pdf', extension: '.pdf', filename: 'output.pdf' });
   } catch (err) {
     cleanTempFiles(req);
     res.status(500).json({ error: 'Forms processor failed.' });
@@ -1552,8 +1578,7 @@ router.post('/api/protect', upload.single('file'), checkUploadLimit, apiLimiter,
     const encryptedBytes = await encryptPDF(new Uint8Array(buffer), password, password);
     fs.unlink(file.path, () => {});
 
-    res.setHeader('Content-Type', 'application/pdf');
-    res.send(Buffer.from(encryptedBytes));
+    return sendGeneratedFile(res, Buffer.from(encryptedBytes), { contentType: 'application/pdf', extension: '.pdf', filename: 'output.pdf' });
   } catch (err) {
     cleanTempFiles(req);
     res.status(500).json({ error: 'Failed to protect PDF.' });
@@ -1571,8 +1596,7 @@ router.post('/api/unlock', upload.single('file'), checkUploadLimit, apiLimiter, 
     const decryptedBytes = await decryptPDF(new Uint8Array(buffer), password);
     fs.unlink(file.path, () => {});
 
-    res.setHeader('Content-Type', 'application/pdf');
-    res.send(Buffer.from(decryptedBytes));
+    return sendGeneratedFile(res, Buffer.from(decryptedBytes), { contentType: 'application/pdf', extension: '.pdf', filename: 'output.pdf' });
   } catch (err) {
     cleanTempFiles(req);
     res.status(500).json({ error: 'Invalid password. Decryption rejected.' });
@@ -1620,8 +1644,7 @@ router.post('/api/sign', upload.single('file'), checkUploadLimit, apiLimiter, as
     page.drawImage(sigImage, { x, y, width, height });
 
     const bytes = await pdf.save();
-    res.setHeader('Content-Type', 'application/pdf');
-    res.send(Buffer.from(bytes));
+    return sendGeneratedFile(res, Buffer.from(bytes), { contentType: 'application/pdf', extension: '.pdf', filename: 'output.pdf' });
   } catch (err) {
     console.error('[Sign PDF Error]', err);
     cleanTempFiles(req);
@@ -1650,8 +1673,7 @@ router.post('/api/redact', upload.single('file'), checkUploadLimit, apiLimiter, 
     });
 
     const bytes = await pdf.save();
-    res.setHeader('Content-Type', 'application/pdf');
-    res.send(Buffer.from(bytes));
+    return sendGeneratedFile(res, Buffer.from(bytes), { contentType: 'application/pdf', extension: '.pdf', filename: 'output.pdf' });
   } catch (err) {
     cleanTempFiles(req);
     res.status(500).json({ error: 'Failed to redact PDF.' });
