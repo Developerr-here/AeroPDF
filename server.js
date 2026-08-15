@@ -60,25 +60,31 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use('/api/blog-uploads', express.static(blogUploadsDir));
 
 // Helper: Periodically clean orphaned temporary files from uploads/ directory (older than 15 mins)
-function cleanupOrphanedUploads() {
+async function cleanupOrphanedUploads() {
   const uploadsDir = path.join(__dirname, 'uploads');
   if (!fs.existsSync(uploadsDir)) return;
 
   const now = Date.now();
   const maxAgeMs = 15 * 60 * 1000; // 15 minutes
 
-  fs.readdir(uploadsDir, (err, files) => {
-    if (err || !files) return;
-    files.forEach(file => {
-      const filePath = path.join(uploadsDir, file);
-      fs.stat(filePath, (statErr, stats) => {
-        if (statErr || !stats) return;
+  try {
+    const files = await fs.promises.readdir(uploadsDir);
+    for (const file of files) {
+      try {
+        const filePath = path.join(uploadsDir, file);
+        const stats = await fs.promises.stat(filePath);
         if (now - stats.mtimeMs > maxAgeMs) {
-          fs.unlink(filePath, () => {});
+          await fs.promises.unlink(filePath).catch(() => {});
         }
-      });
-    });
-  });
+      } catch (err) {
+        // ignore individual file errors
+      }
+      // Yield to the event loop to prevent starvation
+      await new Promise(resolve => setImmediate(resolve));
+    }
+  } catch (err) {
+    console.error('[Cleanup] Error reading uploads directory:', err);
+  }
 }
 
 // Run cleanup immediately on startup and every 30 minutes
