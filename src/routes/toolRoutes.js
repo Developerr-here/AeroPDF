@@ -6,7 +6,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import FormData from 'form-data';
 import fetch from 'node-fetch';
-import { PDFDocument, PDFTextField, degrees, rgb, StandardFonts } from 'pdf-lib';
+import { PDFDocument, PDFTextField, PDFCheckBox, PDFRadioGroup, PDFDropdown, PDFOptionList, degrees, rgb, StandardFonts } from 'pdf-lib';
 import { PDFParse } from 'pdf-parse';
 import HTMLtoDOCX from 'html-to-docx';
 import { encryptPDF } from '@pdfsmaller/pdf-encrypt-lite';
@@ -847,8 +847,10 @@ router.post('/api/office-to-pdf', upload.single('file'), checkUploadLimit, apiLi
         endpoint = 'https://api.cloudmersive.com/convert/docx/to/pdf';
       } else if (lowerName.endsWith('.xlsx') || lowerName.endsWith('.xls') || lowerName.endsWith('.csv')) {
         endpoint = 'https://api.cloudmersive.com/convert/xlsx/to/pdf';
-      } else if (lowerName.endsWith('.pptx') || lowerName.endsWith('.ppt')) {
+      } else if (lowerName.endsWith('.pptx')) {
         endpoint = 'https://api.cloudmersive.com/convert/pptx/to/pdf';
+      } else if (lowerName.endsWith('.ppt')) {
+        endpoint = 'https://api.cloudmersive.com/convert/ppt/to/pdf';
       }
 
       console.log(`[Cloudmersive] Converting Office -> PDF (${file.originalname})`);
@@ -1580,6 +1582,7 @@ router.post('/api/edit-pdf', upload.single('file'), checkUploadLimit, apiLimiter
 });
 
 // 17. PDF Forms
+/*
 router.post('/api/pdf-forms', upload.single('file'), checkUploadLimit, apiLimiter, async (req, res) => {
   try {
     const file = req.file;
@@ -1590,13 +1593,41 @@ router.post('/api/pdf-forms', upload.single('file'), checkUploadLimit, apiLimite
     cleanTempFiles(req);
 
     const form = pdf.getForm();
+    let answers = {};
+    if (req.body.answers) {
+      try {
+        answers = JSON.parse(req.body.answers);
+      } catch (e) {
+        console.warn('Failed to parse answers JSON');
+      }
+    }
+
     const fields = form.getFields();
     fields.forEach(field => {
       try {
-        if (field instanceof PDFTextField) {
-          field.setText('pdfbundles Autocomplete');
+        const name = field.getName();
+        if (answers[name] !== undefined) {
+          const val = answers[name];
+          if (field instanceof PDFTextField) {
+            field.setText(String(val));
+          } else if (field instanceof PDFCheckBox) {
+            if (val) field.check();
+            else field.uncheck();
+          } else if (field instanceof PDFRadioGroup) {
+            field.select(String(val));
+          } else if (field instanceof PDFDropdown) {
+            field.select(String(val));
+          } else if (field instanceof PDFOptionList) {
+            if (Array.isArray(val)) {
+              field.select(val.map(String));
+            } else {
+              field.select(String(val));
+            }
+          }
         }
-      } catch (e) {}
+      } catch (e) {
+        console.error(`Failed to fill field ${field?.getName()}:`, e.message);
+      }
     });
 
     const bytes = await pdf.save();

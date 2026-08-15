@@ -208,9 +208,12 @@ export async function editPDF(file, elements) {
   return handleJSONResponse(res, 'Failed to write text edits.');
 }
 
-export async function fillPDFForms(file) {
+export async function fillPDFForms(file, config = {}) {
   const formData = new FormData();
   formData.append('file', file);
+  if (config.answers) {
+    formData.append('answers', JSON.stringify(config.answers));
+  }
   const res = await authenticatedFetch('/api/pdf-forms', { method: 'POST', body: formData });
   return handleJSONResponse(res, 'Forms filling action failed.');
 }

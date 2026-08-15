@@ -16,6 +16,7 @@ import AiAssistantSettings from '../components/tool-settings/AiAssistantSettings
 import UpscaleSettings from '../components/tool-settings/UpscaleSettings';
 import EditSettings from '../components/tool-settings/EditSettings';
 import RedactSettings from '../components/tool-settings/RedactSettings';
+import PDFFormsSettings from '../components/tool-settings/PDFFormsSettings';
 
 const parsePageSelection = (opt) => {
   if (opt.selectedPages && opt.selectedPages.length > 0) return opt.selectedPages;
@@ -78,8 +79,8 @@ export const TOOLS_DATA = [
       { id: "page-numbers", name: "Page Numbers", desc: "Draw page numbers on margins.", path: "/page-numbers", icon: <Hash size={24} />, color: "indigo", multiple: false, accept: ".pdf", actionTitle: "Add Page Numbers", settingsComponent: PageNumbersSettings, apiAction: async (files, opt) => await api.addPageNumbers(files[0], opt.position, opt.format), ext: ".pdf" },
       { id: "add-watermark", name: "Add Watermark", desc: "Stamp customized text overlays.", path: "/add-watermark", icon: <Droplet size={24} />, color: "blue", multiple: false, accept: ".pdf", actionTitle: "Add Watermark", settingsComponent: WatermarkSettings, apiAction: async (files, opt) => await api.addWatermark(files[0], opt.text, opt.size, opt.rotation, opt.opacity), ext: ".pdf" },
       { id: "crop-pdf", name: "Crop PDF", desc: "Visual page dimensions cropper.", path: "/crop-pdf", icon: <Crop size={24} />, color: "rose", multiple: false, accept: ".pdf", actionTitle: "Crop PDF", settingsComponent: CropSettings, apiAction: async (files, opt) => await api.cropPDF(files[0], { top: opt.top ?? 0.5, right: opt.right ?? 0.5, bottom: opt.bottom ?? 0.5, left: opt.left ?? 0.5 }), ext: ".pdf" },
-      { id: "edit-pdf", name: "Edit PDF", desc: "Add text, shapes, or notes.", path: "/edit-pdf", icon: <PenTool size={24} />, color: "blue", multiple: false, accept: ".pdf", actionTitle: "Edit PDF", settingsComponent: EditSettings, apiAction: async (files, opt) => await api.editPDF(files[0], opt.editTextBoxes || []), ext: ".pdf" },
-      { id: "pdf-forms", name: "PDF Forms", desc: "Fill out interactive forms.", path: "/pdf-forms", icon: <FormInput size={24} />, color: "slate", multiple: false, accept: ".pdf", actionTitle: "Fill Forms", settingsComponent: GenericSettings, apiAction: async (files) => await api.fillPDFForms(files[0]), ext: ".pdf" }
+      { id: "edit-pdf", name: "Edit PDF", desc: "Add text, shapes, or notes.", path: "/edit-pdf", icon: <PenTool size={24} />, color: "blue", multiple: false, accept: ".pdf", actionTitle: "Edit PDF", settingsComponent: EditSettings, apiAction: async (files, opt) => await api.editPDF(files[0], opt.editTextBoxes || []), ext: ".pdf" }
+      // { id: "pdf-forms", name: "PDF Forms", desc: "Fill out interactive forms.", path: "/pdf-forms", icon: <FormInput size={24} />, color: "slate", multiple: false, accept: ".pdf", actionTitle: "Fill Forms", settingsComponent: PDFFormsSettings, apiAction: async (files, config) => await api.fillPDFForms(files[0], config), ext: ".pdf" }
     ]
   },
   {

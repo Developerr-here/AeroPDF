@@ -463,7 +463,7 @@ const GenericToolPage = ({ tool }) => {
                 <h4 className="text-[11px] font-black tracking-widest text-slate-400 uppercase mb-4">TOOL CONFIGURATION</h4>
                 <div className="mb-8">
                   {tool.settingsComponent ? (
-                    <tool.settingsComponent config={toolConfig} setConfig={setToolConfig} />
+                    <tool.settingsComponent config={toolConfig} setConfig={setToolConfig} files={files} />
                   ) : (
                     <p className="text-sm text-slate-500 font-medium">Check your uploaded files on the left. Click the button below to process.</p>
                   )}
