@@ -157,7 +157,7 @@ const GenericToolPage = ({ tool }) => {
         addToast(`${tool.name} completed successfully!`, 'success');
       }
       // 1.5. Result is a raw binary buffer (e.g. storage bucket disabled or local fallback)
-      else if (result instanceof Uint8Array || result instanceof Blob || result instanceof ArrayBuffer) {
+      else if (result instanceof Uint8Array || result instanceof Blob || result instanceof ArrayBuffer || (result && typeof result.byteLength === 'number')) {
         let blob = result instanceof Blob ? result : new Blob([result], { type: result.type || 'application/pdf' });
         let filename = `${tool.id}_output_${Date.now()}${tool.ext || '.pdf'}`;
         if (files.length === 1 && tool.ext === '.pdf') filename = `processed_${files[0].name.replace(/\.[^/.]+$/, "")}.pdf`;

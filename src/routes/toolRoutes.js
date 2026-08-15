@@ -623,8 +623,9 @@ router.post('/api/split', upload.single('file'), checkUploadLimit, apiLimiter, a
       return sendGeneratedFile(res, Buffer.from(bytes), { contentType: 'application/pdf', extension: '.pdf', filename: 'output.pdf' });
     }
   } catch (err) {
+    console.error('[SPLIT-PDF ERROR]', err);
     cleanTempFiles(req);
-    res.status(500).json({ error: 'Failed to split PDF.' });
+    res.status(500).json({ error: 'Failed to split PDF: ' + err.message });
   }
 });
 
@@ -836,7 +837,7 @@ router.post('/api/office-to-pdf', upload.single('file'), checkUploadLimit, apiLi
 
       console.log(`[Cloudmersive] Converting Office -> PDF (${file.originalname})`);
       const convertedBuffer = await convertWithCloudmersive(buffer, file.originalname, endpoint);
-      fs.unlink(file.path, () => {});
+      cleanTempFiles(req);
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="${file.originalname.replace(/\.[^/.]+$/, "")}.pdf"`);
       return sendGeneratedFile(res, convertedBuffer, { contentType: 'application/pdf', extension: '.pdf', filename: 'output.pdf' });
@@ -850,10 +851,10 @@ router.post('/api/office-to-pdf', upload.single('file'), checkUploadLimit, apiLi
                    file.originalname.toLowerCase().endsWith('.csv');
 
     if (isDocx) {
-      const result = await mammoth.extractRawText({ path: file.path });
+      const result = await mammoth.extractRawText({ buffer });
       const rawText = result.value;
       const text = sanitizeWinAnsi(rawText);
-      fs.unlink(file.path, () => {});
+      cleanTempFiles(req);
 
       const pdfDoc = await PDFDocument.create();
       const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
@@ -907,7 +908,7 @@ router.post('/api/office-to-pdf', upload.single('file'), checkUploadLimit, apiLi
 
     if (isXlsx) {
       const workbook = XLSX.read(buffer, { type: 'buffer' });
-      fs.unlink(file.path, () => {});
+      cleanTempFiles(req);
 
       const sheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[sheetName];
@@ -1003,7 +1004,7 @@ router.post('/api/office-to-pdf', upload.single('file'), checkUploadLimit, apiLi
         extractedText = 'Failed to extract text from PowerPoint slides.';
       }
 
-      fs.unlink(file.path, () => {});
+      cleanTempFiles(req);
 
       const pdfDoc = await PDFDocument.create();
       const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
@@ -1062,7 +1063,7 @@ router.post('/api/office-to-pdf', upload.single('file'), checkUploadLimit, apiLi
     }
 
     // Fallback for other non-docx/non-xlsx office files (e.g. legacy formats)
-    fs.unlink(file.path, () => {});
+    cleanTempFiles(req);
     const pdfDoc = await PDFDocument.create();
     const page = pdfDoc.addPage([595.28, 841.89]);
     const fontTitle = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
@@ -1170,7 +1171,7 @@ router.post('/api/html-to-pdf', apiLimiter, async (req, res) => {
     return sendGeneratedFile(res, Buffer.from(bytes), { contentType: 'application/pdf', extension: '.pdf', filename: 'output.pdf' });
   } catch (err) {
     console.error('[HTML-TO-PDF Error]', err);
-    res.status(500).json({ error: 'HTML compilation failed.' });
+    res.status(500).json({ error: 'HTML compilation failed: ' + err.message });
   }
 });
 
@@ -1192,10 +1193,9 @@ router.post('/api/pdf-to-office', upload.single('file'), checkUploadLimit, apiLi
       pageCount = pdf.getPageCount();
       title = pdf.getTitle() || file.originalname;
     } catch (loadErr) {
-      fs.unlink(file.path, () => {});
+      cleanTempFiles(req);
       return res.status(400).json({ error: 'The uploaded file is invalid or corrupted. Please upload a valid PDF document.' });
     }
-    fs.unlink(file.path, () => {});
 
     // Try Cloudmersive high-fidelity API first
     try {
@@ -1220,6 +1220,7 @@ router.post('/api/pdf-to-office', upload.single('file'), checkUploadLimit, apiLi
       if (format === 'docx' && convertedBuffer.length < 5000) {
         console.warn(`[Cloudmersive Warning]: Converted DOCX buffer size is small (${convertedBuffer.length} bytes). Stripped text detected. Falling back to local text extractor.`);
       } else {
+        cleanTempFiles(req);
         res.setHeader('Content-Type', contentType);
         res.setHeader('Content-Disposition', `attachment; filename="${file.originalname.replace(/\.[^/.]+$/, "")}.${extension}"`);
         return sendGeneratedFile(res, convertedBuffer, { contentType, extension: `.${extension}`, filename: `output.${extension}` });
@@ -1253,6 +1254,7 @@ router.post('/api/pdf-to-office', upload.single('file'), checkUploadLimit, apiLi
       XLSX.utils.book_append_sheet(wb, ws, "Extracted Data");
       const excelBuffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
 
+      cleanTempFiles(req);
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       return sendGeneratedFile(res, excelBuffer, { contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', extension: '.xlsx', filename: 'output.xlsx' });
     } else {
@@ -1348,6 +1350,7 @@ router.post('/api/pdf-to-office', upload.single('file'), checkUploadLimit, apiLi
         }
 
         const pptxBuffer = await pptx.write('nodebuffer');
+        cleanTempFiles(req);
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.presentationml.presentation');
         res.setHeader('Content-Disposition', `attachment; filename="${file.originalname.replace(/\.[^/.]+$/, "")}.pptx"`);
         return sendGeneratedFile(res, pptxBuffer, { contentType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation', extension: '.pptx', filename: 'output.pptx' });
@@ -1356,6 +1359,7 @@ router.post('/api/pdf-to-office', upload.single('file'), checkUploadLimit, apiLi
           title: title,
           font: 'Arial'
         });
+        cleanTempFiles(req);
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
         res.setHeader('Content-Disposition', `attachment; filename="${file.originalname.replace(/\.[^/.]+$/, "")}.docx"`);
         return sendGeneratedFile(res, docxBuffer, { contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', extension: '.docx', filename: 'output.docx' });
