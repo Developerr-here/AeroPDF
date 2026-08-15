@@ -74,7 +74,15 @@ async function convertWithCloudmersive(fileBuffer, fileName, endpointUrl) {
   }
 
   const arrayBuffer = await response.arrayBuffer();
-  return Buffer.from(arrayBuffer);
+  const buffer = Buffer.from(arrayBuffer);
+  
+  // Validate PDF magic bytes
+  if (buffer.length < 4 || buffer.toString('utf8', 0, 4) !== '%PDF') {
+    const textSnippet = buffer.toString('utf8', 0, 200);
+    throw new Error(`Cloudmersive returned an invalid PDF (Quota exceeded or API error?): ${textSnippet}`);
+  }
+  
+  return buffer;
 }
 
 // Helper: Safely load PDF document with error handling for encrypted/corrupt files
