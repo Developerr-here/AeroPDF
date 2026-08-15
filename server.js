@@ -2,9 +2,10 @@ import 'dotenv/config';
 import dns from 'dns';
 dns.setDefaultResultOrder('ipv4first');
 import express from 'express';
+import compression from 'compression';
 import multer from 'multer';
 import cors from 'cors';
-import path from 'path';
+import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import seoConfig from './seo-config.js';
@@ -33,6 +34,9 @@ if (!fs.existsSync(blogUploadsDir)) {
 
 // Enable CORS
 app.use(cors());
+
+// Enable gzip compression for all responses
+app.use(compression());
 
 // Custom Request Logger middleware
 app.use((req, res, next) => {
