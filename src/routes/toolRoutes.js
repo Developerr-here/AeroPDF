@@ -83,9 +83,10 @@ async function convertWithCloudmersive(fileBuffer, fileName, endpointUrl, expect
       throw new Error(`Cloudmersive returned an invalid PDF (Quota exceeded or API error?): ${textSnippet}`);
     }
   } else {
-    // If we expect Office file but get JSON, throw
-    if (buffer.length < 300 && buffer.toString('utf8').includes('{')) {
-      throw new Error(`Cloudmersive returned JSON instead of document: ${buffer.toString('utf8')}`);
+    // If we expect Office file but get JSON or HTML error page, throw
+    const snippet = buffer.toString('utf8', 0, 50).trim();
+    if (snippet.startsWith('{') || snippet.startsWith('<')) {
+      throw new Error(`Cloudmersive returned an error page/JSON instead of document: ${buffer.toString('utf8', 0, 500)}`);
     }
   }
   
@@ -1104,20 +1105,45 @@ router.post('/api/html-to-pdf', apiLimiter, async (req, res) => {
     if (mode === 'url') {
       if (!url) return res.status(400).json({ error: 'URL is required.' });
       try {
-        const fetchRes = await fetch(url);
-        if (!fetchRes.ok) throw new Error(`Status ${fetchRes.status}`);
-        const htmlContent = await fetchRes.text();
-        const convertedBuffer = await convertWithCloudmersive(Buffer.from(htmlContent), 'page.html', 'https://api.cloudmersive.com/convert/web/html/to/pdf');
-        return sendGeneratedFile(res, convertedBuffer, { contentType: 'application/pdf', extension: '.pdf', filename: 'webpage.pdf' });
+        const response = await fetch('https://api.cloudmersive.com/convert/web/url/to/pdf', {
+          method: 'POST',
+          headers: {
+            'Apikey': CLOUDMERSIVE_API_KEY,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ Url: url })
+        });
+        
+        if (!response.ok) {
+          const errText = await response.text();
+          throw new Error(`Cloudmersive API error (${response.status}): ${errText}`);
+        }
+        
+        const arrayBuffer = await response.arrayBuffer();
+        return sendGeneratedFile(res, Buffer.from(arrayBuffer), { contentType: 'application/pdf', extension: '.pdf', filename: 'webpage.pdf' });
       } catch (fetchErr) {
-        console.error('HTML fetch or Cloudmersive failed:', fetchErr);
+        console.error('Cloudmersive URL-to-PDF failed:', fetchErr);
         extractedText = `Failed to fetch or compile content from URL: ${url}\nError: ${fetchErr.message}`;
       }
     } else {
       if (!html) return res.status(400).json({ error: 'HTML code is required.' });
       try {
-        const convertedBuffer = await convertWithCloudmersive(Buffer.from(html), 'page.html', 'https://api.cloudmersive.com/convert/web/html/to/pdf');
-        return sendGeneratedFile(res, convertedBuffer, { contentType: 'application/pdf', extension: '.pdf', filename: 'webpage.pdf' });
+        const response = await fetch('https://api.cloudmersive.com/convert/web/html/to/pdf', {
+          method: 'POST',
+          headers: {
+            'Apikey': CLOUDMERSIVE_API_KEY,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ Html: html })
+        });
+        
+        if (!response.ok) {
+          const errText = await response.text();
+          throw new Error(`Cloudmersive API error (${response.status}): ${errText}`);
+        }
+        
+        const arrayBuffer = await response.arrayBuffer();
+        return sendGeneratedFile(res, Buffer.from(arrayBuffer), { contentType: 'application/pdf', extension: '.pdf', filename: 'webpage.pdf' });
       } catch (htmlErr) {
         console.warn('Cloudmersive HTML conversion failed:', htmlErr.message);
         extractedText = html
