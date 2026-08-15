@@ -271,7 +271,10 @@ export async function comparePDFs(fileA, fileB) {
 
 export async function pdfToImages(file, onProgress) {
   const arrayBuffer = await file.arrayBuffer();
-  const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+  const loadingTask = pdfjsLib.getDocument({ 
+    data: arrayBuffer,
+    standardFontDataUrl: `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/standard_fonts/`
+  });
   const pdf = await loadingTask.promise;
   const totalPages = pdf.numPages;
   const images = [];
@@ -298,7 +301,10 @@ export async function pdfToImages(file, onProgress) {
 }
 
 export async function generatePagePreviews(pdfBuffer, onProgress) {
-  const loadingTask = pdfjsLib.getDocument({ data: pdfBuffer });
+  const loadingTask = pdfjsLib.getDocument({ 
+    data: pdfBuffer,
+    standardFontDataUrl: `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/standard_fonts/`
+  });
   const pdf = await loadingTask.promise;
   const totalPages = pdf.numPages;
   const previews = [];
@@ -333,7 +339,10 @@ export async function generatePagePreviews(pdfBuffer, onProgress) {
 export async function getPDFFirstPageThumbnail(file) {
   try {
     const arrayBuffer = await file.arrayBuffer();
-    const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) });
+    const loadingTask = pdfjsLib.getDocument({ 
+      data: new Uint8Array(arrayBuffer),
+      standardFontDataUrl: `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/standard_fonts/`
+    });
     const pdf = await loadingTask.promise;
     if (pdf.numPages > 0) {
       const page = await pdf.getPage(1);

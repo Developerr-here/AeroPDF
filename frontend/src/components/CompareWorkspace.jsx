@@ -14,7 +14,10 @@ export default function CompareWorkspace({ files }) {
       try {
         const getMeta = async (file) => {
           const arrayBuffer = await file.arrayBuffer();
-          const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+          const pdf = await pdfjsLib.getDocument({ 
+            data: arrayBuffer,
+            standardFontDataUrl: `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/standard_fonts/`
+          }).promise;
           const numPages = pdf.numPages;
           const metaData = await pdf.getMetadata();
           return {

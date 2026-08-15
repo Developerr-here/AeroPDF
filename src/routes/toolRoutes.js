@@ -574,7 +574,7 @@ router.post('/api/split', upload.single('file'), checkUploadLimit, apiLimiter, a
     if (mode === 'all-split') {
       const totalPages = pdf.getPageCount();
       if (isStorageBucketEnabled()) {
-        const archive = archiver('zip', { zlib: { level: 5 } });
+        const archive = new archiver.ZipArchive({ zlib: { level: 5 } });
         const chunks = [];
         archive.on('data', chunk => chunks.push(chunk));
         
