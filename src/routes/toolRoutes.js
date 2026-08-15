@@ -54,7 +54,7 @@ async function sendGeneratedFile(res, buffer, { contentType, filename, extension
 }
 
 
-async function convertWithCloudmersive(fileBuffer, fileName, endpointUrl) {
+async function convertWithCloudmersive(fileBuffer, fileName, endpointUrl, expectPdf = true) {
   if (!CLOUDMERSIVE_API_KEY) throw new Error('No Cloudmersive API key configured');
   const form = new FormData();
   form.append('inputFile', fileBuffer, { filename: fileName });
@@ -77,9 +77,16 @@ async function convertWithCloudmersive(fileBuffer, fileName, endpointUrl) {
   const buffer = Buffer.from(arrayBuffer);
   
   // Validate PDF magic bytes
-  if (buffer.length < 4 || buffer.toString('utf8', 0, 4) !== '%PDF') {
-    const textSnippet = buffer.toString('utf8', 0, 200);
-    throw new Error(`Cloudmersive returned an invalid PDF (Quota exceeded or API error?): ${textSnippet}`);
+  if (expectPdf) {
+    if (buffer.length < 4 || buffer.toString('utf8', 0, 4) !== '%PDF') {
+      const textSnippet = buffer.toString('utf8', 0, 200);
+      throw new Error(`Cloudmersive returned an invalid PDF (Quota exceeded or API error?): ${textSnippet}`);
+    }
+  } else {
+    // If we expect Office file but get JSON, throw
+    if (buffer.length < 300 && buffer.toString('utf8').includes('{')) {
+      throw new Error(`Cloudmersive returned JSON instead of document: ${buffer.toString('utf8')}`);
+    }
   }
   
   return buffer;
@@ -846,8 +853,6 @@ router.post('/api/office-to-pdf', upload.single('file'), checkUploadLimit, apiLi
       console.log(`[Cloudmersive] Converting Office -> PDF (${file.originalname})`);
       const convertedBuffer = await convertWithCloudmersive(buffer, file.originalname, endpoint);
       cleanTempFiles(req);
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="${file.originalname.replace(/\.[^/.]+$/, "")}.pdf"`);
       return sendGeneratedFile(res, convertedBuffer, { contentType: 'application/pdf', extension: '.pdf', filename: 'output.pdf' });
     } catch (apiErr) {
       console.warn(`[Cloudmersive API Skipped/Failed]: ${apiErr.message}. Falling back to local converter.`);
@@ -1102,24 +1107,26 @@ router.post('/api/html-to-pdf', apiLimiter, async (req, res) => {
         const fetchRes = await fetch(url);
         if (!fetchRes.ok) throw new Error(`Status ${fetchRes.status}`);
         const htmlContent = await fetchRes.text();
-        extractedText = htmlContent
+        const convertedBuffer = await convertWithCloudmersive(Buffer.from(htmlContent), 'page.html', 'https://api.cloudmersive.com/convert/web/html/to/pdf');
+        return sendGeneratedFile(res, convertedBuffer, { contentType: 'application/pdf', extension: '.pdf', filename: 'webpage.pdf' });
+      } catch (fetchErr) {
+        console.error('HTML fetch or Cloudmersive failed:', fetchErr);
+        extractedText = `Failed to fetch or compile content from URL: ${url}\nError: ${fetchErr.message}`;
+      }
+    } else {
+      if (!html) return res.status(400).json({ error: 'HTML code is required.' });
+      try {
+        const convertedBuffer = await convertWithCloudmersive(Buffer.from(html), 'page.html', 'https://api.cloudmersive.com/convert/web/html/to/pdf');
+        return sendGeneratedFile(res, convertedBuffer, { contentType: 'application/pdf', extension: '.pdf', filename: 'webpage.pdf' });
+      } catch (htmlErr) {
+        console.warn('Cloudmersive HTML conversion failed:', htmlErr.message);
+        extractedText = html
           .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '') // strip style blocks
           .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '') // strip script blocks
           .replace(/<[^>]*>/g, ' ') // strip remaining tags
           .replace(/\s+/g, ' ') // collapse spacing
           .trim();
-      } catch (fetchErr) {
-        console.error('HTML fetch failed:', fetchErr);
-        extractedText = `Failed to fetch or compile content from URL: ${url}\nError: ${fetchErr.message}`;
       }
-    } else {
-      if (!html) return res.status(400).json({ error: 'HTML code is required.' });
-      extractedText = html
-        .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '') // strip style blocks
-        .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '') // strip script blocks
-        .replace(/<[^>]*>/g, ' ') // strip remaining tags
-        .replace(/\s+/g, ' ') // collapse spacing
-        .trim();
     }
 
     const pdfDoc = await PDFDocument.create();
@@ -1222,15 +1229,12 @@ router.post('/api/pdf-to-office', upload.single('file'), checkUploadLimit, apiLi
       }
 
       console.log(`[Cloudmersive] Converting PDF -> ${format.toUpperCase()}`);
-      const convertedBuffer = await convertWithCloudmersive(buffer, file.originalname, endpoint);
-      
+      const convertedBuffer = await convertWithCloudmersive(buffer, file.originalname, endpoint, false);
       // If Cloudmersive returned a stripped document (too small/no text for docx), fall back to local text extractor
       if (format === 'docx' && convertedBuffer.length < 5000) {
         console.warn(`[Cloudmersive Warning]: Converted DOCX buffer size is small (${convertedBuffer.length} bytes). Stripped text detected. Falling back to local text extractor.`);
       } else {
         cleanTempFiles(req);
-        res.setHeader('Content-Type', contentType);
-        res.setHeader('Content-Disposition', `attachment; filename="${file.originalname.replace(/\.[^/.]+$/, "")}.${extension}"`);
         return sendGeneratedFile(res, convertedBuffer, { contentType, extension: `.${extension}`, filename: `output.${extension}` });
       }
     } catch (apiErr) {
@@ -1263,7 +1267,6 @@ router.post('/api/pdf-to-office', upload.single('file'), checkUploadLimit, apiLi
       const excelBuffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
 
       cleanTempFiles(req);
-      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       return sendGeneratedFile(res, excelBuffer, { contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', extension: '.xlsx', filename: 'output.xlsx' });
     } else {
       let extractedText = '';
@@ -1359,8 +1362,6 @@ router.post('/api/pdf-to-office', upload.single('file'), checkUploadLimit, apiLi
 
         const pptxBuffer = await pptx.write('nodebuffer');
         cleanTempFiles(req);
-        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.presentationml.presentation');
-        res.setHeader('Content-Disposition', `attachment; filename="${file.originalname.replace(/\.[^/.]+$/, "")}.pptx"`);
         return sendGeneratedFile(res, pptxBuffer, { contentType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation', extension: '.pptx', filename: 'output.pptx' });
       } else {
         const docxBuffer = await HTMLtoDOCX(wordHtml, null, {
@@ -1368,8 +1369,6 @@ router.post('/api/pdf-to-office', upload.single('file'), checkUploadLimit, apiLi
           font: 'Arial'
         });
         cleanTempFiles(req);
-        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-        res.setHeader('Content-Disposition', `attachment; filename="${file.originalname.replace(/\.[^/.]+$/, "")}.docx"`);
         return sendGeneratedFile(res, docxBuffer, { contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', extension: '.docx', filename: 'output.docx' });
       }
     }
