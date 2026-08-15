@@ -1637,6 +1637,7 @@ router.post('/api/pdf-forms', upload.single('file'), checkUploadLimit, apiLimite
     res.status(500).json({ error: 'Forms processor failed.' });
   }
 });
+*/
 
 // 18. Protect PDF
 router.post('/api/protect', upload.single('file'), checkUploadLimit, apiLimiter, async (req, res) => {
