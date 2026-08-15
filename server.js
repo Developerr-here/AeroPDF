@@ -35,9 +35,6 @@ if (!fs.existsSync(blogUploadsDir)) {
 // Enable CORS
 app.use(cors());
 
-// Enable gzip compression for all responses
-app.use(compression());
-
 // Custom Request Logger middleware
 app.use((req, res, next) => {
   if (req.path !== '/api/log' && !req.path.includes('log')) {
