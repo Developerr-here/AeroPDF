@@ -110,11 +110,11 @@ router.post('/api/ai/assistant', upload.single('file'), checkUploadLimit, verify
       const parser = new PDFParse({ data: new Uint8Array(dataBuffer) });
       pdfData = await parser.getText();
     } catch (parseErr) {
-      fs.unlink(file.path, () => {});
+      cleanTempFiles(req);
       console.error('[PDF Parse Error]:', parseErr);
       return res.status(400).json({ error: 'Failed to parse PDF document text. The file might be corrupted, password protected, or not a valid PDF.' });
     }
-    fs.unlink(file.path, () => {});
+    cleanTempFiles(req);
 
     if (!pdfData.text || pdfData.text.trim().length === 0) {
       return res.status(400).json({ error: 'No copyable text found in PDF.' });
@@ -232,11 +232,11 @@ router.post('/api/ai/summarize', upload.single('file'), checkUploadLimit, verify
       const parser = new PDFParse({ data: new Uint8Array(dataBuffer) });
       pdfData = await parser.getText();
     } catch (parseErr) {
-      fs.unlink(file.path, () => {});
+      cleanTempFiles(req);
       console.error('[PDF Parse Error]:', parseErr);
       return res.status(400).json({ error: 'Failed to parse PDF document text. The file might be corrupted, password protected, or not a valid PDF.' });
     }
-    fs.unlink(file.path, () => {});
+    cleanTempFiles(req);
 
     if (!pdfData.text || pdfData.text.trim().length === 0) {
       return res.status(400).json({ error: 'No copyable text found in PDF.' });
@@ -314,11 +314,11 @@ router.post('/api/ai/translate', upload.single('file'), checkUploadLimit, verify
       const parser = new PDFParse({ data: new Uint8Array(dataBuffer) });
       pdfData = await parser.getText();
     } catch (parseErr) {
-      fs.unlink(file.path, () => {});
+      cleanTempFiles(req);
       console.error('[PDF Parse Error]:', parseErr);
       return res.status(400).json({ error: 'Failed to parse PDF document text. The file might be corrupted, password protected, or not a valid PDF.' });
     }
-    fs.unlink(file.path, () => {});
+    cleanTempFiles(req);
 
     if (!pdfData.text || pdfData.text.trim().length === 0) {
       return res.status(400).json({ error: 'No copyable text found in PDF.' });
@@ -418,17 +418,17 @@ router.post('/api/image/remove-background', upload.single('file'), checkUploadLi
         }
 
         const arrayBuffer = await response.arrayBuffer();
-        fs.unlink(file.path, () => {});
+        cleanTempFiles(req);
         return sendGeneratedFile(res, Buffer.from(arrayBuffer), { contentType: 'image/png', extension: '.png', filename: 'transparent.png' });
       } catch (err) {
-        fs.unlink(file.path, () => {});
+        cleanTempFiles(req);
         console.error(`[Remove.bg API Error]: ${err.message}`);
         return res.status(500).json({ error: `Background removal failed: ${err.message}` });
       }
     } else {
       // Free fallback mode: send the original file back with x-mock-active header to trigger browser canvas processing
       console.log('[Background Remover] No active Remove.bg API key configured. Falling back to browser-side chroma-key mode.');
-      fs.unlink(file.path, () => {});
+      cleanTempFiles(req);
       res.setHeader('x-mock-active', 'true');
       res.setHeader('Content-Type', file.mimetype);
       return sendGeneratedFile(res, fileBuffer, { contentType: file.mimetype, extension: '', filename: file.originalname });
@@ -476,10 +476,10 @@ router.post('/api/image/upscale', upload.single('file'), checkUploadLimit, verif
         }
 
         const arrayBuffer = await response.arrayBuffer();
-        fs.unlink(file.path, () => {});
+        cleanTempFiles(req);
         return sendGeneratedFile(res, Buffer.from(arrayBuffer), { contentType: 'image/png', extension: '.png', filename: 'transparent.png' });
       } catch (err) {
-        fs.unlink(file.path, () => {});
+        cleanTempFiles(req);
         console.error(`[Stability AI API Error]: ${err.message}`);
         return res.status(500).json({ error: `Image upscaling failed: ${err.message}` });
       }
@@ -510,17 +510,17 @@ router.post('/api/image/upscale', upload.single('file'), checkUploadLimit, verif
 
         const imgRes = await fetch(data.output_url);
         const arrayBuffer = await imgRes.arrayBuffer();
-        fs.unlink(file.path, () => {});
+        cleanTempFiles(req);
         return sendGeneratedFile(res, Buffer.from(arrayBuffer), { contentType: 'image/png', extension: '.png', filename: 'transparent.png' });
       } catch (err) {
-        fs.unlink(file.path, () => {});
+        cleanTempFiles(req);
         console.error(`[DeepAI API Error]: ${err.message}`);
         return res.status(500).json({ error: `Image upscaling failed: ${err.message}` });
       }
     } else {
       // Free fallback mode: send original file back with x-mock-active to trigger browser canvas processing
       console.log('[Image Upscaler] No active Stability AI or DeepAI API keys configured. Falling back to browser-side upscaling mode.');
-      fs.unlink(file.path, () => {});
+      cleanTempFiles(req);
       res.setHeader('x-mock-active', 'true');
       res.setHeader('x-upscale-factor', factor || '2');
       res.setHeader('Content-Type', file.mimetype);
@@ -550,7 +550,7 @@ router.post('/api/merge', upload.array('files'), checkUploadLimit, apiLimiter, a
       const pdf = await PDFDocument.load(buffer);
       const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
       copiedPages.forEach((page) => mergedPdf.addPage(page));
-      fs.unlink(file.path, () => {});
+      cleanTempFiles(req);
     }
     const bytes = await mergedPdf.save();
     return sendGeneratedFile(res, Buffer.from(bytes), { contentType: 'application/pdf', extension: '.pdf', filename: 'output.pdf' });
@@ -569,7 +569,7 @@ router.post('/api/split', upload.single('file'), checkUploadLimit, apiLimiter, a
 
     const buffer = fs.readFileSync(file.path);
     const pdf = await PDFDocument.load(buffer);
-    fs.unlink(file.path, () => {});
+    cleanTempFiles(req);
 
     if (mode === 'all-split') {
       const totalPages = pdf.getPageCount();
@@ -638,7 +638,7 @@ router.post('/api/remove-pages', upload.single('file'), checkUploadLimit, apiLim
 
     const buffer = fs.readFileSync(file.path);
     const pdf = await PDFDocument.load(buffer);
-    fs.unlink(file.path, () => {});
+    cleanTempFiles(req);
 
     const totalPages = pdf.getPageCount();
     const indicesToKeep = [];
@@ -671,7 +671,7 @@ router.post('/api/organize-pdf', upload.single('file'), checkUploadLimit, apiLim
 
     const buffer = fs.readFileSync(file.path);
     const pdf = await PDFDocument.load(buffer);
-    fs.unlink(file.path, () => {});
+    cleanTempFiles(req);
 
     const modifiedPdf = await PDFDocument.create();
     const copiedPages = await modifiedPdf.copyPages(pdf, newOrder);
@@ -693,7 +693,7 @@ router.post('/api/compress', upload.single('file'), checkUploadLimit, apiLimiter
     
     const buffer = fs.readFileSync(file.path);
     const pdf = await PDFDocument.load(buffer);
-    fs.unlink(file.path, () => {});
+    cleanTempFiles(req);
     
     const bytes = await pdf.save({ useObjectStreams: true, addEmptyPage: false });
     return sendGeneratedFile(res, Buffer.from(bytes), { contentType: 'application/pdf', extension: '.pdf', filename: 'output.pdf' });
@@ -711,7 +711,7 @@ router.post('/api/repair', upload.single('file'), checkUploadLimit, apiLimiter, 
 
     const buffer = fs.readFileSync(file.path);
     const pdf = await PDFDocument.load(buffer);
-    fs.unlink(file.path, () => {});
+    cleanTempFiles(req);
 
     const bytes = await pdf.save();
     return sendGeneratedFile(res, Buffer.from(bytes), { contentType: 'application/pdf', extension: '.pdf', filename: 'output.pdf' });
@@ -729,7 +729,7 @@ router.post('/api/ocr', upload.single('file'), checkUploadLimit, apiLimiter, asy
 
     const buffer = fs.readFileSync(file.path);
     const pdf = await PDFDocument.load(buffer);
-    fs.unlink(file.path, () => {});
+    cleanTempFiles(req);
 
     const font = await pdf.embedFont(StandardFonts.Helvetica);
     const pages = pdf.getPages();
@@ -771,7 +771,7 @@ router.post('/api/img-to-pdf', upload.array('files'), checkUploadLimit, apiLimit
       } else {
         embeddedImage = await pdfDoc.embedJpg(bytes);
       }
-      fs.unlink(file.path, () => {});
+      cleanTempFiles(req);
 
       let pageWidth, pageHeight;
       if (pageSize === 'fit') {
@@ -1381,7 +1381,7 @@ router.post('/api/rotate', upload.single('file'), checkUploadLimit, apiLimiter, 
 
     const buffer = fs.readFileSync(file.path);
     const pdf = await PDFDocument.load(buffer);
-    fs.unlink(file.path, () => {});
+    cleanTempFiles(req);
 
     const pages = pdf.getPages();
     for (const [indexStr, angle] of Object.entries(rotations)) {
@@ -1410,7 +1410,7 @@ router.post('/api/page-numbers', upload.single('file'), checkUploadLimit, apiLim
 
     const buffer = fs.readFileSync(file.path);
     const pdf = await PDFDocument.load(buffer);
-    fs.unlink(file.path, () => {});
+    cleanTempFiles(req);
 
     const font = await pdf.embedFont(StandardFonts.Helvetica);
     const pages = pdf.getPages();
@@ -1459,7 +1459,7 @@ router.post('/api/watermark', upload.single('file'), checkUploadLimit, apiLimite
 
     const buffer = fs.readFileSync(file.path);
     const pdf = await PDFDocument.load(buffer);
-    fs.unlink(file.path, () => {});
+    cleanTempFiles(req);
 
     const font = await pdf.embedFont(StandardFonts.HelveticaBold);
     const pages = pdf.getPages();
@@ -1498,7 +1498,7 @@ router.post('/api/crop', upload.single('file'), checkUploadLimit, apiLimiter, as
 
     const buffer = fs.readFileSync(file.path);
     const pdf = await PDFDocument.load(buffer);
-    fs.unlink(file.path, () => {});
+    cleanTempFiles(req);
 
     const pages = pdf.getPages();
     pages.forEach(page => {
@@ -1523,7 +1523,7 @@ router.post('/api/edit-pdf', upload.single('file'), checkUploadLimit, apiLimiter
 
     const buffer = fs.readFileSync(file.path);
     const pdf = await PDFDocument.load(buffer);
-    fs.unlink(file.path, () => {});
+    cleanTempFiles(req);
 
     const font = await pdf.embedFont(StandardFonts.Helvetica);
     const pages = pdf.getPages();
@@ -1554,7 +1554,7 @@ router.post('/api/pdf-forms', upload.single('file'), checkUploadLimit, apiLimite
 
     const buffer = fs.readFileSync(file.path);
     const pdf = await PDFDocument.load(buffer);
-    fs.unlink(file.path, () => {});
+    cleanTempFiles(req);
 
     const form = pdf.getForm();
     const fields = form.getFields();
@@ -1583,7 +1583,7 @@ router.post('/api/protect', upload.single('file'), checkUploadLimit, apiLimiter,
 
     const buffer = fs.readFileSync(file.path);
     const encryptedBytes = await encryptPDF(new Uint8Array(buffer), password, password);
-    fs.unlink(file.path, () => {});
+    cleanTempFiles(req);
 
     return sendGeneratedFile(res, Buffer.from(encryptedBytes), { contentType: 'application/pdf', extension: '.pdf', filename: 'output.pdf' });
   } catch (err) {
@@ -1601,7 +1601,7 @@ router.post('/api/unlock', upload.single('file'), checkUploadLimit, apiLimiter, 
 
     const buffer = fs.readFileSync(file.path);
     const decryptedBytes = await decryptPDF(new Uint8Array(buffer), password);
-    fs.unlink(file.path, () => {});
+    cleanTempFiles(req);
 
     return sendGeneratedFile(res, Buffer.from(decryptedBytes), { contentType: 'application/pdf', extension: '.pdf', filename: 'output.pdf' });
   } catch (err) {
@@ -1628,7 +1628,7 @@ router.post('/api/sign', upload.single('file'), checkUploadLimit, apiLimiter, as
 
     const buffer = fs.readFileSync(file.path);
     const pdf = await PDFDocument.load(buffer);
-    fs.unlink(file.path, () => {});
+    cleanTempFiles(req);
 
     const cleanBase64 = signatureBase64.replace(/^data:image\/(png|jpeg|jpg);base64,/, "").replace(/\s/g, "");
     const sigBuffer = Buffer.from(cleanBase64, 'base64');
@@ -1668,7 +1668,7 @@ router.post('/api/redact', upload.single('file'), checkUploadLimit, apiLimiter, 
 
     const buffer = fs.readFileSync(file.path);
     const pdf = await PDFDocument.load(buffer);
-    fs.unlink(file.path, () => {});
+    cleanTempFiles(req);
 
     const pages = pdf.getPages();
     areas.forEach(area => {
@@ -1697,8 +1697,7 @@ router.post('/api/compare', upload.array('files'), checkUploadLimit, apiLimiter,
 
     const bufferA = fs.readFileSync(files[0].path);
     const bufferB = fs.readFileSync(files[1].path);
-    fs.unlink(files[0].path, () => {});
-    fs.unlink(files[1].path, () => {});
+    cleanTempFiles(req);
 
     const pdfA = await PDFDocument.load(bufferA);
     const pdfB = await PDFDocument.load(bufferB);

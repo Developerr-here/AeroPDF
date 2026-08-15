@@ -60,6 +60,7 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use('/api/blog-uploads', express.static(blogUploadsDir));
 
 // Helper: Periodically clean orphaned temporary files from uploads/ directory (older than 15 mins)
+// Helper: Periodically clean orphaned temporary files from uploads/ directory (older than 15 mins)
 async function cleanupOrphanedUploads() {
   const uploadsDir = path.join(__dirname, 'uploads');
   if (!fs.existsSync(uploadsDir)) return;
@@ -68,28 +69,34 @@ async function cleanupOrphanedUploads() {
   const maxAgeMs = 15 * 60 * 1000; // 15 minutes
 
   try {
-    const files = await fs.promises.readdir(uploadsDir);
-    for (const file of files) {
-      try {
-        const filePath = path.join(uploadsDir, file);
-        const stats = await fs.promises.stat(filePath);
-        if (now - stats.mtimeMs > maxAgeMs) {
-          await fs.promises.unlink(filePath).catch(() => {});
+    // Use fs.opendir instead of readdir to stream the directory contents
+    // This prevents memory exhaustion and event loop starvation if the folder has hundreds of thousands of files
+    const dir = await fs.promises.opendir(uploadsDir, { bufferSize: 32 });
+    for await (const dirent of dir) {
+      if (dirent.isFile()) {
+        try {
+          const filePath = path.join(uploadsDir, dirent.name);
+          const stats = await fs.promises.stat(filePath);
+          if (now - stats.mtimeMs > maxAgeMs) {
+            await fs.promises.unlink(filePath).catch(() => {});
+          }
+        } catch (err) {
+          // ignore individual file errors
         }
-      } catch (err) {
-        // ignore individual file errors
       }
-      // Yield to the event loop to prevent starvation
-      await new Promise(resolve => setImmediate(resolve));
+      // Pause 10ms between each file to ensure the event loop is NEVER starved
+      await new Promise(resolve => setTimeout(resolve, 10));
     }
   } catch (err) {
-    console.error('[Cleanup] Error reading uploads directory:', err);
+    console.error('[Cleanup] Error streaming uploads directory:', err);
   }
 }
 
-// Run cleanup immediately on startup and every 30 minutes
-cleanupOrphanedUploads();
-setInterval(cleanupOrphanedUploads, 30 * 60 * 1000);
+// Delay the initial cleanup by 60 seconds to prioritize server boot-up
+setTimeout(() => {
+  cleanupOrphanedUploads();
+  setInterval(cleanupOrphanedUploads, 30 * 60 * 1000);
+}, 60 * 1000);
 
 import authRoutes from './src/routes/authRoutes.js';
 app.use('/api/auth', authRoutes);
