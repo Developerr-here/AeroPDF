@@ -9,7 +9,7 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import seoConfig from './seo-config.js';
-import { syncDatabase } from './db.js';
+import { syncDatabase, BlogPost } from './db.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -105,9 +105,9 @@ app.get('/sitemap.xml', async (req, res) => {
     });
 
     // Add Dynamic Articles from Database
-    const [articles] = await db.query("SELECT slug, created_at FROM articles WHERE status = 'published'");
+    const articles = await BlogPost.findAll({ where: { status: 'published' } });
     articles.forEach(article => {
-      const date = new Date(article.created_at).toISOString().split('T')[0];
+      const date = new Date(article.createdAt).toISOString().split('T')[0];
       xml += `  <url>\n    <loc>${baseUrl}/blog/${article.slug}</loc>\n    <lastmod>${date}</lastmod>\n    <changefreq>monthly</changefreq>\n    <priority>0.7</priority>\n  </url>\n`;
     });
 
