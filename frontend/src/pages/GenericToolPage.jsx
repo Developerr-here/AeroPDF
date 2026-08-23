@@ -242,6 +242,20 @@ const GenericToolPage = ({ tool }) => {
           </Link>
         </div>
       </div>
+      
+      {/* Tool Header */}
+      {(!files.length && status !== 'success' && !isWebcamActive) && (
+        <div className="w-full bg-white pt-12 pb-2">
+          <div className="max-w-[1000px] mx-auto px-6 text-center">
+            <h1 className="text-[32px] md:text-[42px] font-black text-slate-900 tracking-tight mb-4">
+              {extraContent.seoH1 || tool.name}
+            </h1>
+            <p className="text-slate-500 text-lg leading-relaxed max-w-[800px] mx-auto">
+              {extraContent.about}
+            </p>
+          </div>
+        </div>
+      )}
 
       {status === 'success' && successResult ? (
         <div className="flex-1 bg-slate-50 py-12 px-6">
@@ -299,12 +313,8 @@ const GenericToolPage = ({ tool }) => {
           
           {/* Footer Data */}
           <div className="max-w-[1200px] mx-auto px-6 mt-16">
-            {extraContent.seoH1 && (
+            {(extraContent.seoH2_1 || extraContent.seoH2_2) && (
               <div className="bg-white border border-slate-100 rounded-3xl p-10 shadow-sm mb-12 space-y-10">
-                <div>
-                  <h1 className="text-[32px] font-black text-slate-900 mb-4 tracking-tight">{extraContent.seoH1}</h1>
-                  <p className="text-slate-500 leading-relaxed text-lg">{extraContent.about}</p>
-                </div>
                 {extraContent.seoH2_1 && (
                   <div>
                     <h2 className="text-[24px] font-bold text-slate-900 mb-3 tracking-tight">{extraContent.seoH2_1}</h2>
@@ -322,13 +332,6 @@ const GenericToolPage = ({ tool }) => {
             
             <div className="bg-white border border-slate-100 rounded-3xl p-10 shadow-sm grid grid-cols-1 md:grid-cols-2 gap-16">
               <div className="space-y-12">
-                {!extraContent.seoH1 && (
-                  <div>
-                    <h3 className="text-[22px] font-bold text-slate-900 mb-4">About {tool.name}</h3>
-                    <p className="text-slate-500 leading-relaxed">{extraContent.about}</p>
-                  </div>
-                )}
-                
                 <div>
                   <h3 className="text-[18px] font-bold text-slate-900 mb-6 flex items-center gap-2">
                     <Settings size={20} className="text-indigo-600"/> 
