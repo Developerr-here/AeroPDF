@@ -22,7 +22,7 @@ export default {
   '/add-watermark': { title: 'Add Watermark to PDF | Stamp Text on PDF', desc: 'Add a watermark to PDF online for free with PDFBundles. Stamp text or a logo onto your PDF and download the file in seconds.' },
   '/crop-pdf': { title: 'Crop PDF Online | Trim PDF Page Margins', desc: 'Crop PDF online for free with PDFBundles. Trim PDF page margins visually and download the resized file in seconds.' },
   '/edit-pdf': { title: 'Edit PDF Online | Add text to PDF Free', desc: 'Edit PDF online for free with PDFBundles. Add text and annotations to your PDF and download the updated file in seconds.' },
-  '/pdf-forms': { title: 'Fill PDF Forms Online | Free PDF Tool', desc: 'Fill out interactive forms. 100% free online tool.' },
+
   '/protect-pdf': { title: 'Protect PDF With Password | Encrypt PDF Files', desc: 'Protect PDF with a password online for free with PDFBundles. Encrypt PDF files and download the secured document in seconds.' },
   '/unlock-pdf': { title: 'Unlock PDF Online | Remove PDF Password Protection', desc: 'Unlock PDF online for free with PDFBundles. Remove PDF password protection and download the unlocked file in seconds.' },
   '/sign-pdf': { title: 'Sign PDF Online | Add Electronic Signature to PDF', desc: 'Sign PDF online for free with PDFBundles. Add an electronic signature to your document and download the signed file in seconds.' },

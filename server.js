@@ -89,7 +89,7 @@ app.get('/sitemap.xml', async (req, res) => {
   try {
     const baseUrl = 'https://pdfbundles.com';
     const tools = Object.keys(seoConfig);
-    const pages = ['', '/pricing', '/features', '/blog', '/dashboard'];
+    const pages = ['', '/pricing', '/features', '/blog', '/about', '/privacy', '/terms', '/faq', '/security', '/documentation', '/press', '/articles'];
     
     let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
     xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
