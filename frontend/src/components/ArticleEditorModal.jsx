@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { X, Link, Image as ImageIcon, AlertCircle } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { X, Link, Image as ImageIcon, AlertCircle, UploadCloud, Loader2 } from 'lucide-react';
 import { ALL_TOOLS } from '../data/tools';
 
 const ArticleEditorModal = ({ isOpen, onClose, onSave, articleToEdit, token }) => {
@@ -16,6 +16,45 @@ const ArticleEditorModal = ({ isOpen, onClose, onSave, articleToEdit, token }) =
   const [status, setStatus] = useState('published');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [isUploadingCover, setIsUploadingCover] = useState(false);
+  const fileInputRef = useRef(null);
+
+  const handleCoverUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const maxAttachSize = 10 * 1024 * 1024; // 10MB limit
+    if (file.size > maxAttachSize) {
+      setError('Cover image exceeds the 10MB limit.');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    setIsUploadingCover(true);
+    setError('');
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const res = await fetch('/api/blog/upload', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData
+      });
+      const data = await res.json();
+      
+      if (res.ok && data.url) {
+        setCoverImage(data.url);
+      } else {
+        setError(data.error || 'Failed to upload cover image.');
+      }
+    } catch (err) {
+      setError('Error uploading cover image.');
+    } finally {
+      setIsUploadingCover(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
 
   useEffect(() => {
     if (articleToEdit) {
@@ -262,15 +301,33 @@ const ArticleEditorModal = ({ isOpen, onClose, onSave, articleToEdit, token }) =
               {/* Cover image */}
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
-                  Cover Image URL
+                  Cover Image
                 </label>
-                <input
-                  type="text"
-                  value={coverImage}
-                  onChange={(e) => setCoverImage(e.target.value)}
-                  placeholder="https://images.unsplash.com/photo-..."
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all mb-2"
-                />
+                <div className="flex gap-2 mb-2">
+                  <input
+                    type="text"
+                    value={coverImage}
+                    onChange={(e) => setCoverImage(e.target.value)}
+                    placeholder="https://... or upload file"
+                    className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all"
+                  />
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    className="hidden" 
+                    ref={fileInputRef} 
+                    onChange={handleCoverUpload} 
+                  />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploadingCover}
+                    className="shrink-0 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-xl font-bold hover:bg-indigo-100 transition-colors flex items-center gap-2 border border-indigo-100 disabled:opacity-50"
+                  >
+                    {isUploadingCover ? <Loader2 size={16} className="animate-spin" /> : <UploadCloud size={16} />}
+                    Upload
+                  </button>
+                </div>
                 
                 {/* Cover Image Preview Box */}
                 <div className="w-full h-36 bg-slate-100 rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center overflow-hidden relative">
@@ -285,6 +342,7 @@ const ArticleEditorModal = ({ isOpen, onClose, onSave, articleToEdit, token }) =
                   )}
                 </div>
               </div>
+
 
               {/* Alt text (for cover image) */}
               <div>

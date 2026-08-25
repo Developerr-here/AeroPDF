@@ -49,7 +49,7 @@ router.post('/login', authLimiter, async (req, res) => {
     if (!match) return res.status(400).json({ error: 'Invalid email or password.' });
 
     const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
-    res.json({ token, user: await formatUserResponse(user) });
+    return res.json({ token, user: await formatUserResponse(user) });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Login processing failed.' });
