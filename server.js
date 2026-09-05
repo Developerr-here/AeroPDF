@@ -83,13 +83,23 @@ import toolRoutes from './src/routes/toolRoutes.js';
 app.use('/', toolRoutes);
 
 /* ==========================================
+   301 REDIRECTS (Legacy Blog to Articles)
+   ========================================== */
+app.get('/blog', (req, res) => {
+  res.redirect(301, '/articles');
+});
+app.get('/blog/:slug', (req, res) => {
+  res.redirect(301, `/articles/${req.params.slug}`);
+});
+
+/* ==========================================
    DYNAMIC SEO SITEMAP
    ========================================== */
 app.get('/sitemap.xml', async (req, res) => {
   try {
     const baseUrl = 'https://pdfbundles.com';
     const tools = Object.keys(seoConfig);
-    const pages = ['', '/pricing', '/features', '/blog', '/about', '/privacy', '/terms', '/faq', '/security', '/documentation', '/press', '/articles'];
+    const pages = ['', '/pricing', '/features', '/about', '/privacy', '/terms', '/faq', '/security', '/documentation', '/press', '/articles'];
     
     let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
     xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
@@ -107,8 +117,8 @@ app.get('/sitemap.xml', async (req, res) => {
     // Add Dynamic Articles from Database
     const articles = await BlogPost.findAll({ where: { status: 'published' } });
     articles.forEach(article => {
-      const date = new Date(article.createdAt).toISOString().split('T')[0];
-      xml += `  <url>\n    <loc>${baseUrl}/blog/${article.slug}</loc>\n    <lastmod>${date}</lastmod>\n    <changefreq>monthly</changefreq>\n    <priority>0.7</priority>\n  </url>\n`;
+      const date = new Date(article.createdAt || article.created_at || Date.now()).toISOString().split('T')[0];
+      xml += `  <url>\n    <loc>${baseUrl}/articles/${article.slug}</loc>\n    <lastmod>${date}</lastmod>\n    <changefreq>monthly</changefreq>\n    <priority>0.7</priority>\n  </url>\n`;
     });
 
     xml += '</urlset>';
@@ -124,26 +134,58 @@ app.get('/sitemap.xml', async (req, res) => {
 // Serve static files from the React frontend build
 app.use(express.static(path.join(__dirname, 'frontend/dist')));
 
-app.get(/.*/, (req, res, next) => {
+app.get(/.*/, async (req, res, next) => {
   if (req.path.startsWith('/api')) return next();
   
   const indexPath = path.join(__dirname, 'frontend/dist', 'index.html');
   
-  fs.readFile(indexPath, 'utf8', (err, htmlData) => {
+  fs.readFile(indexPath, 'utf8', async (err, htmlData) => {
     if (err) {
       console.error('Error reading index.html:', err);
       return res.status(500).send('Error loading page');
     }
     
     let finalHtml = htmlData;
-    const seo = seoConfig[req.path];
+    const cleanPath = req.path.replace(/\/$/, '') || '';
+    const fullCanonicalUrl = `https://pdfbundles.com${cleanPath || '/'}`;
+
+    // Default self-referencing canonical for all pages
+    finalHtml = finalHtml.replace(/<link rel="canonical" href="[^"]*"/, `<link rel="canonical" href="${fullCanonicalUrl}"`);
+
+    const seo = seoConfig[req.path] || seoConfig[cleanPath];
     
     if (seo) {
       finalHtml = finalHtml.replace(/<title>.*<\/title>/, `<title>${seo.title}</title>`);
       finalHtml = finalHtml.replace(/<meta name="description" content="[^"]*"/, `<meta name="description" content="${seo.desc}"`);
       finalHtml = finalHtml.replace(/<meta property="og:title" content="[^"]*"/, `<meta property="og:title" content="${seo.title}"`);
       finalHtml = finalHtml.replace(/<meta property="og:description" content="[^"]*"/, `<meta property="og:description" content="${seo.desc}"`);
-      finalHtml = finalHtml.replace(/<link rel="canonical" href="[^"]*"/, `<link rel="canonical" href="https://pdfbundles.com${req.path}"`);
+      finalHtml = finalHtml.replace(/<link rel="canonical" href="[^"]*"/, `<link rel="canonical" href="https://pdfbundles.com${cleanPath || '/'}"`);
+    } else if (cleanPath.startsWith('/articles/')) {
+      const slug = cleanPath.replace('/articles/', '');
+      try {
+        const article = await BlogPost.findOne({ where: { slug, status: 'published' } });
+        if (article) {
+          const title = `${article.title} | PDF Bundles`;
+          const desc = article.post_description || article.title;
+          const canonical = article.canonical_url || `https://pdfbundles.com/articles/${article.slug}`;
+          
+          finalHtml = finalHtml.replace(/<title>.*<\/title>/, `<title>${title}</title>`);
+          finalHtml = finalHtml.replace(/<meta name="description" content="[^"]*"/, `<meta name="description" content="${desc}"`);
+          finalHtml = finalHtml.replace(/<meta property="og:title" content="[^"]*"/, `<meta property="og:title" content="${title}"`);
+          finalHtml = finalHtml.replace(/<meta property="og:description" content="[^"]*"/, `<meta property="og:description" content="${desc}"`);
+          finalHtml = finalHtml.replace(/<link rel="canonical" href="[^"]*"/, `<link rel="canonical" href="${canonical}"`);
+        }
+      } catch (dbErr) {
+        console.error('Error fetching article for SEO metadata:', dbErr);
+      }
+    } else if (cleanPath === '/articles') {
+      const title = 'Articles & Guides | PDF Bundles';
+      const desc = 'Browse guides, tutorials, and tips for working with PDF documents, compression, editing, and digital document workflows.';
+      finalHtml = finalHtml.replace(/<title>.*<\/title>/, `<title>${title}</title>`);
+      finalHtml = finalHtml.replace(/<meta name="description" content="[^"]*"/, `<meta name="description" content="${desc}"`);
+      finalHtml = finalHtml.replace(/<meta property="og:title" content="[^"]*"/, `<meta property="og:title" content="${title}"`);
+      finalHtml = finalHtml.replace(/<meta property="og:description" content="[^"]*"/, `<meta property="og:description" content="${desc}"`);
+      finalHtml = finalHtml.replace(/<link rel="canonical" href="[^"]*"/, `<link rel="canonical" href="https://pdfbundles.com/articles"`);
     }
     
     res.send(finalHtml);

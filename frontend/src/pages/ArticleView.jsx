@@ -42,6 +42,18 @@ const ArticleView = () => {
   useEffect(() => {
     if (article) {
       document.title = `${article.title} | PDF Bundles`;
+      
+      // Update Meta Description
+      const desc = article.post_description || article.title;
+      let metaDesc = document.querySelector("meta[name='description']");
+      if (!metaDesc) {
+        metaDesc = document.createElement('meta');
+        metaDesc.setAttribute('name', 'description');
+        document.head.appendChild(metaDesc);
+      }
+      metaDesc.setAttribute('content', desc);
+
+      // Update Canonical Link
       const canonical = article.canonical_url || `https://pdfbundles.com/articles/${article.slug}`;
       let link = document.querySelector("link[rel='canonical']");
       if (!link) {
@@ -82,8 +94,41 @@ const ArticleView = () => {
     );
   }
 
+  const articleSchema = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": article.title,
+    "description": article.post_description || article.title,
+    "image": article.cover_image 
+      ? (article.cover_image.startsWith('http') ? article.cover_image : `https://pdfbundles.com${article.cover_image}`)
+      : "https://pdfbundles.com/favicon.png",
+    "author": {
+      "@type": "Person",
+      "name": article.author_name || "PDF Bundles Team"
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "PDF Bundles",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://pdfbundles.com/favicon.png"
+      }
+    },
+    "datePublished": article.createdAt || article.created_at || new Date().toISOString(),
+    "dateModified": article.updatedAt || article.updated_at || article.createdAt || new Date().toISOString(),
+    "mainEntityOfPage": {
+      "@type": "WebPage",
+      "@id": article.canonical_url || `https://pdfbundles.com/articles/${article.slug}`
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 font-sans pb-24">
+      {/* Article Schema Markup */}
+      <script 
+        type="application/ld+json" 
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }} 
+      />
 
       {/* Main Container */}
       <div className="max-w-[900px] mx-auto px-6 pt-12">
@@ -93,47 +138,29 @@ const ArticleView = () => {
           <ArrowLeft size={14} /> Back to Articles & Guides
         </Link>
 
-        {/* Article Header Card */}
-        <div className="bg-white rounded-3xl p-8 md:p-12 border border-slate-200/80 shadow-[0_2px_10px_rgba(0,0,0,0.02)] mb-8">
-          
-          {/* Category Pill Tag */}
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-xs font-bold uppercase tracking-wider mb-6">
-            <Tag size={12} /> {article.category || article.tool_id || 'GUIDE'}
-          </div>
-
-          {/* H1 Title */}
-          <h1 className="text-3xl md:text-5xl font-black text-slate-900 leading-tight mb-6">
-            {article.title}
-          </h1>
-
-          {/* Post Description / Excerpt */}
-          {article.post_description && (
-            <p className="text-slate-600 text-base md:text-lg leading-relaxed font-medium mb-8">
-              {article.post_description}
-            </p>
-          )}
-
-          {/* Author & Date Bar */}
-          <div className="flex flex-wrap items-center justify-between gap-4 pt-6 border-t border-slate-100 text-xs text-slate-500">
-            <div className="flex items-center gap-4">
-              <span className="flex items-center gap-1.5 font-bold text-slate-800">
-                <User size={14} className="text-indigo-600" /> {article.author_name || 'PDF Bundles Team'}
-              </span>
-              <span className="flex items-center gap-1.5 font-medium">
-                <Calendar size={14} /> {getSafeDate(article.created_at)}
-              </span>
+        {/* Article Metadata Bar (Category, Author, Date, Share) */}
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-8 bg-white px-8 py-5 rounded-3xl border border-slate-200/80 shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
+          <div className="flex flex-wrap items-center gap-4 text-xs">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full font-bold uppercase tracking-wider">
+              <Tag size={12} /> {article.category || article.tool_id || 'GUIDE'}
             </div>
-
-            {/* Share Link Button */}
-            <button
-              onClick={handleShare}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg transition-colors"
-            >
-              {copied ? <Check size={14} className="text-emerald-600" /> : <Share2 size={14} />}
-              <span>{copied ? 'Link Copied!' : 'Share'}</span>
-            </button>
+            <span className="text-slate-200">|</span>
+            <span className="flex items-center gap-1.5 font-bold text-slate-800">
+              <User size={14} className="text-indigo-600" /> {article.author_name || 'PDF Bundles Team'}
+            </span>
+            <span className="flex items-center gap-1.5 font-medium text-slate-500">
+              <Calendar size={14} /> {getSafeDate(article.created_at)}
+            </span>
           </div>
 
+          {/* Share Link Button */}
+          <button
+            onClick={handleShare}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg transition-colors text-xs"
+          >
+            {copied ? <Check size={14} className="text-emerald-600" /> : <Share2 size={14} />}
+            <span>{copied ? 'Link Copied!' : 'Share'}</span>
+          </button>
         </div>
 
         {/* Featured Cover Image */}
