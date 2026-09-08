@@ -22,74 +22,81 @@ import { ALL_TOOLS, TOOLS_DATA, COLOR_MAP } from './data/tools'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { ToastProvider } from './context/ToastContext'
 import { User, Mail, Settings, Users, Star, LogOut, Menu, X, ChevronRight, FileText, Bot } from 'lucide-react'
+import LanguageSelector from './components/LanguageSelector'
+import { useTranslation } from './i18n/LanguageContext'
 
 const Twitter = ({ size, className }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/></svg>;
 const Facebook = ({ size, className }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>;
 const Linkedin = ({ size, className }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect width="4" height="12" x="2" y="9"/><circle cx="4" cy="4" r="2"/></svg>;
 const Tiktok = ({ size, className }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5v3a3 3 0 0 1-3-3v11a7 7 0 1 1-7-7z"/></svg>;
 
-const Footer = () => (
-  <footer className="bg-white border-t border-slate-100 pt-16 pb-8 px-6 mt-auto">
-    <div className="max-w-[1400px] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12 mb-16">
-      
-      <div className="lg:col-span-2">
-        <Link to="/" className="inline-block mb-6">
-          <img src="/logo-desktop.png" alt="PDF Bundles" className="h-8 w-auto" />
-        </Link>
-        <p className="text-[11px] font-black tracking-widest text-slate-400 uppercase mb-4">Professional Suite</p>
-        <p className="text-slate-500 font-medium text-sm leading-relaxed max-w-sm mb-8">
-          A comprehensive professional suite of PDF and image processing utilities. Manage, edit, convert, and protect your documents directly in your browser.
-        </p>
-        <div className="flex items-center gap-4">
-          <a href="https://www.facebook.com/profile.php?id=61591685502000" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:text-blue-600 hover:border-blue-600 transition-colors"><Facebook size={18}/></a>
-          <a href="https://www.tiktok.com/@pdfbundles1" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:text-slate-900 hover:border-slate-900 transition-colors"><Tiktok size={18}/></a>
-          <a href="https://x.com/PDFBUNDLES" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:border-indigo-600 transition-colors"><Twitter size={18}/></a>
-          <a href="https://www.linkedin.com/in/pdf-bundles-735787422/" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:text-blue-700 hover:border-blue-700 transition-colors"><Linkedin size={18}/></a>
+const Footer = () => {
+  const { t } = useTranslation();
+  return (
+    <footer className="bg-white border-t border-slate-100 pt-16 pb-8 px-6 mt-auto">
+      <div className="max-w-[1400px] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12 mb-16">
+        
+        <div className="lg:col-span-2">
+          <Link to="/" className="inline-block mb-6">
+            <img src="/logo-desktop.png" alt="PDF Bundles" className="h-8 w-auto" />
+          </Link>
+          <p className="text-[11px] font-black tracking-widest text-slate-400 uppercase mb-4">{t('footer.professional_suite', 'Professional Suite')}</p>
+          <p className="text-slate-500 font-medium text-sm leading-relaxed max-w-sm mb-8">
+            {t('footer.desc', 'A comprehensive professional suite of PDF and image processing utilities. Manage, edit, convert, and protect your documents directly in your browser.')}
+          </p>
+          <div className="flex items-center gap-4">
+            <a href="https://www.facebook.com/profile.php?id=61591685502000" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:text-blue-600 hover:border-blue-600 transition-colors"><Facebook size={18}/></a>
+            <a href="https://www.tiktok.com/@pdfbundles1" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:text-slate-900 hover:border-slate-900 transition-colors"><Tiktok size={18}/></a>
+            <a href="https://x.com/PDFBUNDLES" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:border-indigo-600 transition-colors"><Twitter size={18}/></a>
+            <a href="https://www.linkedin.com/in/pdf-bundles-735787422/" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:text-blue-700 hover:border-blue-700 transition-colors"><Linkedin size={18}/></a>
+          </div>
         </div>
-      </div>
 
-      <div>
-        <h4 className="font-bold text-slate-900 tracking-wide mb-6">POPULAR TOOLS</h4>
-        <ul className="space-y-4">
-          <li><Link to="/merge-pdf" className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">Merge PDF</Link></li>
-          <li><Link to="/split-pdf" className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">Split PDF</Link></li>
-          <li><Link to="/compress-pdf" className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">Compress PDF</Link></li>
-          <li><Link to="/jpg-to-pdf" className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">JPG to PDF</Link></li>
-          <li><Link to="/pdf-to-png" className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">PDF to PNG</Link></li>
-        </ul>
-      </div>
+        <div>
+          <h4 className="font-bold text-slate-900 tracking-wide mb-6">{t('footer.popular_tools', 'POPULAR TOOLS')}</h4>
+          <ul className="space-y-4">
+            <li><Link to="/merge-pdf" className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">{t('tools.merge-pdf.name', 'Merge PDF')}</Link></li>
+            <li><Link to="/split-pdf" className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">{t('tools.split-pdf.name', 'Split PDF')}</Link></li>
+            <li><Link to="/compress-pdf" className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">{t('tools.compress-pdf.name', 'Compress PDF')}</Link></li>
+            <li><Link to="/jpg-to-pdf" className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">{t('tools.jpg-to-pdf.name', 'JPG to PDF')}</Link></li>
+            <li><Link to="/pdf-to-png" className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">{t('tools.pdf-to-png.name', 'PDF to PNG')}</Link></li>
+          </ul>
+        </div>
 
-      <div>
-        <h4 className="font-bold text-slate-900 tracking-wide mb-6">COMPANY & LEGAL</h4>
-        <ul className="space-y-4">
-          <li><Link to="/about" className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">About Us</Link></li>
-          <li><Link to="/press" className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">Press</Link></li>
-          <li><Link to="/security" className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">Security</Link></li>
-          <li><Link to="/privacy" className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">Privacy Policy</Link></li>
-          <li><Link to="/terms" className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">Terms & Conditions</Link></li>
-        </ul>
-      </div>
+        <div>
+          <h4 className="font-bold text-slate-900 tracking-wide mb-6">{t('footer.company_legal', 'COMPANY & LEGAL')}</h4>
+          <ul className="space-y-4">
+            <li><Link to="/about" className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">{t('footer.about_us', 'About Us')}</Link></li>
+            <li><Link to="/press" className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">{t('footer.press', 'Press')}</Link></li>
+            <li><Link to="/security" className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">{t('footer.security', 'Security')}</Link></li>
+            <li><Link to="/privacy" className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">{t('footer.privacy', 'Privacy Policy')}</Link></li>
+            <li><Link to="/terms" className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">{t('footer.terms', 'Terms & Conditions')}</Link></li>
+          </ul>
+        </div>
 
-      <div>
-        <h4 className="font-bold text-slate-900 tracking-wide mb-6">RESOURCES & MORE</h4>
-        <ul className="space-y-4">
-          <li><Link to="/features" className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">Features</Link></li>
-          <li><Link to="/documentation" className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">Tools/documentation</Link></li>
-          <li><Link to="/faq" className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">Frequently Asked Questions</Link></li>
-          <li><Link to="/articles" className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">Articles & Guides</Link></li>
-          <li><Link to="/pricing" className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">Upgrade to Premium</Link></li>
-        </ul>
-      </div>
+        <div>
+          <h4 className="font-bold text-slate-900 tracking-wide mb-6">{t('footer.resources', 'RESOURCES & MORE')}</h4>
+          <ul className="space-y-4">
+            <li><Link to="/features" className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">{t('footer.features', 'Features')}</Link></li>
+            <li><Link to="/documentation" className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">{t('footer.documentation', 'Tools/documentation')}</Link></li>
+            <li><Link to="/faq" className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">{t('footer.faq', 'Frequently Asked Questions')}</Link></li>
+            <li><Link to="/articles" className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">{t('footer.articles', 'Articles & Guides')}</Link></li>
+            <li><Link to="/pricing" className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">{t('footer.upgrade', 'Upgrade to Premium')}</Link></li>
+          </ul>
+        </div>
 
-    </div>
-    
-    <div className="max-w-[1400px] mx-auto border-t border-slate-100 pt-8 text-center md:text-left">
-      <p className="text-slate-400 text-sm font-medium">© 2026 pdfbundles. All rights reserved. Professional Document Workflow Suite.</p>
-    </div>
-  </footer>
-);
+      </div>
+      
+      <div className="max-w-[1400px] mx-auto border-t border-slate-100 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-center md:text-left">
+        <p className="text-slate-400 text-sm font-medium">{t('footer.copyright', '© 2026 pdfbundles. All rights reserved. Professional Document Workflow Suite.')}</p>
+        <LanguageSelector variant="footer" />
+      </div>
+    </footer>
+  );
+};
 const Layout = ({ children }) => {
   const { currentUser, logout, openAuthModal } = useAuth();
+  const { t } = useTranslation();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isLeftDrawerOpen, setIsLeftDrawerOpen] = useState(false);
   const [isRightDrawerOpen, setIsRightDrawerOpen] = useState(false);
@@ -135,7 +142,7 @@ const Layout = ({ children }) => {
               onMouseEnter={() => setActiveMegaMenu('tools')}
               onMouseLeave={() => setActiveMegaMenu(null)}
             >
-              <Link to="/#tools" className="font-bold text-[15px] text-slate-700 hover:text-indigo-600 transition-colors flex items-center gap-1 cursor-default">All Tools <span className="text-[10px]">▼</span></Link>
+              <Link to="/#tools" className="font-bold text-[15px] text-slate-700 hover:text-indigo-600 transition-colors flex items-center gap-1 cursor-default">{t('nav.all_tools', 'All Tools')} <span className="text-[10px]">▼</span></Link>
               
               {/* Mega Menu Dropdown */}
               {activeMegaMenu === 'tools' && (
@@ -143,7 +150,7 @@ const Layout = ({ children }) => {
                   {TOOLS_DATA.filter(c => !c.category.includes('AI') && c.category !== 'PDF Intelligence').map((category, idx) => (
                     <div key={idx}>
                       <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-4">
-                        {category.category}
+                        {t('categories.' + category.category, category.category)}
                       </h4>
                       <ul className="space-y-1">
                         {category.items.map((tool, tIdx) => (
@@ -152,7 +159,7 @@ const Layout = ({ children }) => {
                               <div className={`p-1.5 rounded-md ${COLOR_MAP[tool.color]} group-hover:scale-110 transition-transform`}>
                                 {React.cloneElement(tool.icon, { size: 14 })}
                               </div>
-                              <span className="text-[13px] font-bold text-slate-700 group-hover:text-indigo-600 transition-colors">{tool.name}</span>
+                              <span className="text-[13px] font-bold text-slate-700 group-hover:text-indigo-600 transition-colors">{t('tools.' + tool.id + '.name', tool.name)}</span>
                             </Link>
                           </li>
                         ))}
@@ -168,7 +175,7 @@ const Layout = ({ children }) => {
               onMouseEnter={() => setActiveMegaMenu('ai')}
               onMouseLeave={() => setActiveMegaMenu(null)}
             >
-              <button className="font-bold text-[15px] text-slate-700 hover:text-indigo-600 transition-colors flex items-center gap-2 cursor-default">AI Tools <span className="bg-blue-500 text-white text-[10px] px-2 py-0.5 rounded-full shadow-sm">NEW</span></button>
+              <button className="font-bold text-[15px] text-slate-700 hover:text-indigo-600 transition-colors flex items-center gap-2 cursor-default">{t('nav.ai_tools', 'AI Tools')} <span className="bg-blue-500 text-white text-[10px] px-2 py-0.5 rounded-full shadow-sm">{t('nav.new', 'NEW')}</span></button>
               
               {/* AI Mega Menu Dropdown */}
               {activeMegaMenu === 'ai' && (
@@ -179,8 +186,8 @@ const Layout = ({ children }) => {
                          {React.cloneElement(tool.icon, { size: 20 })}
                        </div>
                        <div>
-                         <h4 className="font-bold text-slate-900 text-[14px] group-hover:text-indigo-600 transition-colors">{tool.name}</h4>
-                         <p className="text-[12px] text-slate-500 mt-1 leading-relaxed">{tool.desc}</p>
+                         <h4 className="font-bold text-slate-900 text-[14px] group-hover:text-indigo-600 transition-colors">{t('tools.' + tool.id + '.name', tool.name)}</h4>
+                         <p className="text-[12px] text-slate-500 mt-1 leading-relaxed">{t('tools.' + tool.id + '.desc', tool.desc)}</p>
                        </div>
                     </Link>
                   ))}
@@ -188,20 +195,23 @@ const Layout = ({ children }) => {
               )}
             </div>
 
-            <Link to="/pricing" className="font-bold text-[15px] text-slate-700 hover:text-indigo-600 transition-colors">Pricing</Link>
-            <Link to="/articles" className="font-bold text-[15px] text-slate-700 hover:text-indigo-600 transition-colors">Articles</Link>
+            <Link to="/pricing" className="font-bold text-[15px] text-slate-700 hover:text-indigo-600 transition-colors">{t('nav.pricing', 'Pricing')}</Link>
+            <Link to="/articles" className="font-bold text-[15px] text-slate-700 hover:text-indigo-600 transition-colors">{t('nav.articles', 'Articles')}</Link>
           </nav>
 
           {/* Desktop & Mobile Right */}
-          <div className="flex items-center gap-4 ml-auto">
+          <div className="flex items-center gap-3 md:gap-4 ml-auto">
+            {/* Language Selector */}
+            <LanguageSelector />
+
             {!currentUser ? (
               <>
                 <div className="hidden lg:flex items-center gap-4">
                   <button onClick={() => openAuthModal('login')} className="px-7 py-3 text-slate-700 font-bold bg-white border border-slate-200 hover:bg-slate-50 rounded-full transition-all shadow-sm">
-                    Login
+                    {t('nav.login', 'Login')}
                   </button>
                   <button onClick={() => openAuthModal('signup')} className="px-7 py-3 bg-[#1E1B4B] hover:bg-indigo-900 text-white font-bold rounded-full transition-all shadow-md hover:shadow-lg">
-                    Sign Up
+                    {t('nav.signup', 'Sign Up')}
                   </button>
                 </div>
                 {/* Mobile Right: 9 dots before login */}
@@ -315,11 +325,15 @@ const Layout = ({ children }) => {
                 <X size={20} />
               </button>
             </div>
+            <div className="p-3 border-b border-slate-100 flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider px-1">{t('actions.language', 'Language')}</span>
+              <LanguageSelector />
+            </div>
             <div className="flex-1 overflow-y-auto p-4 space-y-6">
               {TOOLS_DATA.map((category, idx) => (
                 <div key={idx}>
                   <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3 px-2">
-                    {category.category}
+                    {t('categories.' + category.category, category.category)}
                   </h4>
                   <ul className="space-y-1">
                     {category.items.map((tool, tIdx) => (
@@ -328,7 +342,7 @@ const Layout = ({ children }) => {
                           <div className={`p-1.5 rounded-lg ${COLOR_MAP[tool.color]}`}>
                             {React.cloneElement(tool.icon, { size: 16 })}
                           </div>
-                          <span className="text-[14px] font-bold text-slate-700">{tool.name}</span>
+                          <span className="text-[14px] font-bold text-slate-700">{t('tools.' + tool.id + '.name', tool.name)}</span>
                         </Link>
                       </li>
                     ))}
@@ -345,7 +359,8 @@ const Layout = ({ children }) => {
         <>
           <div className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-[60] lg:hidden animate-in fade-in" onClick={() => setIsRightDrawerOpen(false)}></div>
           <div className="fixed top-0 right-0 bottom-0 w-[85%] max-w-[320px] bg-white z-[70] shadow-2xl flex flex-col lg:hidden animate-in slide-in-from-right">
-            <div className="p-4 flex justify-end">
+            <div className="p-4 flex items-center justify-between border-b border-slate-100">
+              <LanguageSelector />
               <button onClick={() => setIsRightDrawerOpen(false)} className="p-2 text-slate-400 hover:text-slate-700 bg-slate-50 rounded-full">
                 <X size={20} />
               </button>
@@ -359,10 +374,10 @@ const Layout = ({ children }) => {
                   <h3 className="font-bold text-slate-900 text-lg mb-6">Welcome, Guest!</h3>
                   <div className="space-y-3">
                     <button onClick={() => { setIsRightDrawerOpen(false); openAuthModal('login'); }} className="w-full py-3.5 border-2 border-rose-500 text-rose-500 font-bold rounded-xl hover:bg-rose-50 transition-colors">
-                      Login
+                      {t('nav.login', 'Login')}
                     </button>
                     <button onClick={() => { setIsRightDrawerOpen(false); openAuthModal('signup'); }} className="w-full py-3.5 bg-rose-500 text-white font-bold rounded-xl hover:bg-rose-600 transition-colors shadow-md shadow-rose-500/20">
-                      Sign up
+                      {t('nav.signup', 'Sign Up')}
                     </button>
                   </div>
                 </div>
@@ -389,51 +404,51 @@ const Layout = ({ children }) => {
                 {currentUser ? (
                   <>
                     <Link to="/dashboard" onClick={() => setIsRightDrawerOpen(false)} className="flex items-center gap-4 px-4 py-3.5 hover:bg-slate-50 text-[15px] font-bold text-slate-700 rounded-xl transition-colors">
-                      <Settings size={20} className="text-slate-400" /> Account settings
+                      <Settings size={20} className="text-slate-400" /> {t('nav.account_settings', 'Account settings')}
                     </Link>
                     <Link to="/dashboard?tab=teams" onClick={() => setIsRightDrawerOpen(false)} className="flex items-center gap-4 px-4 py-3.5 hover:bg-slate-50 text-[15px] font-bold text-slate-700 rounded-xl transition-colors">
-                      <Users size={20} className="text-slate-400" /> Team
+                      <Users size={20} className="text-slate-400" /> {t('nav.team', 'Team')}
                     </Link>
                     <Link to="/pricing" onClick={() => setIsRightDrawerOpen(false)} className="flex items-center gap-4 px-4 py-3.5 hover:bg-slate-50 text-[15px] font-bold text-slate-700 rounded-xl transition-colors">
-                      <Star size={20} className="text-slate-400" /> Upgrade to Premium
+                      <Star size={20} className="text-slate-400" /> {t('nav.upgrade_premium', 'Upgrade to Premium')}
                     </Link>
                   </>
                 ) : (
                   <>
                     <Link to="/pricing" onClick={() => setIsRightDrawerOpen(false)} className="flex items-center gap-4 px-4 py-3.5 hover:bg-slate-50 text-[15px] font-bold text-slate-700 rounded-xl transition-colors">
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg> 
-                      Pricing
+                      {t('nav.pricing', 'Pricing')}
                     </Link>
-                    <Link to="/blog" onClick={() => setIsRightDrawerOpen(false)} className="flex items-center gap-4 px-4 py-3.5 hover:bg-slate-50 text-[15px] font-bold text-slate-700 rounded-xl transition-colors">
+                    <Link to="/articles" onClick={() => setIsRightDrawerOpen(false)} className="flex items-center gap-4 px-4 py-3.5 hover:bg-slate-50 text-[15px] font-bold text-slate-700 rounded-xl transition-colors">
                       <FileText size={20} className="text-slate-400" /> 
-                      Tech Blog
+                      {t('nav.articles', 'Articles')}
                     </Link>
                     <Link to="/features" onClick={() => setIsRightDrawerOpen(false)} className="flex items-center gap-4 px-4 py-3.5 hover:bg-slate-50 text-[15px] font-bold text-slate-700 rounded-xl transition-colors">
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-                      Platform Features
+                      {t('footer.features', 'Features')}
                     </Link>
                     <Link to="/documentation" onClick={() => setIsRightDrawerOpen(false)} className="flex items-center gap-4 px-4 py-3.5 hover:bg-slate-50 text-[15px] font-bold text-slate-700 rounded-xl transition-colors">
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-                      Tools/documentation
+                      {t('footer.documentation', 'Documentation')}
                     </Link>
                     <Link to="/faq" onClick={() => setIsRightDrawerOpen(false)} className="flex items-center gap-4 px-4 py-3.5 hover:bg-slate-50 text-[15px] font-bold text-slate-700 rounded-xl transition-colors">
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-                      FAQ
+                      {t('footer.faq', 'FAQ')}
                     </Link>
                     <Link to="/security" onClick={() => setIsRightDrawerOpen(false)} className="flex items-center gap-4 px-4 py-3.5 hover:bg-slate-50 text-[15px] font-bold text-slate-700 rounded-xl transition-colors">
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-                      Security & Trust
+                      {t('footer.security', 'Security')}
                     </Link>
                     <Link to="/press" onClick={() => setIsRightDrawerOpen(false)} className="flex items-center gap-4 px-4 py-3.5 hover:bg-slate-50 text-[15px] font-bold text-slate-700 rounded-xl transition-colors">
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><rect x="9" y="9" width="6" height="6"></rect><line x1="9" y1="1" x2="9" y2="4"></line><line x1="15" y1="1" x2="15" y2="4"></line><line x1="9" y1="20" x2="9" y2="23"></line><line x1="15" y1="20" x2="15" y2="23"></line><line x1="20" y1="9" x2="23" y2="9"></line><line x1="20" y1="14" x2="23" y2="14"></line><line x1="1" y1="9" x2="4" y2="9"></line><line x1="1" y1="14" x2="4" y2="14"></line></svg>
-                      Press Kit
+                      {t('footer.press', 'Press')}
                     </Link>
                   </>
                 )}
                 
                 {currentUser && (
                   <button onClick={handleLogout} className="w-full mt-4 flex items-center gap-4 px-4 py-3.5 hover:bg-rose-50 text-[15px] font-bold text-rose-500 rounded-xl transition-colors text-left">
-                    <LogOut size={20} /> Log out
+                    <LogOut size={20} /> {t('nav.logout', 'Log out')}
                   </button>
                 )}
               </div>

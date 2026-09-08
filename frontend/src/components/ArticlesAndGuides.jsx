@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BookOpen } from 'lucide-react';
+import { useTranslation } from '../i18n/LanguageContext';
 
 const ArticlesAndGuides = ({ tool }) => {
+  const { t, language } = useTranslation();
   const navigate = useNavigate();
   const [realArticles, setRealArticles] = useState([]);
   const toolName = tool?.name || "PDF Processing";
@@ -12,7 +14,11 @@ const ArticlesAndGuides = ({ tool }) => {
   useEffect(() => {
     const fetchToolArticles = async () => {
       try {
-        const res = await fetch(`/api/articles?tool=${toolId}`);
+        const queryParts = [];
+        if (toolId && toolId !== 'all') queryParts.push(`tool=${toolId}`);
+        if (language && language !== 'en') queryParts.push(`lang=${language}`);
+        const query = queryParts.length > 0 ? `?${queryParts.join('&')}` : '';
+        const res = await fetch(`/api/articles${query}`);
         const data = await res.json();
         if (data.success && data.articles && data.articles.length > 0) {
           setRealArticles(data.articles);
@@ -20,16 +26,16 @@ const ArticlesAndGuides = ({ tool }) => {
       } catch (e) {}
     };
     fetchToolArticles();
-  }, [toolId]);
+  }, [toolId, language]);
 
   if (realArticles.length === 0) return null;
 
   return (
     <div className="w-full mt-24">
       <div className="flex items-center justify-between mb-8">
-        <h3 className="text-2xl font-bold text-slate-900">Latest Articles & Guides</h3>
+        <h3 className="text-2xl font-bold text-slate-900">{t('articles.latest_title', 'Latest Articles & Guides')}</h3>
         <button onClick={() => navigate('/articles')} className="px-4 py-2 border border-slate-200 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors">
-          View Articles Hub →
+          {t('articles.view_hub', 'View Articles Hub →')}
         </button>
       </div>
       

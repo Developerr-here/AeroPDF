@@ -1,10 +1,15 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { TOOLS_DATA, COLOR_MAP } from '../data/tools';
+import { useTranslation } from '../i18n/LanguageContext';
 
-const ToolsGrid = ({ showHeader = true, title = "All PDF Tools", subtitle = "Complete collection of 24 powerful tools" }) => {
+const ToolsGrid = ({ showHeader = true, title, subtitle }) => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('All Tools');
   const tabs = ['All Tools', 'Organize', 'Optimize', 'Convert', 'Edit & AI', 'Security'];
+
+  const displayTitle = title || t('categories.All Tools', 'All PDF Tools');
+  const displaySubtitle = subtitle || t('hero.subtitle', 'Complete collection of 28 powerful tools');
 
   // Map tabs to categories
   const getFilteredCategories = () => {
@@ -21,8 +26,8 @@ const ToolsGrid = ({ showHeader = true, title = "All PDF Tools", subtitle = "Com
     <div className="w-full">
       {showHeader && (
         <div className="text-center mb-8">
-          <h2 className="text-3xl font-black text-slate-900 mb-2">{title}</h2>
-          <p className="text-slate-500 font-medium">{subtitle}</p>
+          <h2 className="text-3xl font-black text-slate-900 mb-2">{displayTitle}</h2>
+          <p className="text-slate-500 font-medium">{displaySubtitle}</p>
         </div>
       )}
       
@@ -34,7 +39,7 @@ const ToolsGrid = ({ showHeader = true, title = "All PDF Tools", subtitle = "Com
             onClick={() => setActiveTab(tab)}
             className={`px-6 py-2.5 rounded-full font-bold text-[15px] transition-all ${activeTab === tab ? 'bg-[#1E1B4B] text-white shadow-md' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'}`}
           >
-            {tab}
+            {t('categories.' + tab, tab)}
           </button>
         ))}
       </div>
@@ -44,7 +49,7 @@ const ToolsGrid = ({ showHeader = true, title = "All PDF Tools", subtitle = "Com
         {getFilteredCategories().map((category, idx) => (
           <div key={idx} className="break-inside-avoid mb-6">
             <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-4">
-              {category.icon} {category.category}
+              {category.icon} {t('categories.' + category.category, category.category)}
             </h3>
             <div className="space-y-4">
               {category.items.map((tool, tIdx) => (
@@ -53,8 +58,8 @@ const ToolsGrid = ({ showHeader = true, title = "All PDF Tools", subtitle = "Com
                     {tool.icon}
                   </div>
                   <div>
-                    <h4 className="font-bold text-slate-900 text-[15px]">{tool.name}</h4>
-                    <p className="text-[13px] text-slate-500 mt-0.5 line-clamp-2 leading-relaxed">{tool.desc}</p>
+                    <h4 className="font-bold text-slate-900 text-[15px]">{t('tools.' + tool.id + '.name', tool.name)}</h4>
+                    <p className="text-[13px] text-slate-500 mt-0.5 line-clamp-2 leading-relaxed">{t('tools.' + tool.id + '.desc', tool.desc)}</p>
                   </div>
                 </Link>
               ))}

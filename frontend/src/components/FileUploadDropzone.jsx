@@ -1,15 +1,18 @@
 import React, { useCallback, useState, useRef } from 'react';
 import { Upload } from 'lucide-react';
+import { useTranslation } from '../i18n/LanguageContext';
 
 const FileUploadDropzone = ({ 
   onFilesSelected, 
   multiple = false, 
   accept = ".pdf",
   title = "Upload multiple PDFs to merge",
-  subtitle = "or drag and drop them here" 
+  subtitle
 }) => {
+  const { t } = useTranslation();
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
+  const displaySubtitle = subtitle || t('actions.drop_files', 'or drag and drop them here');
 
   const handleDrag = useCallback((e) => {
     e.preventDefault();
@@ -73,7 +76,7 @@ const FileUploadDropzone = ({
           </div>
           <div className="text-center space-y-1.5">
             <h3 className="text-[26px] font-bold text-slate-900 tracking-tight">{title}</h3>
-            <p className="text-[17px] text-slate-500 font-medium">{subtitle}</p>
+            <p className="text-[17px] text-slate-500 font-medium">{displaySubtitle}</p>
           </div>
         </div>
       </div>

@@ -8,6 +8,7 @@ import ArticlesAndGuides from '../components/ArticlesAndGuides';
 import { FileText, X, Loader2, ArrowLeft, Settings, CheckCircle2, ShieldCheck, Zap, ChevronLeft, ChevronRight, Upload, ArrowRight, Camera } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { useTranslation } from '../i18n/LanguageContext';
 import { getExtraContentForTool } from '../data/toolExtraContent';
 import { getPDFFirstPageThumbnail, generatePagePreviews } from '../lib/pdf-tools';
 import PageGrid from '../components/PageGrid';
@@ -18,6 +19,7 @@ import CompareWorkspace from '../components/CompareWorkspace';
 const interactiveTools = ['rotate-pdf', 'split-pdf', 'extract-pages', 'remove-pages', 'organize-pdf', 'edit-pdf', 'redact-pdf', 'sign-pdf'];
 
 const GenericToolPage = ({ tool }) => {
+  const { t, language } = useTranslation();
   const { currentUser, token } = useAuth();
   const { addToast } = useToast();
   
@@ -31,6 +33,25 @@ const GenericToolPage = ({ tool }) => {
   const [pagePreviews, setPagePreviews] = useState([]);
 
   const extraContent = useMemo(() => getExtraContentForTool(tool.id, tool.name, tool.desc), [tool]);
+
+  const localizedToolFaqs = useMemo(() => [
+    {
+      q: `${t('tool_page.tool_faq_q1', 'How do I process my file with this tool?')} (${t(`tools.${tool.id}.name`, tool.name)})`,
+      a: t('tool_page.tool_faq_a1', 'Simply upload your document to the tool workspace above, configure any desired options, and click the action button to process. Your output file will be ready for download in seconds.')
+    },
+    {
+      q: t('tool_page.tool_faq_q2', 'Will processing affect the formatting or quality of my document?'),
+      a: t('tool_page.tool_faq_a2', 'No. Our conversion engine ensures that typography, tables, layouts, and image quality remain pristine and faithful to the original file.')
+    },
+    {
+      q: t('tool_page.tool_faq_q3', 'Is it safe and private to use this online tool?'),
+      a: t('tool_page.tool_faq_a3', 'Yes, 100%. All uploads and downloads use end-to-end HTTPS encryption. Your documents are never shared or viewed, and are automatically removed from our servers after 60 minutes.')
+    },
+    {
+      q: t('tool_page.tool_faq_q4', 'Can I use this tool on mobile devices without installing software?'),
+      a: t('tool_page.tool_faq_a4', 'Yes. The tool runs directly in any modern web browser on iOS, Android, macOS, Windows, and Linux without needing any plugins or app installations.')
+    }
+  ], [tool, t]);
   const formatSize = (bytes) => (bytes / (1024 * 1024)).toFixed(2) + ' MB';
 
   // Generate thumbnails or page previews
@@ -238,7 +259,7 @@ const GenericToolPage = ({ tool }) => {
       <div className="w-full bg-white border-b border-slate-100 sticky top-0 z-40">
         <div className="max-w-[1400px] mx-auto px-6 py-4 flex items-center gap-4">
           <Link to="/" className="flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-900 bg-white border border-slate-200 px-4 py-2 rounded-full shadow-sm transition-all hover:shadow-md">
-            <ArrowLeft size={16} /> Back to Dashboard
+            <ArrowLeft size={16} /> {t('tool_page.back_dashboard', 'Back to Dashboard')}
           </Link>
         </div>
       </div>
@@ -248,10 +269,10 @@ const GenericToolPage = ({ tool }) => {
         <div className="w-full bg-white pt-12 pb-2">
           <div className="max-w-[1000px] mx-auto px-6 text-center">
             <h1 className="text-[32px] md:text-[42px] font-black text-slate-900 tracking-tight mb-4">
-              {extraContent.seoH1 || tool.name}
+              {language === 'en' ? (extraContent.seoH1 || tool.name) : t(`tools.${tool.id}.name`, extraContent.seoH1 || tool.name)}
             </h1>
             <p className="text-slate-500 text-lg leading-relaxed max-w-[800px] mx-auto">
-              {extraContent.about}
+              {language === 'en' ? extraContent.about : t(`tools.${tool.id}.desc`, extraContent.about)}
             </p>
           </div>
         </div>
@@ -285,7 +306,7 @@ const GenericToolPage = ({ tool }) => {
             />
             {files.length > 0 && (
               <div className="mt-6 text-center text-slate-500 font-medium">
-                {files.length} snapshot(s) captured. <button onClick={() => setIsWebcamActive(false)} className="text-indigo-600 font-bold hover:underline">Close scanner</button> to proceed.
+                {files.length} snapshot(s) captured. <button onClick={() => setIsWebcamActive(false)} className="text-indigo-600 font-bold hover:underline">{t('tool_page.close_scanner', 'Close scanner')}</button> to proceed.
               </div>
             )}
           </div>
@@ -296,7 +317,7 @@ const GenericToolPage = ({ tool }) => {
             onFilesSelected={handleFilesSelected}
             multiple={tool.multiple}
             accept={tool.accept}
-            title={`Upload ${tool.accept === 'image/*' ? 'images' : 'PDFs'} to ${tool.name.toLowerCase()}`}
+            title={`${t('actions.choose_files', 'Upload')} ${tool.accept === 'image/*' ? 'images' : 'PDFs'} - ${t(`tools.${tool.id}.name`, tool.name)}`}
           />
           
           {tool.id === 'scan-to-pdf' && (
@@ -306,7 +327,7 @@ const GenericToolPage = ({ tool }) => {
                 className="bg-indigo-900 hover:bg-indigo-800 text-white px-8 py-4 rounded-xl font-bold flex items-center gap-3 shadow-lg hover:shadow-xl transition-all"
               >
                 <Camera size={24} />
-                Use Web Camera Instead
+                {t('tool_page.use_webcam', 'Use Web Camera Instead')}
               </button>
             </div>
           )}
@@ -317,14 +338,22 @@ const GenericToolPage = ({ tool }) => {
               <div className="bg-white border border-slate-100 rounded-3xl p-10 shadow-sm mb-12 space-y-10">
                 {extraContent.seoH2_1 && (
                   <div>
-                    <h2 className="text-[24px] font-bold text-slate-900 mb-3 tracking-tight">{extraContent.seoH2_1}</h2>
-                    <p className="text-slate-500 leading-relaxed text-md">{extraContent.seoH2_1Desc}</p>
+                    <h2 className="text-[24px] font-bold text-slate-900 mb-3 tracking-tight">
+                      {language === 'en' ? extraContent.seoH2_1 : `${t('tool_page.how_works_heading', 'How This Tool Works')} - ${t(`tools.${tool.id}.name`, tool.name)}`}
+                    </h2>
+                    <p className="text-slate-500 leading-relaxed text-md">
+                      {language === 'en' ? extraContent.seoH2_1Desc : t('tool_page.how_works_desc', 'Upload your files to the tool and our browser-based processing engine handles the conversion securely in seconds. Your document structure, formatting, and quality are preserved with no watermark.')}
+                    </p>
                   </div>
                 )}
                 {extraContent.seoH2_2 && (
                   <div>
-                    <h2 className="text-[24px] font-bold text-slate-900 mb-3 tracking-tight">{extraContent.seoH2_2}</h2>
-                    <p className="text-slate-500 leading-relaxed text-md">{extraContent.seoH2_2Desc}</p>
+                    <h2 className="text-[24px] font-bold text-slate-900 mb-3 tracking-tight">
+                      {language === 'en' ? extraContent.seoH2_2 : `${t('tool_page.why_convert_heading', 'Why Use Our Online PDF Tool')} - ${t(`tools.${tool.id}.name`, tool.name)}`}
+                    </h2>
+                    <p className="text-slate-500 leading-relaxed text-md">
+                      {language === 'en' ? extraContent.seoH2_2Desc : t('tool_page.why_convert_desc', 'Our free online tool works on any computer, tablet, or smartphone without installing software. All processing uses enterprise-grade encryption and files are automatically deleted after 1 hour.')}
+                    </p>
                   </div>
                 )}
               </div>
@@ -335,15 +364,28 @@ const GenericToolPage = ({ tool }) => {
                 <div>
                   <h3 className="text-[18px] font-bold text-slate-900 mb-6 flex items-center gap-2">
                     <Settings size={20} className="text-indigo-600"/> 
-                    Who Uses This Tool?
+                    {t('tool_page.who_uses', 'Who Uses This Tool?')}
                   </h3>
                   <ul className="space-y-4 text-slate-600">
-                    {extraContent.whoUses?.map((user, idx) => (
-                      <li key={idx} className="flex items-start gap-3">
-                        <span className="text-indigo-500 mt-1">•</span>
-                        <span>{user}</span>
-                      </li>
-                    ))}
+                    {language === 'en' ? (
+                      extraContent.whoUses?.map((user, idx) => (
+                        <li key={idx} className="flex items-start gap-3">
+                          <span className="text-indigo-500 mt-1">•</span>
+                          <span>{user}</span>
+                        </li>
+                      ))
+                    ) : (
+                      [
+                        t('tool_page.default_who_uses_1', 'Students and researchers compiling notes, study packs, and coursework.'),
+                        t('tool_page.default_who_uses_2', 'Offices, accountants, and legal professionals preparing client records.'),
+                        t('tool_page.default_who_uses_3', 'Everyday users looking for fast, browser-based document conversions.')
+                      ].map((user, idx) => (
+                        <li key={idx} className="flex items-start gap-3">
+                          <span className="text-indigo-500 mt-1">•</span>
+                          <span>{user}</span>
+                        </li>
+                      ))
+                    )}
                   </ul>
                 </div>
               </div>
@@ -352,29 +394,54 @@ const GenericToolPage = ({ tool }) => {
                 <div>
                   <h3 className="text-[18px] font-bold text-slate-900 mb-6 flex items-center gap-2">
                     <CheckCircle2 size={20} className="text-emerald-600"/> 
-                    Key Features
+                    {t('tool_page.key_features', 'Key Features')}
                   </h3>
                   <ul className="space-y-4 text-slate-600">
-                    {extraContent.features?.map((feature, idx) => (
-                      <li key={idx} className="flex items-center gap-3">
-                        <ShieldCheck size={18} className="text-emerald-500 flex-shrink-0" />
-                        <span>{feature}</span>
-                      </li>
-                    ))}
+                    {language === 'en' ? (
+                      extraContent.features?.map((feature, idx) => (
+                        <li key={idx} className="flex items-center gap-3">
+                          <ShieldCheck size={18} className="text-emerald-500 flex-shrink-0" />
+                          <span>{feature}</span>
+                        </li>
+                      ))
+                    ) : (
+                      [
+                        t('tool_page.default_feat_1', 'Fast processing directly in your browser or secure server.'),
+                        t('tool_page.default_feat_2', 'Enterprise-grade encryption and automatic file cleanup.'),
+                        t('tool_page.default_feat_3', '100% free with no watermark added to your output files.')
+                      ].map((feature, idx) => (
+                        <li key={idx} className="flex items-center gap-3">
+                          <ShieldCheck size={18} className="text-emerald-500 flex-shrink-0" />
+                          <span>{feature}</span>
+                        </li>
+                      ))
+                    )}
                   </ul>
                 </div>
                 
                 <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100">
                    <h3 className="text-[16px] font-bold text-slate-900 mb-4 flex items-center gap-2">
                     <Zap size={18} className="text-amber-500"/> 
-                    How it Works
+                    {t('tool_page.how_it_works', 'How it Works')}
                   </h3>
                   <ol className="space-y-4">
-                    {extraContent.steps?.map((step, idx) => (
-                      <li key={idx} className="text-sm">
-                        <strong className="text-slate-800">{idx + 1}. {step.title}:</strong> <span className="text-slate-600">{step.desc}</span>
-                      </li>
-                    ))}
+                    {language === 'en' ? (
+                      extraContent.steps?.map((step, idx) => (
+                        <li key={idx} className="text-sm">
+                          <strong className="text-slate-800">{idx + 1}. {step.title}:</strong> <span className="text-slate-600">{step.desc}</span>
+                        </li>
+                      ))
+                    ) : (
+                      [
+                        t('tool_page.step_1', 'Upload: Select or drag and drop your document into the tool.'),
+                        t('tool_page.step_2', 'Configure: Adjust the settings or options to your preference.'),
+                        t('tool_page.step_3', 'Download: Save your processed document with a single click.')
+                      ].map((stepText, idx) => (
+                        <li key={idx} className="text-sm">
+                          <strong className="text-slate-800">{idx + 1}. </strong> <span className="text-slate-600">{stepText}</span>
+                        </li>
+                      ))
+                    )}
                   </ol>
                 </div>
               </div>
@@ -400,8 +467,8 @@ const GenericToolPage = ({ tool }) => {
                   <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm text-indigo-500 group-hover:scale-110 transition-transform">
                     <Upload size={28} strokeWidth={2} />
                   </div>
-                  <h3 className="text-[22px] font-bold text-slate-900 mb-2">Upload multiple PDFs to {tool.name.toLowerCase()}</h3>
-                  <p className="text-slate-500 font-medium">or drag and drop them here</p>
+                  <h3 className="text-[22px] font-bold text-slate-900 mb-2">{t('actions.choose_files', 'Upload')} - {t(`tools.${tool.id}.name`, tool.name)}</h3>
+                  <p className="text-slate-500 font-medium">{t('actions.drop_files', 'or drag and drop them here')}</p>
                </div>
             </div>
           </div>
@@ -463,16 +530,16 @@ const GenericToolPage = ({ tool }) => {
             <div className={tool.noUpload ? "lg:col-span-3 max-w-[800px] mx-auto w-full" : "lg:col-span-1"}>
               <div className="bg-white rounded-[24px] shadow-sm border border-slate-200 p-8 sticky top-28">
                 
-                <h4 className="text-[11px] font-black tracking-widest text-slate-400 uppercase mb-4">TOOL CONFIGURATION</h4>
+                <h4 className="text-[11px] font-black tracking-widest text-slate-400 uppercase mb-4">{t('tool_page.tool_configuration', 'TOOL CONFIGURATION')}</h4>
                 <div className="mb-8">
                   {tool.settingsComponent ? (
                     <tool.settingsComponent config={toolConfig} setConfig={setToolConfig} files={files} />
                   ) : (
-                    <p className="text-sm text-slate-500 font-medium">Check your uploaded files on the left. Click the button below to process.</p>
+                    <p className="text-sm text-slate-500 font-medium">{t('tool_page.check_files', 'Check your uploaded files on the left. Click the button below to process.')}</p>
                   )}
                 </div>
 
-                <h4 className="text-[11px] font-black tracking-widest text-slate-400 uppercase mb-4">ACTIONS</h4>
+                <h4 className="text-[11px] font-black tracking-widest text-slate-400 uppercase mb-4">{t('tool_page.actions', 'ACTIONS')}</h4>
                 <div className="space-y-3">
                   <button 
                     onClick={handleProcess} 
@@ -481,7 +548,7 @@ const GenericToolPage = ({ tool }) => {
                   >
                     {status === 'processing' ? <Loader2 className="animate-spin" size={20} /> : (
                       <>
-                        {tool.actionTitle}
+                        {t(`tools.${tool.id}.name`, tool.actionTitle || tool.name)}
                         <ArrowRight size={18} />
                       </>
                     )}
@@ -490,7 +557,7 @@ const GenericToolPage = ({ tool }) => {
                     onClick={() => setFiles([])} 
                     className="w-full px-6 py-4 rounded-xl font-bold text-[15px] text-slate-600 hover:bg-slate-50 border border-slate-200 hover:border-slate-300 transition-colors"
                   >
-                    Clear Workspace
+                    {t('tool_page.clear_workspace', 'Clear Workspace')}
                   </button>
                 </div>
 
@@ -504,8 +571,11 @@ const GenericToolPage = ({ tool }) => {
       {(!tool.noUpload && !files.length) && status !== 'success' && !isWebcamActive && (
         <div className="bg-slate-50 py-24 border-t border-slate-100">
           <div className="max-w-[1200px] mx-auto px-6">
-            <div className="mb-24"><h3 className="text-2xl font-bold text-slate-900 mb-8 flex items-center gap-2"><span className="text-indigo-600">→</span> Related Tools</h3><ToolsGrid showHeader={false} /></div>
-            <FAQ faqs={extraContent.seoFaqs || extraContent.faqs} title={extraContent.seoFaqTitle} /><ArticlesAndGuides tool={tool} />
+            <FAQ 
+              faqs={language === 'en' ? (extraContent.seoFaqs || extraContent.faqs) : localizedToolFaqs} 
+              title={language === 'en' ? extraContent.seoFaqTitle : `${t('tool_page.faq_title', 'Frequently Asked Questions')} - ${t(`tools.${tool.id}.name`, tool.name)}`} 
+            />
+            <ArticlesAndGuides tool={tool} />
           </div>
         </div>
       )}

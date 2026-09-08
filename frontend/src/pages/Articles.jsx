@@ -5,8 +5,10 @@ import ArticleEditorModal from '../components/ArticleEditorModal';
 import { TOOLS_DATA } from '../data/tools';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { useTranslation } from '../i18n/LanguageContext';
 
 const Articles = () => {
+  const { t, language } = useTranslation();
   const navigate = useNavigate();
   const { currentUser, token } = useAuth();
   const { addToast } = useToast();
@@ -24,7 +26,10 @@ const Articles = () => {
   const fetchArticles = async () => {
     setLoading(true);
     try {
-      const query = selectedTool !== 'all' ? `?tool=${selectedTool}` : '';
+      const queryParts = [];
+      if (selectedTool !== 'all') queryParts.push(`tool=${selectedTool}`);
+      if (language && language !== 'en') queryParts.push(`lang=${language}`);
+      const query = queryParts.length > 0 ? `?${queryParts.join('&')}` : '';
       const res = await fetch(`/api/articles${query}`);
       const data = await res.json();
       if (data.success && data.articles) {
@@ -39,7 +44,7 @@ const Articles = () => {
 
   useEffect(() => {
     fetchArticles();
-  }, [selectedTool]);
+  }, [selectedTool, language]);
 
   const handleCreateNew = () => {
     setArticleToEdit(null);
@@ -93,11 +98,13 @@ const Articles = () => {
         <div className="max-w-[1200px] mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 rounded-full text-xs font-bold uppercase tracking-wider mb-4">
-              <BookOpen size={14} /> Knowledge Hub
+              <BookOpen size={14} /> {t('articles_page.knowledge_hub', 'Knowledge Hub')}
             </div>
-            <h1 className="text-3xl md:text-5xl font-black tracking-tight">Articles & Guides</h1>
+            <h1 className="text-3xl md:text-5xl font-black tracking-tight">
+              {t('articles_page.title', 'Articles & Guides')}
+            </h1>
             <p className="text-slate-400 text-base mt-2 max-w-[600px]">
-              Explore step-by-step guides, best practices, security standards, and workflows for all your document tools.
+              {t('articles_page.subtitle', 'Explore step-by-step guides, best practices, security standards, and workflows for all your document tools.')}
             </p>
           </div>
 
@@ -108,7 +115,7 @@ const Articles = () => {
               className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-bold text-sm shadow-xl shadow-indigo-600/30 transition-all flex items-center gap-2.5 shrink-0"
             >
               <Plus size={18} strokeWidth={2.5} />
-              <span>Write New Article</span>
+              <span>{t('articles_page.write_new', 'Write New Article')}</span>
             </button>
           )}
         </div>
@@ -125,7 +132,7 @@ const Articles = () => {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search articles & guides..."
+              placeholder={t('articles_page.search_placeholder', 'Search articles & guides...')}
               className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all"
             />
           </div>
@@ -133,20 +140,20 @@ const Articles = () => {
 
         {/* Articles Grid */}
         {loading ? (
-          <div className="text-center py-24 text-slate-400 font-semibold">Loading Articles & Guides...</div>
+          <div className="text-center py-24 text-slate-400 font-semibold">{t('articles_page.loading', 'Loading Articles & Guides...')}</div>
         ) : filteredArticles.length === 0 ? (
           <div className="bg-white rounded-3xl p-16 text-center border border-slate-200 max-w-[600px] mx-auto my-12 shadow-sm">
             <BookOpen className="mx-auto text-slate-300 mb-4" size={48} />
-            <h3 className="text-xl font-bold text-slate-800 mb-2">No Articles Available Yet</h3>
+            <h3 className="text-xl font-bold text-slate-800 mb-2">{t('articles_page.empty_title', 'No Articles Available Yet')}</h3>
             <p className="text-slate-500 text-sm mb-6">
-              Our SEO team is preparing comprehensive guides for this topic. Check back soon!
+              {t('articles_page.empty_desc', 'Our SEO team is preparing comprehensive guides for this topic. Check back soon!')}
             </p>
             {isWriter && (
               <button
                 onClick={handleCreateNew}
                 className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-xs shadow-md shadow-indigo-600/20 transition-all inline-flex items-center gap-2"
               >
-                <Plus size={16} /> Write First Article
+                <Plus size={16} /> {t('articles_page.write_first', 'Write First Article')}
               </button>
             )}
           </div>
@@ -174,7 +181,7 @@ const Articles = () => {
 
                   {/* Tool Tag Pill */}
                   <span className="absolute top-4 left-4 bg-slate-900/80 backdrop-blur-md text-white text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full border border-white/20">
-                    {article.category || article.tool_id || 'GENERAL'}
+                    {article.category || article.tool_id || t('articles_page.general', 'GENERAL')}
                   </span>
 
                   {/* Writer Controls (Edit / Delete) */}
@@ -209,7 +216,7 @@ const Articles = () => {
                   </p>
 
                   <div className="flex items-center justify-between pt-4 border-t border-slate-100 mt-auto text-xs text-slate-400">
-                    <span className="font-semibold text-slate-700">{article.author_name || 'PDF Bundles Team'}</span>
+                    <span className="font-semibold text-slate-700">{article.author_name || t('articles_page.default_author', 'PDF Bundles Team')}</span>
                     <span>{new Date(article.createdAt).toLocaleDateString()}</span>
                   </div>
                 </div>
@@ -247,27 +254,27 @@ const Articles = () => {
                 <div className="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center">
                   <AlertCircle size={20} />
                 </div>
-                Delete Article?
+                {t('articles_page.delete_title', 'Delete Article?')}
               </div>
               <button onClick={() => setArticleToDelete(null)} className="text-slate-400 hover:text-slate-600 transition-colors">
                 <X size={20} />
               </button>
             </div>
             <p className="text-slate-600 text-sm mb-6 leading-relaxed">
-              Are you sure you want to delete this article? This action cannot be undone and will remove it from the platform.
+              {t('articles_page.delete_desc', 'Are you sure you want to delete this article? This action cannot be undone and will remove it from the platform.')}
             </p>
             <div className="flex gap-3 justify-end">
               <button 
                 onClick={() => setArticleToDelete(null)}
                 className="px-5 py-2.5 bg-slate-100 text-slate-700 font-bold text-sm rounded-xl hover:bg-slate-200 transition-colors"
               >
-                Cancel
+                {t('actions.cancel', 'Cancel')}
               </button>
               <button 
                 onClick={confirmDelete}
                 className="px-5 py-2.5 bg-rose-500 text-white font-bold text-sm rounded-xl hover:bg-rose-600 shadow-md shadow-rose-500/20 transition-all"
               >
-                Delete
+                {t('actions.delete', 'Delete')}
               </button>
             </div>
           </div>

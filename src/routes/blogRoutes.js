@@ -24,10 +24,89 @@ const generateSlug = (text) => {
     .replace(/\-\-+/g, '-');
 };
 
-// Route: Get articles list (supports ?tool=compress-pdf filtering)
+// In-memory Translation Cache
+const translationCache = new Map();
+
+const translateSingleText = async (text, targetLang) => {
+  if (!text || !text.trim() || !targetLang || targetLang === 'en') return text;
+  const cacheKey = `${targetLang}:${text.trim()}`;
+  if (translationCache.has(cacheKey)) {
+    return translationCache.get(cacheKey);
+  }
+
+  try {
+    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text.trim())}&langpair=en|${targetLang}`;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 4000);
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeout);
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data?.responseData?.translatedText && !data.responseData.translatedText.startsWith('MYMEMORY WARNING')) {
+        const translated = data.responseData.translatedText;
+        translationCache.set(cacheKey, translated);
+        return translated;
+      }
+    }
+  } catch (err) {
+    // Fallback to original text on network failure
+  }
+  return text;
+};
+
+const translateHtmlContent = async (html, targetLang) => {
+  if (!html || !targetLang || targetLang === 'en') return html;
+  const cacheKey = `${targetLang}:html:${html.length}:${html.slice(0, 40)}`;
+  if (translationCache.has(cacheKey)) {
+    return translationCache.get(cacheKey);
+  }
+
+  try {
+    const tagRegex = /<(p|h[1-6]|li|blockquote)([^>]*)>([\s\S]*?)<\/\1>/gi;
+    const segments = [];
+    let match;
+    while ((match = tagRegex.exec(html)) !== null) {
+      const innerText = match[3].replace(/<[^>]+>/g, '').trim();
+      if (innerText && innerText.length > 2) {
+        segments.push({ full: match[0], tag: match[1], attrs: match[2], inner: match[3], text: innerText });
+      }
+    }
+
+    if (segments.length === 0) return html;
+
+    const uniqueTexts = [...new Set(segments.map(s => s.text))];
+    const textTranslations = new Map();
+
+    const chunkSize = 5;
+    for (let i = 0; i < uniqueTexts.length; i += chunkSize) {
+      const chunk = uniqueTexts.slice(i, i + chunkSize);
+      await Promise.all(chunk.map(async (txt) => {
+        const translated = await translateSingleText(txt, targetLang);
+        textTranslations.set(txt, translated);
+      }));
+    }
+
+    let translatedHtml = html;
+    for (const seg of segments) {
+      const translated = textTranslations.get(seg.text);
+      if (translated && translated !== seg.text) {
+        const newSeg = `<${seg.tag}${seg.attrs}>${translated}</${seg.tag}>`;
+        translatedHtml = translatedHtml.replace(seg.full, newSeg);
+      }
+    }
+
+    translationCache.set(cacheKey, translatedHtml);
+    return translatedHtml;
+  } catch (err) {
+    return html;
+  }
+};
+
+// Route: Get articles list (supports ?tool=compress-pdf and ?lang=ko filtering)
 router.get('/articles', async (req, res) => {
   try {
-    const { tool, category } = req.query;
+    const { tool, category, lang } = req.query;
     const targetTool = tool || category;
     
     let whereClause = { status: 'published' };
@@ -40,6 +119,23 @@ router.get('/articles', async (req, res) => {
       order: [['createdAt', 'DESC']] 
     });
 
+    if (lang && lang !== 'en' && posts.length > 0) {
+      const translatedPosts = await Promise.all(posts.map(async (p) => {
+        const postObj = p.toJSON ? p.toJSON() : { ...p };
+        const translatedTitle = await translateSingleText(postObj.title, lang);
+        const translatedDesc = await translateSingleText(postObj.post_description, lang);
+        return {
+          ...postObj,
+          original_title: postObj.title,
+          original_description: postObj.post_description,
+          title: translatedTitle,
+          post_description: translatedDesc,
+          translated_to: lang
+        };
+      }));
+      return res.json({ success: true, articles: translatedPosts, posts: translatedPosts });
+    }
+
     res.json({ success: true, articles: posts, posts });
   } catch (err) {
     console.error(err);
@@ -47,10 +143,12 @@ router.get('/articles', async (req, res) => {
   }
 });
 
-// Route: Get single article by slug
+// Route: Get single article by slug (supports ?lang=ko)
 router.get('/articles/:slug', async (req, res) => {
   try {
     const { slug } = req.params;
+    const { lang } = req.query;
+
     let article = await BlogPost.findOne({ where: { slug } });
     if (!article) {
       article = await BlogPost.findByPk(slug);
@@ -58,6 +156,25 @@ router.get('/articles/:slug', async (req, res) => {
     if (!article) {
       return res.status(404).json({ error: 'Article not found.' });
     }
+
+    if (lang && lang !== 'en') {
+      const postObj = article.toJSON ? article.toJSON() : { ...article };
+      const translatedTitle = await translateSingleText(postObj.title, lang);
+      const translatedDesc = await translateSingleText(postObj.post_description, lang);
+      const translatedContent = await translateHtmlContent(postObj.content, lang);
+      const translatedArticle = {
+        ...postObj,
+        original_title: postObj.title,
+        original_description: postObj.post_description,
+        original_content: postObj.content,
+        title: translatedTitle,
+        post_description: translatedDesc,
+        content: translatedContent,
+        translated_to: lang
+      };
+      return res.json({ success: true, article: translatedArticle, post: translatedArticle });
+    }
+
     res.json({ success: true, article, post: article });
   } catch (err) {
     console.error(err);
