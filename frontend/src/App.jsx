@@ -139,8 +139,8 @@ const Layout = ({ children }) => {
               
               {/* Mega Menu Dropdown */}
               {activeMegaMenu === 'tools' && (
-                <div className="absolute top-full left-0 w-[1000px] bg-white border border-slate-100 rounded-b-3xl shadow-[0_20px_40px_rgba(0,0,0,0.08)] p-8 grid grid-cols-5 gap-8 z-50 cursor-default animate-in fade-in slide-in-from-top-4">
-                  {TOOLS_DATA.filter(c => !c.category.includes('AI')).slice(0, 5).map((category, idx) => (
+                <div className="absolute top-full left-0 w-[1180px] max-w-[95vw] bg-white border border-slate-100 rounded-b-3xl shadow-[0_20px_40px_rgba(0,0,0,0.08)] p-8 grid grid-cols-6 gap-6 z-50 cursor-default animate-in fade-in slide-in-from-top-4">
+                  {TOOLS_DATA.filter(c => !c.category.includes('AI') && c.category !== 'PDF Intelligence').map((category, idx) => (
                     <div key={idx}>
                       <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-4">
                         {category.category}

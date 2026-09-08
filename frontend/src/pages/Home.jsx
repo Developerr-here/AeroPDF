@@ -739,7 +739,7 @@ const Home = () => {
         <h2 className="text-4xl font-black text-[#1E1B4B] mt-6 mb-4 tracking-tight">Frequently Asked Questions</h2>
         <p className="text-slate-500 font-medium text-lg mb-16">Here you can find clear and direct answers to common questions about PDF tools.</p>
         <div className="text-left">
-          <FAQ />
+          <FAQ showHeader={false} />
         </div>
       </div>
 

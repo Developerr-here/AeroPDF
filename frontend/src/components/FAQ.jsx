@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Plus, Minus } from 'lucide-react';
 
-const FAQ = ({ faqs: customFaqs, title }) => {
+const FAQ = ({ faqs: customFaqs, title, showHeader = true }) => {
   const [openIndex, setOpenIndex] = useState(null);
 
   const defaultFaqs = [
@@ -15,11 +15,13 @@ const FAQ = ({ faqs: customFaqs, title }) => {
   const displayTitle = title || "Frequently Asked Questions";
 
   return (
-    <div className="w-full max-w-[1000px] mx-auto mt-24 mb-12">
-      <div className="text-center mb-8">
-        <h3 className="text-3xl font-black text-slate-900 mb-2">{displayTitle}</h3>
-        <p className="text-slate-500 font-medium">Here you can find clear and direct answers to common questions about PDF tools.</p>
-      </div>
+    <div className={`w-full max-w-[1000px] mx-auto ${showHeader ? 'mt-24' : 'mt-0'} mb-12`}>
+      {showHeader && (
+        <div className="text-center mb-8">
+          <h3 className="text-3xl font-black text-slate-900 mb-2">{displayTitle}</h3>
+          <p className="text-slate-500 font-medium">Here you can find clear and direct answers to common questions about PDF tools.</p>
+        </div>
+      )}
       <div className="space-y-3">
         {faqs.map((faq, i) => (
           <div key={i} className="bg-white border border-slate-100 rounded-xl overflow-hidden shadow-[0_2px_10px_rgba(0,0,0,0.02)]">

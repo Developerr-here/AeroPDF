@@ -4393,10 +4393,6 @@ TOOL_EXTRA_CONTENT['merge-pdf'] = {
 
 
 export function getExtraContentForTool(toolId, toolName = 'Document Tool', toolDesc = 'Manage your documents easily.') {
-  if (TOOL_EXTRA_CONTENT[toolId]) {
-    return TOOL_EXTRA_CONTENT[toolId];
-  }
-
   let category = 'Utility';
   let icon = '🛠️';
   if (toolId.includes('pdf-to-') || toolId.includes('-to-pdf')) {
@@ -4410,7 +4406,7 @@ export function getExtraContentForTool(toolId, toolName = 'Document Tool', toolD
     icon = '📏';
   }
 
-  return {
+  const defaults = {
     category: category,
     icon: icon,
     badges: ['SECURE PROCESSING', 'HIGH SPEED', 'ZERO TRUST'],
@@ -4441,4 +4437,20 @@ export function getExtraContentForTool(toolId, toolName = 'Document Tool', toolD
     ],
     related: ['merge-pdf', 'split-pdf', 'compress-pdf']
   };
+
+  if (TOOL_EXTRA_CONTENT[toolId]) {
+    const custom = TOOL_EXTRA_CONTENT[toolId];
+    return {
+      ...defaults,
+      ...custom,
+      about: custom.about || defaults.about,
+      whoUses: (custom.whoUses && custom.whoUses.length > 0) ? custom.whoUses : defaults.whoUses,
+      features: (custom.features && custom.features.length > 0) ? custom.features : defaults.features,
+      steps: (custom.steps && custom.steps.length > 0) ? custom.steps : defaults.steps,
+      badges: (custom.badges && custom.badges.length > 0) ? custom.badges : defaults.badges,
+      flow: (custom.flow && custom.flow.length > 0) ? custom.flow : defaults.flow,
+    };
+  }
+
+  return defaults;
 }

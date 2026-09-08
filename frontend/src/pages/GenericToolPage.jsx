@@ -338,7 +338,7 @@ const GenericToolPage = ({ tool }) => {
                     Who Uses This Tool?
                   </h3>
                   <ul className="space-y-4 text-slate-600">
-                    {extraContent.whoUses.map((user, idx) => (
+                    {extraContent.whoUses?.map((user, idx) => (
                       <li key={idx} className="flex items-start gap-3">
                         <span className="text-indigo-500 mt-1">•</span>
                         <span>{user}</span>
@@ -355,7 +355,7 @@ const GenericToolPage = ({ tool }) => {
                     Key Features
                   </h3>
                   <ul className="space-y-4 text-slate-600">
-                    {extraContent.features.map((feature, idx) => (
+                    {extraContent.features?.map((feature, idx) => (
                       <li key={idx} className="flex items-center gap-3">
                         <ShieldCheck size={18} className="text-emerald-500 flex-shrink-0" />
                         <span>{feature}</span>
@@ -370,7 +370,7 @@ const GenericToolPage = ({ tool }) => {
                     How it Works
                   </h3>
                   <ol className="space-y-4">
-                    {extraContent.steps.map((step, idx) => (
+                    {extraContent.steps?.map((step, idx) => (
                       <li key={idx} className="text-sm">
                         <strong className="text-slate-800">{idx + 1}. {step.title}:</strong> <span className="text-slate-600">{step.desc}</span>
                       </li>
