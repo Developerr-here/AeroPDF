@@ -44,15 +44,7 @@ export default function SEOSchema() {
       "publisher": {
         "@id": "https://pdfbundles.com/#organization"
       },
-      "inLanguage": "en",
-      "potentialAction": {
-        "@type": "SearchAction",
-        "target": {
-          "@type": "EntryPoint",
-          "urlTemplate": "https://pdfbundles.com/?q={search_term_string}"
-        },
-        "query-input": "required name=search_term_string"
-      }
+      "inLanguage": "en"
     }
   ]
 }

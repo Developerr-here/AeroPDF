@@ -83,13 +83,19 @@ import toolRoutes from './src/routes/toolRoutes.js';
 app.use('/', toolRoutes);
 
 /* ==========================================
-   301 REDIRECTS (Legacy Blog to Articles)
+   301 REDIRECTS (Legacy Blog to Articles & Tools Prefix)
    ========================================== */
 app.get('/blog', (req, res) => {
   res.redirect(301, '/articles');
 });
 app.get('/blog/:slug', (req, res) => {
   res.redirect(301, `/articles/${req.params.slug}`);
+});
+app.get(['/tools', '/tool'], (req, res) => {
+  res.redirect(301, '/');
+});
+app.get(['/tools/:tool', '/tool/:tool'], (req, res) => {
+  res.redirect(301, `/${req.params.tool}`);
 });
 
 /* ==========================================
