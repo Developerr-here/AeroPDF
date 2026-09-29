@@ -16,3 +16,5 @@ export const LANGUAGES = [
 ];
 
 export const DEFAULT_LANGUAGE = 'en';
+export const SUPPORTED_LANG_CODES = LANGUAGES.map(l => l.code);
+export const NON_EN_LANG_CODES = LANGUAGES.filter(l => l.code !== 'en').map(l => l.code);

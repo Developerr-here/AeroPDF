@@ -191,7 +191,7 @@ const ArticleView = () => {
 
         {/* Featured Cover Image */}
         {article.cover_image && (
-          <div className="w-full h-[400px] bg-slate-200 rounded-3xl overflow-hidden mb-12 shadow-lg border border-slate-200">
+          <div className="w-full h-[400px] bg-slate-200 rounded-3xl overflow-hidden mb-8 shadow-lg border border-slate-200">
             <img
               src={article.cover_image}
               alt={article.alt_text || activeTitle}
@@ -199,11 +199,6 @@ const ArticleView = () => {
             />
           </div>
         )}
-
-        {/* Article Title */}
-        <h1 className="text-3xl md:text-5xl font-black text-slate-900 mb-8 leading-tight tracking-tight">
-          {activeTitle}
-        </h1>
 
         {/* Main Formatted Article Body */}
         <div className="bg-white rounded-3xl p-8 md:p-12 border border-slate-200/80 shadow-[0_2px_10px_rgba(0,0,0,0.02)]">

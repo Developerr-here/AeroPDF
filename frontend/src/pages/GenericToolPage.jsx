@@ -19,7 +19,7 @@ import CompareWorkspace from '../components/CompareWorkspace';
 const interactiveTools = ['rotate-pdf', 'split-pdf', 'extract-pages', 'remove-pages', 'organize-pdf', 'edit-pdf', 'redact-pdf', 'sign-pdf'];
 
 const GenericToolPage = ({ tool }) => {
-  const { t, language } = useTranslation();
+  const { t, language, localizePath } = useTranslation();
   const { currentUser, token } = useAuth();
   const { addToast } = useToast();
   
@@ -258,7 +258,7 @@ const GenericToolPage = ({ tool }) => {
       {/* Breadcrumb */}
       <div className="w-full bg-white border-b border-slate-100 sticky top-0 z-40">
         <div className="max-w-[1400px] mx-auto px-6 py-4 flex items-center gap-4">
-          <Link to="/" className="flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-900 bg-white border border-slate-200 px-4 py-2 rounded-full shadow-sm transition-all hover:shadow-md">
+          <Link to={localizePath('/')} className="flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-900 bg-white border border-slate-200 px-4 py-2 rounded-full shadow-sm transition-all hover:shadow-md">
             <ArrowLeft size={16} /> {t('tool_page.back_dashboard', 'Back to Dashboard')}
           </Link>
         </div>

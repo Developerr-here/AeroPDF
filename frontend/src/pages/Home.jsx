@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { ALL_TOOLS } from '../data/tools';
 import ToolsGrid from '../components/ToolsGrid';
@@ -9,12 +9,67 @@ import { useToast } from '../context/ToastContext';
 import { useTranslation } from '../i18n/LanguageContext';
 import { 
   FileText, Shield, Lock, Globe, FileKey, CheckCircle2, ChevronDown, 
-  UploadCloud, Settings, Download, GraduationCap, Briefcase, Star, Clock, X, Check, ArrowRight, BookOpen
+  UploadCloud, Settings, Download, GraduationCap, Briefcase, Star, Clock, X, Check, ArrowRight, BookOpen,
+  Sparkles, Bot, ZoomIn
 } from 'lucide-react';
 
 const Home = () => {
-  const { t, language } = useTranslation();
+  const { t, language, localizePath } = useTranslation();
   const [showUploadMenu, setShowUploadMenu] = useState(false);
+  const [showAiDropdown, setShowAiDropdown] = useState(false);
+  const aiDropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (aiDropdownRef.current && !aiDropdownRef.current.contains(event.target)) {
+        setShowAiDropdown(false);
+      }
+    };
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setShowAiDropdown(false);
+      }
+    };
+    if (showAiDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [showAiDropdown]);
+
+  const aiToolsList = [
+    {
+      id: 'ai-pdf-assistant',
+      name: 'AI PDF Assistant',
+      path: '/ai-pdf-assistant',
+      desc: 'Chat, summarize, translate & extract PDF info',
+      icon: <Bot size={20} className="text-purple-300" />,
+      iconBg: 'bg-purple-500/20 text-purple-300 border border-purple-500/30',
+      badge: 'PDF AI'
+    },
+    {
+      id: 'background-remover',
+      name: 'Background Remover',
+      path: '/background-remover',
+      desc: 'Instantly isolate subjects & clear backgrounds',
+      icon: <Sparkles size={20} className="text-emerald-300" />,
+      iconBg: 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30',
+      badge: 'Vision AI'
+    },
+    {
+      id: 'image-upscaler',
+      name: 'Image Upscaler',
+      path: '/image-upscaler',
+      desc: 'Enhance image quality and sharpness up to 4x',
+      icon: <ZoomIn size={20} className="text-teal-300" />,
+      iconBg: 'bg-teal-500/20 text-teal-300 border border-teal-500/30',
+      badge: 'HD 4X'
+    }
+  ];
+
   const [activeTab, setActiveTab] = useState('students');
   const [yearlyBilling, setYearlyBilling] = useState(false);
   const [seats, setSeats] = useState(1);
@@ -180,7 +235,7 @@ const Home = () => {
                   <div className="p-2 bg-slate-50 border-b border-slate-100 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">{t('hero.select_tool', 'Select a tool')}</div>
                   <div className="p-2 flex flex-col">
                     {topTools.map(tool => (
-                      <Link key={tool.id} to={tool.path} className="flex items-center gap-3 p-3 hover:bg-indigo-50 rounded-xl transition-colors">
+                      <Link key={tool.id} to={localizePath(tool.path)} className="flex items-center gap-3 p-3 hover:bg-indigo-50 rounded-xl transition-colors">
                         <div className={`p-1.5 rounded-lg ${tool.color === 'indigo' ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-600'}`}>
                           {tool.icon}
                         </div>
@@ -632,7 +687,7 @@ const Home = () => {
             {recentArticles.map((article, i) => (
               <Link 
                 key={article.id || i} 
-                to={article.slug ? `/articles/${article.slug}` : '/articles'} 
+                to={localizePath(article.slug ? `/articles/${article.slug}` : '/articles')} 
                 className="bg-white rounded-3xl shadow-sm border border-slate-100 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group overflow-hidden flex flex-col h-full"
               >
                 {/* Cover Image */}
@@ -683,7 +738,7 @@ const Home = () => {
           </div>
         )}
         
-        <Link to="/articles" className="inline-flex items-center gap-2 bg-white border border-slate-200 text-slate-700 font-bold px-8 py-4 rounded-full shadow-sm hover:shadow-md hover:border-indigo-200 hover:text-indigo-600 transition-all">
+        <Link to={localizePath('/articles')} className="inline-flex items-center gap-2 bg-white border border-slate-200 text-slate-700 font-bold px-8 py-4 rounded-full shadow-sm hover:shadow-md hover:border-indigo-200 hover:text-indigo-600 transition-all">
           {t('community.view_all', 'View All Articles')} <ArrowRight size={18} />
         </Link>
       </div>
@@ -706,7 +761,7 @@ const Home = () => {
               .map(id => ALL_TOOLS.find(t => t.id === id))
               .filter(Boolean)
               .map(tool => (
-              <Link key={tool.id} to={tool.path} className="bg-white p-5 rounded-[1.25rem] shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-slate-100 hover:shadow-md hover:border-indigo-100 transition-all flex items-center gap-4 group">
+              <Link key={tool.id} to={localizePath(tool.path)} className="bg-white p-5 rounded-[1.25rem] shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-slate-100 hover:shadow-md hover:border-indigo-100 transition-all flex items-center gap-4 group">
                 <div className={`w-[48px] h-[48px] rounded-xl flex items-center justify-center shrink-0 ${tool.color === 'indigo' ? 'bg-indigo-50 text-indigo-500 group-hover:bg-indigo-500 group-hover:text-white' : tool.color === 'slate' ? 'bg-slate-50 text-slate-500 group-hover:bg-slate-800 group-hover:text-white' : tool.color === 'rose' ? 'bg-rose-50 text-rose-500 group-hover:bg-rose-500 group-hover:text-white' : tool.color === 'blue' ? 'bg-blue-50 text-blue-500 group-hover:bg-blue-500 group-hover:text-white' : 'bg-slate-50 text-slate-500 group-hover:bg-slate-800 group-hover:text-white'} transition-colors`}>
                   {tool.icon}
                 </div>
@@ -715,7 +770,7 @@ const Home = () => {
             ))}
           </div>
           
-          <div className="lg:w-[410px] bg-[#1d1b46] rounded-[2rem] p-8 text-center text-white shadow-2xl relative overflow-hidden flex flex-col">
+          <div className="lg:w-[410px] bg-[#1d1b46] rounded-[2rem] p-8 text-center text-white shadow-2xl relative flex flex-col">
             <span className="bg-blue-600 text-white font-bold text-[10px] px-3 py-1.5 rounded-full uppercase tracking-widest mx-auto mb-8 shadow-sm">{t('ai_companion.badge', 'AI PDF Assistant')}</span>
             <h3 className="text-[26px] font-black mb-3 tracking-tight">{t('ai_companion.title', 'Your Intelligent Companion')}</h3>
             <p className="text-indigo-200/80 text-[13px] font-medium leading-relaxed mb-8 px-2">{t('ai_companion.subtitle', 'Chat, summarize, translate & extract insights from any PDF instantly')}</p>
@@ -743,9 +798,55 @@ const Home = () => {
               </div>
             </div>
             
-            <button className="w-full bg-blue-500 hover:bg-blue-400 text-white font-bold py-[18px] rounded-2xl shadow-[0_8px_25px_rgba(59,130,246,0.35)] transition-all flex items-center justify-center gap-2 mt-auto">
-              <span className="text-[20px] leading-none mb-0.5">+</span> {t('ai_companion.btn', 'Try AI Tools Now')}
-            </button>
+            <div className="relative mt-auto" ref={aiDropdownRef}>
+              {showAiDropdown && (
+                <div className="absolute bottom-full mb-3 left-0 right-0 bg-[#242159] border border-indigo-400/30 rounded-2xl p-2.5 shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-30 backdrop-blur-xl animate-in fade-in slide-in-from-bottom-2 duration-200">
+                  <div className="text-[11px] font-bold text-indigo-200 uppercase tracking-wider px-3 py-1.5 text-left border-b border-indigo-400/20 mb-1.5 flex items-center justify-between">
+                    <span>{t('ai_companion.select_tool', 'Select AI Tool')}</span>
+                    <span className="text-[10px] bg-blue-500/25 text-blue-200 px-2 py-0.5 rounded-full font-semibold">3 Tools</span>
+                  </div>
+                  <div className="space-y-1.5 text-left">
+                    {aiToolsList.map((tool) => (
+                      <Link
+                        key={tool.id}
+                        to={localizePath(tool.path)}
+                        onClick={() => setShowAiDropdown(false)}
+                        className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-white/10 active:bg-white/15 transition-all group"
+                      >
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${tool.iconBg}`}>
+                          {tool.icon}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-white text-[13px] group-hover:text-blue-300 transition-colors truncate">
+                              {t('tools.' + tool.id + '.name', tool.name)}
+                            </span>
+                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-white/10 text-indigo-200 shrink-0">
+                              {tool.badge}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-indigo-200/70 truncate mt-0.5">
+                            {t('tools.' + tool.id + '.desc', tool.desc)}
+                          </p>
+                        </div>
+                        <ArrowRight size={15} className="text-indigo-400 opacity-0 group-hover:opacity-100 -translate-x-1 group-hover:translate-x-0 transition-all shrink-0" />
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <button 
+                type="button"
+                onClick={() => setShowAiDropdown(prev => !prev)}
+                aria-expanded={showAiDropdown}
+                className="w-full bg-blue-500 hover:bg-blue-400 active:scale-[0.99] text-white font-bold py-[18px] px-6 rounded-2xl shadow-[0_8px_25px_rgba(59,130,246,0.35)] transition-all flex items-center justify-center gap-2"
+              >
+                <Sparkles size={18} className="text-blue-200" />
+                <span>{t('ai_companion.btn', 'Try AI Tools Now')}</span>
+                <ChevronDown size={18} className={`transition-transform duration-200 ${showAiDropdown ? 'rotate-180' : ''}`} />
+              </button>
+            </div>
           </div>
         </div>
       </div>

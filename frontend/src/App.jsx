@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { BrowserRouter, Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Link, useNavigate, useLocation, Outlet, useParams, Navigate } from 'react-router-dom'
 import Home from './pages/Home'
 import GenericToolPage from './pages/GenericToolPage'
 import Blog from './pages/Blog'
@@ -23,7 +23,8 @@ import { AuthProvider, useAuth } from './context/AuthContext'
 import { ToastProvider } from './context/ToastContext'
 import { User, Mail, Settings, Users, Star, LogOut, Menu, X, ChevronRight, FileText, Bot } from 'lucide-react'
 import LanguageSelector from './components/LanguageSelector'
-import { useTranslation } from './i18n/LanguageContext'
+import { LanguageProvider, useTranslation } from './i18n/LanguageContext'
+import { NON_EN_LANG_CODES } from './i18n/languages'
 
 const Twitter = ({ size, className }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/></svg>;
 const Facebook = ({ size, className }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>;
@@ -31,13 +32,13 @@ const Linkedin = ({ size, className }) => <svg width={size} height={size} viewBo
 const Tiktok = ({ size, className }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5v3a3 3 0 0 1-3-3v11a7 7 0 1 1-7-7z"/></svg>;
 
 const Footer = () => {
-  const { t } = useTranslation();
+  const { t, localizePath } = useTranslation();
   return (
     <footer className="bg-white border-t border-slate-100 pt-16 pb-8 px-6 mt-auto">
       <div className="max-w-[1400px] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12 mb-16">
         
         <div className="lg:col-span-2">
-          <Link to="/" className="inline-block mb-6">
+          <Link to={localizePath('/')} className="inline-block mb-6">
             <img src="/logo-desktop.png" alt="PDF Bundles" className="h-8 w-auto" />
           </Link>
           <p className="text-[11px] font-black tracking-widest text-slate-400 uppercase mb-4">{t('footer.professional_suite', 'Professional Suite')}</p>
@@ -55,33 +56,33 @@ const Footer = () => {
         <div>
           <h4 className="font-bold text-slate-900 tracking-wide mb-6">{t('footer.popular_tools', 'POPULAR TOOLS')}</h4>
           <ul className="space-y-4">
-            <li><Link to="/merge-pdf" className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">{t('tools.merge-pdf.name', 'Merge PDF')}</Link></li>
-            <li><Link to="/split-pdf" className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">{t('tools.split-pdf.name', 'Split PDF')}</Link></li>
-            <li><Link to="/compress-pdf" className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">{t('tools.compress-pdf.name', 'Compress PDF')}</Link></li>
-            <li><Link to="/jpg-to-pdf" className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">{t('tools.jpg-to-pdf.name', 'JPG to PDF')}</Link></li>
-            <li><Link to="/pdf-to-png" className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">{t('tools.pdf-to-png.name', 'PDF to PNG')}</Link></li>
+            <li><Link to={localizePath('/merge-pdf')} className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">{t('tools.merge-pdf.name', 'Merge PDF')}</Link></li>
+            <li><Link to={localizePath('/split-pdf')} className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">{t('tools.split-pdf.name', 'Split PDF')}</Link></li>
+            <li><Link to={localizePath('/compress-pdf')} className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">{t('tools.compress-pdf.name', 'Compress PDF')}</Link></li>
+            <li><Link to={localizePath('/jpg-to-pdf')} className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">{t('tools.jpg-to-pdf.name', 'JPG to PDF')}</Link></li>
+            <li><Link to={localizePath('/pdf-to-png')} className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">{t('tools.pdf-to-png.name', 'PDF to PNG')}</Link></li>
           </ul>
         </div>
 
         <div>
           <h4 className="font-bold text-slate-900 tracking-wide mb-6">{t('footer.company_legal', 'COMPANY & LEGAL')}</h4>
           <ul className="space-y-4">
-            <li><Link to="/about" className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">{t('footer.about_us', 'About Us')}</Link></li>
-            <li><Link to="/press" className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">{t('footer.press', 'Press')}</Link></li>
-            <li><Link to="/security" className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">{t('footer.security', 'Security')}</Link></li>
-            <li><Link to="/privacy" className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">{t('footer.privacy', 'Privacy Policy')}</Link></li>
-            <li><Link to="/terms" className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">{t('footer.terms', 'Terms & Conditions')}</Link></li>
+            <li><Link to={localizePath('/about')} className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">{t('footer.about_us', 'About Us')}</Link></li>
+            <li><Link to={localizePath('/press')} className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">{t('footer.press', 'Press')}</Link></li>
+            <li><Link to={localizePath('/security')} className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">{t('footer.security', 'Security')}</Link></li>
+            <li><Link to={localizePath('/privacy')} className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">{t('footer.privacy', 'Privacy Policy')}</Link></li>
+            <li><Link to={localizePath('/terms')} className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">{t('footer.terms', 'Terms & Conditions')}</Link></li>
           </ul>
         </div>
 
         <div>
           <h4 className="font-bold text-slate-900 tracking-wide mb-6">{t('footer.resources', 'RESOURCES & MORE')}</h4>
           <ul className="space-y-4">
-            <li><Link to="/features" className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">{t('footer.features', 'Features')}</Link></li>
-            <li><Link to="/documentation" className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">{t('footer.documentation', 'Tools/documentation')}</Link></li>
-            <li><Link to="/faq" className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">{t('footer.faq', 'Frequently Asked Questions')}</Link></li>
-            <li><Link to="/articles" className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">{t('footer.articles', 'Articles & Guides')}</Link></li>
-            <li><Link to="/pricing" className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">{t('footer.upgrade', 'Upgrade to Premium')}</Link></li>
+            <li><Link to={localizePath('/features')} className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">{t('footer.features', 'Features')}</Link></li>
+            <li><Link to={localizePath('/documentation')} className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">{t('footer.documentation', 'Tools/documentation')}</Link></li>
+            <li><Link to={localizePath('/faq')} className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">{t('footer.faq', 'Frequently Asked Questions')}</Link></li>
+            <li><Link to={localizePath('/articles')} className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">{t('footer.articles', 'Articles & Guides')}</Link></li>
+            <li><Link to={localizePath('/pricing')} className="text-slate-500 hover:text-indigo-600 text-sm font-medium transition-colors">{t('footer.upgrade', 'Upgrade to Premium')}</Link></li>
           </ul>
         </div>
 
@@ -96,7 +97,7 @@ const Footer = () => {
 };
 const Layout = ({ children }) => {
   const { currentUser, logout, openAuthModal } = useAuth();
-  const { t } = useTranslation();
+  const { t, localizePath } = useTranslation();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isLeftDrawerOpen, setIsLeftDrawerOpen] = useState(false);
   const [isRightDrawerOpen, setIsRightDrawerOpen] = useState(false);
@@ -115,7 +116,7 @@ const Layout = ({ children }) => {
 
   const handleLogout = () => {
     logout();
-    navigate('/');
+    navigate(localizePath('/'));
     setIsDropdownOpen(false);
     setIsRightDrawerOpen(false);
   };
@@ -131,7 +132,7 @@ const Layout = ({ children }) => {
           </button>
 
           {/* Logo */}
-          <Link to="/" className="flex items-center">
+          <Link to={localizePath('/')} className="flex items-center">
             <img src="/logo-desktop.png" alt="PDF Bundles" className="h-6 md:h-9 w-auto" />
           </Link>
           
@@ -142,7 +143,7 @@ const Layout = ({ children }) => {
               onMouseEnter={() => setActiveMegaMenu('tools')}
               onMouseLeave={() => setActiveMegaMenu(null)}
             >
-              <Link to="/#tools" className="font-bold text-[15px] text-slate-700 hover:text-indigo-600 transition-colors flex items-center gap-1 cursor-default">{t('nav.all_tools', 'All Tools')} <span className="text-[10px]">▼</span></Link>
+              <Link to={localizePath('/#tools')} className="font-bold text-[15px] text-slate-700 hover:text-indigo-600 transition-colors flex items-center gap-1 cursor-default">{t('nav.all_tools', 'All Tools')} <span className="text-[10px]">▼</span></Link>
               
               {/* Mega Menu Dropdown */}
               {activeMegaMenu === 'tools' && (
@@ -155,7 +156,7 @@ const Layout = ({ children }) => {
                       <ul className="space-y-1">
                         {category.items.map((tool, tIdx) => (
                           <li key={tIdx}>
-                            <Link to={tool.path} className="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-lg group transition-colors">
+                            <Link to={localizePath(tool.path)} className="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-lg group transition-colors">
                               <div className={`p-1.5 rounded-md ${COLOR_MAP[tool.color]} group-hover:scale-110 transition-transform`}>
                                 {React.cloneElement(tool.icon, { size: 14 })}
                               </div>
@@ -181,7 +182,7 @@ const Layout = ({ children }) => {
               {activeMegaMenu === 'ai' && (
                 <div className="absolute top-full left-0 w-[600px] bg-white border border-slate-100 rounded-b-3xl shadow-[0_20px_40px_rgba(0,0,0,0.08)] p-6 grid grid-cols-2 gap-4 z-50 cursor-default animate-in fade-in slide-in-from-top-4">
                   {TOOLS_DATA.filter(c => c.category.includes('AI') || c.category === 'PDF Intelligence').map(cat => cat.items).flat().map((tool, idx) => (
-                    <Link to={tool.path} key={idx} className="flex items-start gap-4 p-4 hover:bg-slate-50 rounded-2xl border border-transparent hover:border-slate-100 group transition-all">
+                    <Link to={localizePath(tool.path)} key={idx} className="flex items-start gap-4 p-4 hover:bg-slate-50 rounded-2xl border border-transparent hover:border-slate-100 group transition-all">
                        <div className={`p-2.5 rounded-xl ${COLOR_MAP[tool.color]} group-hover:scale-110 transition-transform`}>
                          {React.cloneElement(tool.icon, { size: 20 })}
                        </div>
@@ -195,8 +196,8 @@ const Layout = ({ children }) => {
               )}
             </div>
 
-            <Link to="/pricing" className="font-bold text-[15px] text-slate-700 hover:text-indigo-600 transition-colors">{t('nav.pricing', 'Pricing')}</Link>
-            <Link to="/articles" className="font-bold text-[15px] text-slate-700 hover:text-indigo-600 transition-colors">{t('nav.articles', 'Articles')}</Link>
+            <Link to={localizePath('/pricing')} className="font-bold text-[15px] text-slate-700 hover:text-indigo-600 transition-colors">{t('nav.pricing', 'Pricing')}</Link>
+            <Link to={localizePath('/articles')} className="font-bold text-[15px] text-slate-700 hover:text-indigo-600 transition-colors">{t('nav.articles', 'Articles')}</Link>
           </nav>
 
           {/* Desktop & Mobile Right */}
@@ -250,10 +251,10 @@ const Layout = ({ children }) => {
                       <div className="flex-1 hidden md:block">
                         <p className="text-[11px] font-black tracking-widest text-slate-400 uppercase mb-4">FEATURES & DOCS</p>
                         <div className="space-y-1">
-                          <Link to="/features" onClick={() => setIsDropdownOpen(false)} className="flex items-center gap-3 px-3 py-2 hover:bg-slate-50 text-[14px] font-medium text-slate-700 transition-colors rounded-lg"><span className="text-amber-500">✨</span> Features</Link>
-                          <Link to="/documentation" onClick={() => setIsDropdownOpen(false)} className="flex items-center gap-3 px-3 py-2 hover:bg-slate-50 text-[14px] font-medium text-slate-700 transition-colors rounded-lg"><span className="text-blue-500">📚</span> Documentation</Link>
-                          <Link to="/faq" onClick={() => setIsDropdownOpen(false)} className="flex items-center gap-3 px-3 py-2 hover:bg-slate-50 text-[14px] font-medium text-slate-700 transition-colors rounded-lg"><span className="text-rose-500">❓</span> FAQ</Link>
-                          <Link to="/security" onClick={() => setIsDropdownOpen(false)} className="flex items-center gap-3 px-3 py-2 hover:bg-slate-50 text-[14px] font-medium text-slate-700 transition-colors rounded-lg"><span className="text-emerald-500">🔒</span> Security</Link>
+                          <Link to={localizePath('/features')} onClick={() => setIsDropdownOpen(false)} className="flex items-center gap-3 px-3 py-2 hover:bg-slate-50 text-[14px] font-medium text-slate-700 transition-colors rounded-lg"><span className="text-amber-500">✨</span> Features</Link>
+                          <Link to={localizePath('/documentation')} onClick={() => setIsDropdownOpen(false)} className="flex items-center gap-3 px-3 py-2 hover:bg-slate-50 text-[14px] font-medium text-slate-700 transition-colors rounded-lg"><span className="text-blue-500">📚</span> Documentation</Link>
+                          <Link to={localizePath('/faq')} onClick={() => setIsDropdownOpen(false)} className="flex items-center gap-3 px-3 py-2 hover:bg-slate-50 text-[14px] font-medium text-slate-700 transition-colors rounded-lg"><span className="text-rose-500">❓</span> FAQ</Link>
+                          <Link to={localizePath('/security')} onClick={() => setIsDropdownOpen(false)} className="flex items-center gap-3 px-3 py-2 hover:bg-slate-50 text-[14px] font-medium text-slate-700 transition-colors rounded-lg"><span className="text-emerald-500">🔒</span> Security</Link>
                         </div>
                       </div>
 
@@ -261,10 +262,10 @@ const Layout = ({ children }) => {
                       <div className="flex-1 hidden md:block">
                         <p className="text-[11px] font-black tracking-widest text-slate-400 uppercase mb-4">COMPANY & LEGAL</p>
                         <div className="space-y-1">
-                          <Link to="/press" onClick={() => setIsDropdownOpen(false)} className="flex items-center gap-3 px-3 py-2 hover:bg-slate-50 text-[14px] font-medium text-slate-700 transition-colors rounded-lg"><span className="text-slate-400">📰</span> Press Room</Link>
-                          <Link to="/privacy" onClick={() => setIsDropdownOpen(false)} className="flex items-center gap-3 px-3 py-2 hover:bg-slate-50 text-[14px] font-medium text-slate-700 transition-colors rounded-lg"><span className="text-blue-500">🛡️</span> Privacy Policy</Link>
-                          <Link to="/terms" onClick={() => setIsDropdownOpen(false)} className="flex items-center gap-3 px-3 py-2 hover:bg-slate-50 text-[14px] font-medium text-slate-700 transition-colors rounded-lg"><span className="text-slate-300">📄</span> Terms & Conditions</Link>
-                          <Link to="/about" onClick={() => setIsDropdownOpen(false)} className="flex items-center gap-3 px-3 py-2 hover:bg-slate-50 text-[14px] font-medium text-slate-700 transition-colors rounded-lg"><span className="text-indigo-500">👥</span> About Us</Link>
+                          <Link to={localizePath('/press')} onClick={() => setIsDropdownOpen(false)} className="flex items-center gap-3 px-3 py-2 hover:bg-slate-50 text-[14px] font-medium text-slate-700 transition-colors rounded-lg"><span className="text-slate-400">📰</span> Press Room</Link>
+                          <Link to={localizePath('/privacy')} onClick={() => setIsDropdownOpen(false)} className="flex items-center gap-3 px-3 py-2 hover:bg-slate-50 text-[14px] font-medium text-slate-700 transition-colors rounded-lg"><span className="text-blue-500">🛡️</span> Privacy Policy</Link>
+                          <Link to={localizePath('/terms')} onClick={() => setIsDropdownOpen(false)} className="flex items-center gap-3 px-3 py-2 hover:bg-slate-50 text-[14px] font-medium text-slate-700 transition-colors rounded-lg"><span className="text-slate-300">📄</span> Terms & Conditions</Link>
+                          <Link to={localizePath('/about')} onClick={() => setIsDropdownOpen(false)} className="flex items-center gap-3 px-3 py-2 hover:bg-slate-50 text-[14px] font-medium text-slate-700 transition-colors rounded-lg"><span className="text-indigo-500">👥</span> About Us</Link>
                         </div>
                       </div>
 
@@ -286,13 +287,13 @@ const Layout = ({ children }) => {
                         </div>
                         
                         <div className="py-2 border-b border-slate-100">
-                          <Link to="/dashboard" onClick={() => setIsDropdownOpen(false)} className="flex items-center gap-3 px-3 py-2 hover:bg-slate-50 text-[13px] font-medium text-slate-600 transition-colors rounded-lg">
+                          <Link to={localizePath('/dashboard')} onClick={() => setIsDropdownOpen(false)} className="flex items-center gap-3 px-3 py-2 hover:bg-slate-50 text-[13px] font-medium text-slate-600 transition-colors rounded-lg">
                             <Settings size={16} className="text-slate-400" /> Account settings
                           </Link>
-                          <Link to="/dashboard?tab=teams" onClick={() => setIsDropdownOpen(false)} className="flex items-center gap-3 px-3 py-2 hover:bg-slate-50 text-[13px] font-medium text-slate-600 transition-colors rounded-lg">
+                          <Link to={localizePath('/dashboard?tab=teams')} onClick={() => setIsDropdownOpen(false)} className="flex items-center gap-3 px-3 py-2 hover:bg-slate-50 text-[13px] font-medium text-slate-600 transition-colors rounded-lg">
                             <Users size={16} className="text-slate-400" /> Team
                           </Link>
-                          <Link to="/pricing" onClick={() => setIsDropdownOpen(false)} className="flex items-center gap-3 px-3 py-2 hover:bg-slate-50 text-[13px] font-medium text-slate-600 transition-colors rounded-lg">
+                          <Link to={localizePath('/pricing')} onClick={() => setIsDropdownOpen(false)} className="flex items-center gap-3 px-3 py-2 hover:bg-slate-50 text-[13px] font-medium text-slate-600 transition-colors rounded-lg">
                             <Star size={16} className="text-slate-400" /> Upgrade to Premium
                           </Link>
                         </div>
@@ -318,7 +319,7 @@ const Layout = ({ children }) => {
           <div className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-[60] lg:hidden animate-in fade-in" onClick={() => setIsLeftDrawerOpen(false)}></div>
           <div className="fixed top-0 left-0 bottom-0 w-[85%] max-w-[320px] bg-white z-[70] shadow-2xl flex flex-col lg:hidden animate-in slide-in-from-left">
             <div className="p-4 flex items-center justify-between border-b border-slate-100">
-              <Link to="/" className="flex items-center">
+              <Link to={localizePath('/')} className="flex items-center">
                 <img src="/logo-desktop.png" alt="PDF Bundles" className="h-6 w-auto" />
               </Link>
               <button onClick={() => setIsLeftDrawerOpen(false)} className="p-2 text-slate-400 hover:text-slate-700 bg-slate-50 rounded-full">
@@ -338,7 +339,7 @@ const Layout = ({ children }) => {
                   <ul className="space-y-1">
                     {category.items.map((tool, tIdx) => (
                       <li key={tIdx}>
-                        <Link to={tool.path} onClick={() => setIsLeftDrawerOpen(false)} className="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-xl transition-colors">
+                        <Link to={localizePath(tool.path)} onClick={() => setIsLeftDrawerOpen(false)} className="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-xl transition-colors">
                           <div className={`p-1.5 rounded-lg ${COLOR_MAP[tool.color]}`}>
                             {React.cloneElement(tool.icon, { size: 16 })}
                           </div>
@@ -403,43 +404,43 @@ const Layout = ({ children }) => {
               <div className="p-4 space-y-1 mt-2">
                 {currentUser ? (
                   <>
-                    <Link to="/dashboard" onClick={() => setIsRightDrawerOpen(false)} className="flex items-center gap-4 px-4 py-3.5 hover:bg-slate-50 text-[15px] font-bold text-slate-700 rounded-xl transition-colors">
+                    <Link to={localizePath('/dashboard')} onClick={() => setIsRightDrawerOpen(false)} className="flex items-center gap-4 px-4 py-3.5 hover:bg-slate-50 text-[15px] font-bold text-slate-700 rounded-xl transition-colors">
                       <Settings size={20} className="text-slate-400" /> {t('nav.account_settings', 'Account settings')}
                     </Link>
-                    <Link to="/dashboard?tab=teams" onClick={() => setIsRightDrawerOpen(false)} className="flex items-center gap-4 px-4 py-3.5 hover:bg-slate-50 text-[15px] font-bold text-slate-700 rounded-xl transition-colors">
+                    <Link to={localizePath('/dashboard?tab=teams')} onClick={() => setIsRightDrawerOpen(false)} className="flex items-center gap-4 px-4 py-3.5 hover:bg-slate-50 text-[15px] font-bold text-slate-700 rounded-xl transition-colors">
                       <Users size={20} className="text-slate-400" /> {t('nav.team', 'Team')}
                     </Link>
-                    <Link to="/pricing" onClick={() => setIsRightDrawerOpen(false)} className="flex items-center gap-4 px-4 py-3.5 hover:bg-slate-50 text-[15px] font-bold text-slate-700 rounded-xl transition-colors">
+                    <Link to={localizePath('/pricing')} onClick={() => setIsRightDrawerOpen(false)} className="flex items-center gap-4 px-4 py-3.5 hover:bg-slate-50 text-[15px] font-bold text-slate-700 rounded-xl transition-colors">
                       <Star size={20} className="text-slate-400" /> {t('nav.upgrade_premium', 'Upgrade to Premium')}
                     </Link>
                   </>
                 ) : (
                   <>
-                    <Link to="/pricing" onClick={() => setIsRightDrawerOpen(false)} className="flex items-center gap-4 px-4 py-3.5 hover:bg-slate-50 text-[15px] font-bold text-slate-700 rounded-xl transition-colors">
+                    <Link to={localizePath('/pricing')} onClick={() => setIsRightDrawerOpen(false)} className="flex items-center gap-4 px-4 py-3.5 hover:bg-slate-50 text-[15px] font-bold text-slate-700 rounded-xl transition-colors">
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg> 
                       {t('nav.pricing', 'Pricing')}
                     </Link>
-                    <Link to="/articles" onClick={() => setIsRightDrawerOpen(false)} className="flex items-center gap-4 px-4 py-3.5 hover:bg-slate-50 text-[15px] font-bold text-slate-700 rounded-xl transition-colors">
+                    <Link to={localizePath('/articles')} onClick={() => setIsRightDrawerOpen(false)} className="flex items-center gap-4 px-4 py-3.5 hover:bg-slate-50 text-[15px] font-bold text-slate-700 rounded-xl transition-colors">
                       <FileText size={20} className="text-slate-400" /> 
                       {t('nav.articles', 'Articles')}
                     </Link>
-                    <Link to="/features" onClick={() => setIsRightDrawerOpen(false)} className="flex items-center gap-4 px-4 py-3.5 hover:bg-slate-50 text-[15px] font-bold text-slate-700 rounded-xl transition-colors">
+                    <Link to={localizePath('/features')} onClick={() => setIsRightDrawerOpen(false)} className="flex items-center gap-4 px-4 py-3.5 hover:bg-slate-50 text-[15px] font-bold text-slate-700 rounded-xl transition-colors">
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
                       {t('footer.features', 'Features')}
                     </Link>
-                    <Link to="/documentation" onClick={() => setIsRightDrawerOpen(false)} className="flex items-center gap-4 px-4 py-3.5 hover:bg-slate-50 text-[15px] font-bold text-slate-700 rounded-xl transition-colors">
+                    <Link to={localizePath('/documentation')} onClick={() => setIsRightDrawerOpen(false)} className="flex items-center gap-4 px-4 py-3.5 hover:bg-slate-50 text-[15px] font-bold text-slate-700 rounded-xl transition-colors">
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
                       {t('footer.documentation', 'Documentation')}
                     </Link>
-                    <Link to="/faq" onClick={() => setIsRightDrawerOpen(false)} className="flex items-center gap-4 px-4 py-3.5 hover:bg-slate-50 text-[15px] font-bold text-slate-700 rounded-xl transition-colors">
+                    <Link to={localizePath('/faq')} onClick={() => setIsRightDrawerOpen(false)} className="flex items-center gap-4 px-4 py-3.5 hover:bg-slate-50 text-[15px] font-bold text-slate-700 rounded-xl transition-colors">
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
                       {t('footer.faq', 'FAQ')}
                     </Link>
-                    <Link to="/security" onClick={() => setIsRightDrawerOpen(false)} className="flex items-center gap-4 px-4 py-3.5 hover:bg-slate-50 text-[15px] font-bold text-slate-700 rounded-xl transition-colors">
+                    <Link to={localizePath('/security')} onClick={() => setIsRightDrawerOpen(false)} className="flex items-center gap-4 px-4 py-3.5 hover:bg-slate-50 text-[15px] font-bold text-slate-700 rounded-xl transition-colors">
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
                       {t('footer.security', 'Security')}
                     </Link>
-                    <Link to="/press" onClick={() => setIsRightDrawerOpen(false)} className="flex items-center gap-4 px-4 py-3.5 hover:bg-slate-50 text-[15px] font-bold text-slate-700 rounded-xl transition-colors">
+                    <Link to={localizePath('/press')} onClick={() => setIsRightDrawerOpen(false)} className="flex items-center gap-4 px-4 py-3.5 hover:bg-slate-50 text-[15px] font-bold text-slate-700 rounded-xl transition-colors">
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><rect x="9" y="9" width="6" height="6"></rect><line x1="9" y1="1" x2="9" y2="4"></line><line x1="15" y1="1" x2="15" y2="4"></line><line x1="9" y1="20" x2="9" y2="23"></line><line x1="15" y1="20" x2="15" y2="23"></line><line x1="20" y1="9" x2="23" y2="9"></line><line x1="20" y1="14" x2="23" y2="14"></line><line x1="1" y1="9" x2="4" y2="9"></line><line x1="1" y1="14" x2="4" y2="14"></line></svg>
                       {t('footer.press', 'Press')}
                     </Link>
@@ -467,36 +468,72 @@ const Layout = ({ children }) => {
   )
 }
 
+const LocaleLayout = () => {
+  const { lang } = useParams();
+  if (!NON_EN_LANG_CODES.includes(lang?.toLowerCase())) {
+    return <Navigate to="/" replace />;
+  }
+  return <Outlet />;
+};
+
 function App() {
   return (
     <ToastProvider>
       <AuthProvider>
         <BrowserRouter>
-          <Layout>
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/articles" element={<Articles />} />
-              <Route path="/articles/:slug" element={<ArticleView />} />
-              <Route path="/blog" element={<Blog />} />
-              <Route path="/blog/new" element={<BlogEditor />} />
-              <Route path="/blog/:id" element={<BlogArticle />} />
-              <Route path="/pricing" element={<Pricing />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              
-              <Route path="/features" element={<Features />} />
-              <Route path="/documentation" element={<Documentation />} />
-              <Route path="/faq" element={<FAQPage />} />
-              <Route path="/security" element={<Security />} />
-              <Route path="/press" element={<PressRoom />} />
-              <Route path="/privacy" element={<PrivacyPolicy />} />
-              <Route path="/terms" element={<TermsConditions />} />
-              <Route path="/about" element={<AboutUs />} />
+          <LanguageProvider>
+            <Layout>
+              <Routes>
+                {/* Default English Root Routes */}
+                <Route path="/" element={<Home />} />
+                <Route path="/articles" element={<Articles />} />
+                <Route path="/articles/:slug" element={<ArticleView />} />
+                <Route path="/blog" element={<Blog />} />
+                <Route path="/blog/new" element={<BlogEditor />} />
+                <Route path="/blog/:id" element={<BlogArticle />} />
+                <Route path="/pricing" element={<Pricing />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                
+                <Route path="/features" element={<Features />} />
+                <Route path="/documentation" element={<Documentation />} />
+                <Route path="/faq" element={<FAQPage />} />
+                <Route path="/security" element={<Security />} />
+                <Route path="/press" element={<PressRoom />} />
+                <Route path="/privacy" element={<PrivacyPolicy />} />
+                <Route path="/terms" element={<TermsConditions />} />
+                <Route path="/about" element={<AboutUs />} />
 
-              {ALL_TOOLS.map(tool => (
-                <Route key={tool.id} path={tool.path} element={<GenericToolPage tool={tool} />} />
-              ))}
-            </Routes>
-          </Layout>
+                {ALL_TOOLS.map(tool => (
+                  <Route key={tool.id} path={tool.path} element={<GenericToolPage tool={tool} />} />
+                ))}
+
+                {/* Localized /:lang Routes (Spanish, French, German, etc.) */}
+                <Route path="/:lang" element={<LocaleLayout />}>
+                  <Route index element={<Home />} />
+                  <Route path="articles" element={<Articles />} />
+                  <Route path="articles/:slug" element={<ArticleView />} />
+                  <Route path="blog" element={<Blog />} />
+                  <Route path="blog/new" element={<BlogEditor />} />
+                  <Route path="blog/:id" element={<BlogArticle />} />
+                  <Route path="pricing" element={<Pricing />} />
+                  <Route path="dashboard" element={<Dashboard />} />
+                  
+                  <Route path="features" element={<Features />} />
+                  <Route path="documentation" element={<Documentation />} />
+                  <Route path="faq" element={<FAQPage />} />
+                  <Route path="security" element={<Security />} />
+                  <Route path="press" element={<PressRoom />} />
+                  <Route path="privacy" element={<PrivacyPolicy />} />
+                  <Route path="terms" element={<TermsConditions />} />
+                  <Route path="about" element={<AboutUs />} />
+
+                  {ALL_TOOLS.map(tool => (
+                    <Route key={`loc-${tool.id}`} path={tool.path.replace(/^\//, '')} element={<GenericToolPage tool={tool} />} />
+                  ))}
+                </Route>
+              </Routes>
+            </Layout>
+          </LanguageProvider>
         </BrowserRouter>
       </AuthProvider>
     </ToastProvider>

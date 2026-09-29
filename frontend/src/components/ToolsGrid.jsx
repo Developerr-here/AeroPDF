@@ -4,7 +4,7 @@ import { TOOLS_DATA, COLOR_MAP } from '../data/tools';
 import { useTranslation } from '../i18n/LanguageContext';
 
 const ToolsGrid = ({ showHeader = true, title, subtitle }) => {
-  const { t } = useTranslation();
+  const { t, localizePath } = useTranslation();
   const [activeTab, setActiveTab] = useState('All Tools');
   const tabs = ['All Tools', 'Organize', 'Optimize', 'Convert', 'Edit & AI', 'Security'];
 
@@ -53,7 +53,7 @@ const ToolsGrid = ({ showHeader = true, title, subtitle }) => {
             </h3>
             <div className="space-y-4">
               {category.items.map((tool, tIdx) => (
-                <Link to={tool.path} key={tIdx} className="flex items-start gap-4 bg-white p-5 rounded-2xl border border-slate-100 shadow-[0_2px_10px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:border-indigo-100 hover:-translate-y-0.5 transition-all group block w-full">
+                <Link to={localizePath(tool.path)} key={tIdx} className="flex items-start gap-4 bg-white p-5 rounded-2xl border border-slate-100 shadow-[0_2px_10px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:border-indigo-100 hover:-translate-y-0.5 transition-all group block w-full">
                   <div className={`p-2.5 rounded-xl shrink-0 transition-transform group-hover:scale-110 ${COLOR_MAP[tool.color] || COLOR_MAP.slate}`}>
                     {tool.icon}
                   </div>
