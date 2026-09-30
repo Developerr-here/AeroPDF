@@ -34,6 +34,31 @@ const translateSingleText = async (text, targetLang) => {
     return translationCache.get(cacheKey);
   }
 
+  const targetLangCode = targetLang === 'zh' ? 'zh-CN' : targetLang;
+
+  // Tier 1: Google Translate public API (fast, reliable, handles long text & all 13 languages)
+  try {
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=${targetLangCode}&dt=t&q=${encodeURIComponent(text.trim())}`;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeout);
+
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data) && Array.isArray(data[0])) {
+        const translated = data[0].map(x => x[0]).filter(Boolean).join('');
+        if (translated && translated.trim().length > 0) {
+          translationCache.set(cacheKey, translated);
+          return translated;
+        }
+      }
+    }
+  } catch (err) {
+    // Fallback to Tier 2
+  }
+
+  // Tier 2: MyMemory API Fallback
   try {
     const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text.trim())}&langpair=en|${targetLang}`;
     const controller = new AbortController();
@@ -52,6 +77,7 @@ const translateSingleText = async (text, targetLang) => {
   } catch (err) {
     // Fallback to original text on network failure
   }
+
   return text;
 };
 
@@ -63,18 +89,40 @@ const translateHtmlContent = async (html, targetLang) => {
   }
 
   try {
-    const tagRegex = /<(p|h[1-6]|li|blockquote)([^>]*)>([\s\S]*?)<\/\1>/gi;
+    // Case 1: Plain text without HTML tags
+    if (!html.includes('<') || !html.includes('>')) {
+      const translated = await translateSingleText(html, targetLang);
+      translationCache.set(cacheKey, translated);
+      return translated;
+    }
+
+    // Case 2: Standard HTML content with tags (p, h1-h6, li, blockquote, div, etc.)
+    const tagRegex = /<(p|h[1-6]|li|blockquote|div)([^>]*)>([\s\S]*?)<\/\1>/gi;
     const segments = [];
     let match;
     while ((match = tagRegex.exec(html)) !== null) {
       const innerText = match[3].replace(/<[^>]+>/g, '').trim();
-      if (innerText && innerText.length > 2) {
+      if (innerText && innerText.length > 1) {
         segments.push({ full: match[0], tag: match[1], attrs: match[2], inner: match[3], text: innerText });
       }
     }
 
-    if (segments.length === 0) return html;
+    // If no block tags matched (e.g. text with only <br> or inline formatting like <b>, <i>, <span>):
+    if (segments.length === 0) {
+      const lines = html.split(/(<br\s*\/?>|\n)/gi);
+      const translatedLines = await Promise.all(lines.map(async (line) => {
+        if (/^<br\s*\/?>$/i.test(line) || line === '\n' || !line.trim()) return line;
+        const cleanText = line.replace(/<[^>]+>/g, '').trim();
+        if (!cleanText) return line;
+        const translated = await translateSingleText(cleanText, targetLang);
+        return translated;
+      }));
+      const result = translatedLines.join('');
+      translationCache.set(cacheKey, result);
+      return result;
+    }
 
+    // Translate unique text segments
     const uniqueTexts = [...new Set(segments.map(s => s.text))];
     const textTranslations = new Map();
 
