@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Calendar, User, Tag, Share2, Check, BookOpen, Globe } from 'lucide-react';
 import { useTranslation } from '../i18n/LanguageContext';
+import AdsterraLeaderboard from '../components/ads/AdsterraLeaderboard';
+import AdsterraNativeBanner from '../components/ads/AdsterraNativeBanner';
 
 const ArticleView = () => {
   const { slug } = useParams();
@@ -200,12 +202,20 @@ const ArticleView = () => {
           </div>
         )}
 
+        {/* Responsive Leaderboard Banner */}
+        <AdsterraLeaderboard className="mb-8" />
+
         {/* Main Formatted Article Body */}
         <div className="bg-white rounded-3xl p-8 md:p-12 border border-slate-200/80 shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
           <div 
             className="prose prose-indigo max-w-none text-slate-800 text-base leading-relaxed space-y-6"
             dangerouslySetInnerHTML={{ __html: activeContent || '' }}
           />
+        </div>
+
+        {/* Native 4:1 Widget Banner below article */}
+        <div className="mt-8">
+          <AdsterraNativeBanner />
         </div>
 
       </div>

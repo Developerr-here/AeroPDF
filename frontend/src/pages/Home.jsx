@@ -12,6 +12,8 @@ import {
   UploadCloud, Settings, Download, GraduationCap, Briefcase, Star, Clock, X, Check, ArrowRight, BookOpen,
   Sparkles, Bot, ZoomIn
 } from 'lucide-react';
+import AdsterraLeaderboard from '../components/ads/AdsterraLeaderboard';
+import AdsterraNativeBanner from '../components/ads/AdsterraNativeBanner';
 
 const Home = () => {
   const { t, language, localizePath } = useTranslation();
@@ -314,8 +316,13 @@ const Home = () => {
         </div>
       </div>
 
+      {/* Responsive Leaderboard Ad (728x90 Desktop, 468x60 Tablet, 320x50 Mobile) */}
+      <div className="max-w-[1400px] mx-auto px-6 pt-4">
+        <AdsterraLeaderboard />
+      </div>
+
       {/* ALL TOOLS */}
-      <div id="tools" className="max-w-[1600px] mx-auto px-6 py-12 md:py-16">
+      <div id="tools" className="max-w-[1600px] mx-auto px-6 py-10 md:py-14">
         <ToolsGrid 
           title={t('tools_section.title', 'Explore Our 28 Free Online PDF Tools')}
           subtitle={t('tools_section.subtitle', 'These free PDF tools make your day-to-day tasks easier by saving your time. We have categorized all PDF tools so you can find your PDF tool easily.')}
@@ -881,6 +888,11 @@ const Home = () => {
             </form>
           </div>
         </div>
+      </div>
+
+      {/* Adsterra Native 4:1 Widget Banner */}
+      <div className="max-w-[1400px] mx-auto px-6 py-6">
+        <AdsterraNativeBanner />
       </div>
 
       {/* NEW: FAQ */}

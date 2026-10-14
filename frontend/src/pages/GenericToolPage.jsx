@@ -15,6 +15,10 @@ import PageGrid from '../components/PageGrid';
 import SuccessView from '../components/SuccessView';
 import WebcamWorkspace from '../components/WebcamWorkspace';
 import CompareWorkspace from '../components/CompareWorkspace';
+import AdsterraLeaderboard from '../components/ads/AdsterraLeaderboard';
+import AdsterraBanner from '../components/ads/AdsterraBanner';
+import AdsterraNativeBanner from '../components/ads/AdsterraNativeBanner';
+import { ADSTERRA_SLOTS } from '../components/ads/adConfig';
 
 const interactiveTools = ['rotate-pdf', 'split-pdf', 'extract-pages', 'remove-pages', 'organize-pdf', 'edit-pdf', 'redact-pdf', 'sign-pdf'];
 
@@ -312,7 +316,10 @@ const GenericToolPage = ({ tool }) => {
           </div>
         </div>
       ) : (!tool.noUpload && !files.length) ? (
-        <div className="pt-10 pb-24 bg-white flex-1">
+        <div className="pt-6 pb-24 bg-white flex-1">
+          {/* Top Responsive Leaderboard Banner (728x90 on Desktop, 468x60 on Tablet, 320x50 on Mobile) */}
+          <AdsterraLeaderboard className="mb-8" />
+
           <FileUploadDropzone 
             onFilesSelected={handleFilesSelected}
             multiple={tool.multiple}
@@ -331,6 +338,9 @@ const GenericToolPage = ({ tool }) => {
               </button>
             </div>
           )}
+
+          {/* Adsterra Native 4:1 Banner before SEO content */}
+          <AdsterraNativeBanner className="my-10" />
           
           {/* Footer Data */}
           <div className="max-w-[1200px] mx-auto px-6 mt-16">
@@ -561,6 +571,11 @@ const GenericToolPage = ({ tool }) => {
                   </button>
                 </div>
 
+                {/* Sidebar Adsterra 300x250 Medium Rectangle Ad */}
+                <div className="mt-8 pt-6 border-t border-slate-100 flex justify-center">
+                  <AdsterraBanner slot={ADSTERRA_SLOTS.rectangle_medium} />
+                </div>
+
               </div>
             </div>
 
@@ -571,6 +586,9 @@ const GenericToolPage = ({ tool }) => {
       {(!tool.noUpload && !files.length) && status !== 'success' && !isWebcamActive && (
         <div className="bg-slate-50 py-24 border-t border-slate-100">
           <div className="max-w-[1200px] mx-auto px-6">
+            {/* Bottom Responsive Leaderboard Banner */}
+            <AdsterraLeaderboard className="mb-14" />
+
             <FAQ 
               faqs={language === 'en' ? (extraContent.seoFaqs || extraContent.faqs) : localizedToolFaqs} 
               title={language === 'en' ? extraContent.seoFaqTitle : `${t('tool_page.faq_title', 'Frequently Asked Questions')} - ${t(`tools.${tool.id}.name`, tool.name)}`} 

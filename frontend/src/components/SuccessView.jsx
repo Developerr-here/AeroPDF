@@ -1,5 +1,7 @@
 import React from 'react';
 import { Check, Download, RotateCcw } from 'lucide-react';
+import AdsterraBanner from './ads/AdsterraBanner';
+import { ADSTERRA_SLOTS } from './ads/adConfig';
 
 export default function SuccessView({ filename, blob, downloadUrl, jsonResult, onReset }) {
   const handleDownload = () => {
@@ -84,6 +86,12 @@ export default function SuccessView({ filename, blob, downloadUrl, jsonResult, o
           <RotateCcw size={18} />
           {(blob || downloadUrl) ? 'Process Another File' : 'Start Over'}
         </button>
+      </div>
+
+      {/* High-Converting Download Screen Adsterra Banner (300x250) */}
+      <div className="mt-8 pt-6 border-t border-slate-100 w-full flex flex-col items-center justify-center">
+        <p className="text-[10px] font-bold tracking-wider text-slate-300 uppercase mb-2">Sponsored</p>
+        <AdsterraBanner slot={ADSTERRA_SLOTS.rectangle_medium} />
       </div>
     </div>
   );

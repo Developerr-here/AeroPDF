@@ -6,6 +6,7 @@ import { TOOLS_DATA } from '../data/tools';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { useTranslation } from '../i18n/LanguageContext';
+import AdsterraLeaderboard from '../components/ads/AdsterraLeaderboard';
 
 const Articles = () => {
   const { t, language } = useTranslation();
@@ -136,6 +137,11 @@ const Articles = () => {
               className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all"
             />
           </div>
+        </div>
+
+        {/* Adsterra Responsive Leaderboard Banner */}
+        <div className="mb-10">
+          <AdsterraLeaderboard />
         </div>
 
         {/* Articles Grid */}
